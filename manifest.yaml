@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kubecost-etl
+  namespace: kubecost
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: etl
+            image: nialt/kubecost-etl:v3
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: EKS_CLUSTER_ID
+              value: eks-kubecost1
+            - name: S3_BUCKET_NAME
+              value: nialt-kubecost-csv
+          restartPolicy: OnFailure
+          serviceAccountName: kubecost-cost-analyzer
