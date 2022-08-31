@@ -1,0 +1,42 @@
+clusterId: ""
+s3BucketName: ""
+
+replicaCount: 1
+
+image:
+  repository: nialt/kubecost-etl
+  pullPolicy: IfNotPresent
+  tag: "v4"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "kubecost-athena-exporter"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

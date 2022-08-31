@@ -25,56 +25,62 @@ response = r.json()
 
 df = pd.json_normalize(response["data"][0].values())
 
-columns = [
-  'name',
-  'window.start',
-  'window.end',
-  'minutes',
-  'cpuCores', 
-  'cpuCoreRequestAverage', 
-  'cpuCoreUsageAverage', 
-  'cpuCoreHours', 
-  'cpuCost', 
-  'cpuCostAdjustment', 
-  'cpuEfficiency', 
-  'gpuCount', 
-  'gpuHours', 
-  'gpuCost', 
-  'gpuCostAdjustment', 
-  'networkTransferBytes', 
-  'networkReceiveBytes', 
-  'networkCost', 
-  'networkCostAdjustment', 
-  'loadBalancerCost', 
-  'loadBalancerCostAdjustment', 
-  'pvBytes', 
-  'pvByteHours', 
-  'pvCost', 
-  'pvs', 
-  'pvCostAdjustment', 
-  'ramBytes', 
-  'ramByteRequestAverage', 
-  'ramByteUsageAverage', 
-  'ramByteHours', 
-  'ramCost', 
-  'ramCostAdjustment', 
-  'ramEfficiency', 
-  'sharedCost', 
-  'externalCost', 
-  'totalCost', 
-  'totalEfficiency', 
-  'rawAllocationOnly', 
-  'properties.cluster', 
-  'properties.container', 
-  'properties.namespace', 
-  'properties.pod', 
-  'properties.node', 
-  'properties.controller', 
-  'properties.controllerKind', 
-  'properties.providerID'
-]
+if 'name' in df.columns:
+  print("Uploading data to S3 bucket...")
 
-df.to_csv('output.csv', sep=',', encoding='utf-8', index=False, columns=columns)
+  columns = [
+    'name',
+    'window.start',
+    'window.end',
+    'minutes',
+    'cpuCores', 
+    'cpuCoreRequestAverage', 
+    'cpuCoreUsageAverage', 
+    'cpuCoreHours', 
+    'cpuCost', 
+    'cpuCostAdjustment', 
+    'cpuEfficiency', 
+    'gpuCount', 
+    'gpuHours', 
+    'gpuCost', 
+    'gpuCostAdjustment', 
+    'networkTransferBytes', 
+    'networkReceiveBytes', 
+    'networkCost', 
+    'networkCostAdjustment', 
+    'loadBalancerCost', 
+    'loadBalancerCostAdjustment', 
+    'pvBytes', 
+    'pvByteHours', 
+    'pvCost', 
+    'pvs', 
+    'pvCostAdjustment', 
+    'ramBytes', 
+    'ramByteRequestAverage', 
+    'ramByteUsageAverage', 
+    'ramByteHours', 
+    'ramCost', 
+    'ramCostAdjustment', 
+    'ramEfficiency', 
+    'sharedCost', 
+    'externalCost', 
+    'totalCost', 
+    'totalEfficiency', 
+    'rawAllocationOnly', 
+    'properties.cluster', 
+    'properties.container', 
+    'properties.namespace', 
+    'properties.pod', 
+    'properties.node', 
+    'properties.controller', 
+    'properties.controllerKind', 
+    'properties.providerID'
+  ]
 
-s3 = boto3.resource('s3')    
-s3.Bucket(bucket_name).upload_file('./output.csv','{}/{}.csv'.format(start.strftime('year=%Y/month=%m/day=%d'), cluster_id))
+  df.to_csv('output.csv', sep=',', encoding='utf-8', index=False, columns=columns)
+
+  s3 = boto3.resource('s3')    
+  s3.Bucket(bucket_name).upload_file('./output.csv','{}/{}.csv'.format(start.strftime('year=%Y/month=%m/day=%d'), cluster_id))
+else:
+  print("API response appears to be empty, check window")
+  print("Response: {}".format(response))
