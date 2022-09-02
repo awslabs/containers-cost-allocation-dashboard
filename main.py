@@ -3,6 +3,8 @@ import pandas as pd
 import datetime
 import boto3
 import os
+import json
+import csv
 
 cluster_id = os.environ["EKS_CLUSTER_ID"]
 bucket_name = os.environ["S3_BUCKET_NAME"]
@@ -23,10 +25,21 @@ r = requests.get('{}/model/allocation'.format(kubecost_endpoint), params=params)
 
 response = r.json()
 
-df = pd.json_normalize(response["data"][0].values())
+payload = response["data"][0]
+
+df = pd.json_normalize(payload.values())
+
+def assign_labels(x):
+  properties = payload[x['name']]['properties']
+  if 'labels' in properties:
+    return json.dumps(properties['labels'])
+
+  return '{}'
 
 if 'name' in df.columns:
   print("Uploading data to S3 bucket...")
+
+  df['labels'] = df.apply(assign_labels, axis=1)
 
   columns = [
     'name',
@@ -74,10 +87,11 @@ if 'name' in df.columns:
     'properties.node', 
     'properties.controller', 
     'properties.controllerKind', 
-    'properties.providerID'
+    'properties.providerID',
+    'labels'
   ]
 
-  df.to_csv('output.csv', sep=',', encoding='utf-8', index=False, columns=columns)
+  df.to_csv('output.csv', sep=',', encoding='utf-8', index=False, quotechar="'", escapechar="\\", columns=columns)
 
   s3 = boto3.resource('s3')    
   s3.Bucket(bucket_name).upload_file('./output.csv','{}/{}.csv'.format(start.strftime('year=%Y/month=%m/day=%d'), cluster_id))

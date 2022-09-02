@@ -6,7 +6,7 @@ replicaCount: 1
 image:
   repository: nialt/kubecost-etl
   pullPolicy: IfNotPresent
-  tag: "v4"
+  tag: "v5"
 
 imagePullSecrets: []
 nameOverride: ""
