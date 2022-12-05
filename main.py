@@ -1,100 +1,204 @@
-import requests
-import pandas as pd
-import datetime
-import boto3
 import os
-import json
-import csv
+import sys
+import logging
+import requests
+import datetime
+import pandas as pd
 
-cluster_id = os.environ["EKS_CLUSTER_ID"]
-bucket_name = os.environ["S3_BUCKET_NAME"]
-kubecost_endpoint = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost.svc")
+import boto3
+from boto3 import exceptions
 
-today = datetime.date.today()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
-start = today - datetime.timedelta(days=2)
-end = today - datetime.timedelta(days=1)
+# Environment variables to identify the S3 bucket, Kubecost API endpoint and EKS cluster ID
+S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
+KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost")
+CLUSTER_ID = os.environ.get("CLUSTER_ID")
+GRANULARITY_INPUT = os.environ.get("GRANULARITY", "hourly")
 
-window = "{}T00:00:00Z,{}T00:00:00Z".format(start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
 
-print("Targeting window {}".format(window))
+def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granularity, aggregate, accumulate=False):
+    """Executes Kubecost Allocation API On-demand query.
 
-params = {'window': window, 'aggregate':'pod', 'accumulate': 'true', 'shareIdle': 'false'}
+    :param kubecost_api_endpoint: the Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
+    :param start: the start time for calculating Kubecost Allocation API window
+    :param end: the end time for calculating Kubecost Allocation API window
+    :param granularity: the user input time granularity, to use for calculating the step (daily or hourly)
+    :param aggregate: the K8s object used for aggregation, as per Kubecost Allocation API On-demand query documentation
+    :param accumulate: dictates whether to return data for the entire window, or divide to time sets
+    :return: the Kubecost Allocation API On-demand query response
+    """
 
-r = requests.get('{}/model/allocation'.format(kubecost_endpoint), params=params)
+    granularity_map = {
+        "hourly": "1h",
+        "daily": "1d"
+    }
 
-response = r.json()
+    # Calculate window and step
+    window = "{},{}".format(start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    try:
+        step = granularity_map[granularity.lower()]
+    except KeyError:
+        logger.error("Granularity must be one of 'hourly' or 'daily'")
+        sys.exit(1)
 
-payload = response["data"][0]
+    # Executing Kubecost Allocation API call (On-demand query)
+    try:
+        logger.info("Querying Kubecost API for data between {} and {} in {} granularity...".format(start, end,
+                                                                                                   granularity.lower()))
+        params = {'window': window, 'aggregate': aggregate, 'accumulate': accumulate, "step": step}
+        r = requests.get('{}/model/allocation/compute'.format(kubecost_api_endpoint), params=params)
+        if not r.json()["data"]:
+            logger.error("API response appears to be empty, check window")
+            sys.exit(1)
 
-df = pd.json_normalize(payload.values())
+        return r
+    except requests.exceptions.ConnectionError as error:
+        logger.error("Error connecting to Kubecost API: {}".format(error))
+        sys.exit(1)
 
-def assign_labels(x):
-  properties = payload[x['name']]['properties']
-  if 'labels' in properties:
-    return json.dumps(properties['labels'])
 
-  return '{}'
+def kubecost_allocation_data_timestamp_update(allocation_data):
+    """Replaces Kubecost's ISO8601 timestamp format to java.sql.Timestamp format, using dictionary comprehension.
+    The replacement is necessary due to Athena's requirement for java.sql.Timestamp format.
 
-if 'name' in df.columns:
-  print("Uploading data to S3 bucket...")
+    :param allocation_data: the Kubecost Allocation API On-demand query response
+    :return: A list of lists, where each nested list is a time set with all the unique K8s aggregation values
+    """
 
-  df['labels'] = df.apply(assign_labels, axis=1)
+    allocation_data_with_updated_timestamps = [
+        [
+            {**d, **{
+                "window":
+                    {
+                        "start": d["window"]["start"].replace("T", " ").replace("Z", ".000"),
+                        "end": d["window"]["end"].replace("T", " ").replace("Z", ".000")
+                    },
+                "start": d["start"].replace("T", " ").replace("Z", ".000"),
+                "end": d["end"].replace("T", " ").replace("Z", ".000")
+            }
+             } for d in y] for y in
+        [list(x.values()) for x in allocation_data.json()["data"]]
+    ]
 
-  columns = [
-    'name',
-    'window.start',
-    'window.end',
-    'minutes',
-    'cpuCores', 
-    'cpuCoreRequestAverage', 
-    'cpuCoreUsageAverage', 
-    'cpuCoreHours', 
-    'cpuCost', 
-    'cpuCostAdjustment', 
-    'cpuEfficiency', 
-    'gpuCount', 
-    'gpuHours', 
-    'gpuCost', 
-    'gpuCostAdjustment', 
-    'networkTransferBytes', 
-    'networkReceiveBytes', 
-    'networkCost', 
-    'networkCostAdjustment', 
-    'loadBalancerCost', 
-    'loadBalancerCostAdjustment', 
-    'pvBytes', 
-    'pvByteHours', 
-    'pvCost', 
-    'pvs', 
-    'pvCostAdjustment', 
-    'ramBytes', 
-    'ramByteRequestAverage', 
-    'ramByteUsageAverage', 
-    'ramByteHours', 
-    'ramCost', 
-    'ramCostAdjustment', 
-    'ramEfficiency', 
-    'sharedCost', 
-    'externalCost', 
-    'totalCost', 
-    'totalEfficiency', 
-    'rawAllocationOnly', 
-    'properties.cluster', 
-    'properties.container', 
-    'properties.namespace', 
-    'properties.pod', 
-    'properties.node', 
-    'properties.controller', 
-    'properties.controllerKind', 
-    'properties.providerID',
-    'labels'
-  ]
+    return allocation_data_with_updated_timestamps
 
-  df.to_csv('output.csv', sep=',', encoding='utf-8', index=False, quotechar="'", escapechar="\\", columns=columns)
 
-  s3 = boto3.resource('s3')    
-  s3.Bucket(bucket_name).upload_file('./output.csv','{}/{}.csv'.format(start.strftime('year=%Y/month=%m/day=%d'), cluster_id))
-else:
-  print("API response appears to be empty, check window")
-  print("Response: {}".format(response))
+def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
+    """Transforms the Kubecost Allocation data to CSV.
+
+    :param updated_allocation_data: Kubecost's Allocation data after:
+     1. Transforming to a nested list
+     2. Updating timestamps
+    :param csv_columns: the list of columns to use as CSV headers
+    :return:
+    """
+
+    # Dataframe definition, including all time sets from Kubecost API response
+    all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
+    df = pd.concat(all_dfs)
+
+    # Transforming the DataFrame to a CSV and creating the CSV file locally
+    df.to_csv('output.csv', sep=',', encoding='utf-8', index=False, quotechar="'", escapechar="\\", columns=csv_columns)
+
+
+def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, month, year):
+    """Uploads the Kubecost Allocation CSV to an S3 bucket.
+
+    :param s3_bucket_name: the S3 bucket name to use
+    :param cluster_id: the K8s cluster ID to use in the CSV file name
+    :param _date: the date to use in the CSV file name
+    :param month: the month to use as part of the S3 bucket prefix
+    :param year: the year to use as part of the S3 bucket prefix
+    :return:
+    """
+
+    # Uploading the CSV file to the S3 bucket
+    s3_csv_file_name = "{}_{}.csv".format(_date, cluster_id)
+    try:
+        s3 = boto3.resource('s3')
+        s3_bucket_prefix = 'year={}/month={}'.format(year, month)
+
+        logger.info("Uploading file {} to S3 bucket {}...".format(s3_csv_file_name, s3_bucket_name))
+        s3.Bucket(s3_bucket_name).upload_file('./output.csv', '{}/{}'.format(s3_bucket_prefix, s3_csv_file_name))
+    except boto3.exceptions.S3UploadFailedError as error:
+        logger.error("Unable to upload file {} to S3 bucket {}: {}".format(s3_csv_file_name, s3_bucket_name, error))
+        sys.exit(1)
+
+
+def main():
+
+    # Kubecost window definition
+    three_days_ago = datetime.datetime.now() - datetime.timedelta(days=3)
+    three_days_ago_midnight = three_days_ago.replace(microsecond=0, second=0, minute=0, hour=0)
+    three_days_ago_midnight_plus_one_day = three_days_ago_midnight + datetime.timedelta(days=1)
+    three_days_ago_date = three_days_ago_midnight.strftime("%Y-%m-%d")
+    three_days_ago_year = three_days_ago_midnight.strftime("%Y")
+    three_days_ago_month = three_days_ago_midnight.strftime("%m")
+
+    # Executing Kubecost Allocation API call
+    kubecost_allocation_api_response = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
+                                                                       three_days_ago_midnight_plus_one_day,
+                                                                       GRANULARITY_INPUT, "pod")
+
+    # CSV headers definition
+    columns = [
+        'name',
+        'window.start',
+        'window.end',
+        'minutes',
+        'cpuCores',
+        'cpuCoreRequestAverage',
+        'cpuCoreUsageAverage',
+        'cpuCoreHours',
+        'cpuCost',
+        'cpuCostAdjustment',
+        'cpuEfficiency',
+        'gpuCount',
+        'gpuHours',
+        'gpuCost',
+        'gpuCostAdjustment',
+        'networkTransferBytes',
+        'networkReceiveBytes',
+        'networkCost',
+        'networkCostAdjustment',
+        'loadBalancerCost',
+        'loadBalancerCostAdjustment',
+        'pvBytes',
+        'pvByteHours',
+        'pvCost',
+        'pvCostAdjustment',
+        'ramBytes',
+        'ramByteRequestAverage',
+        'ramByteUsageAverage',
+        'ramByteHours',
+        'ramCost',
+        'ramCostAdjustment',
+        'ramEfficiency',
+        'sharedCost',
+        'externalCost',
+        'totalCost',
+        'totalEfficiency',
+        'rawAllocationOnly',
+        'properties.cluster',
+        'properties.container',
+        'properties.namespace',
+        'properties.pod',
+        'properties.node',
+        'properties.controller',
+        'properties.controllerKind',
+        'properties.providerID'
+    ]
+
+    # Transforming Kubecost's allocation API response to a list of lists, and updating timestamps
+    kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(kubecost_allocation_api_response)
+
+    # Transforming Kubecost's updated allocation data to CSV and uploading to S3
+    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
+    upload_kubecost_allocation_csv_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
+                                         three_days_ago_year)
+
+
+if __name__ == "__main__":
+    main()
