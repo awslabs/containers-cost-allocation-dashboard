@@ -16,13 +16,13 @@ nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
-  create: false
-  annotations: {}
-  name: "kubecost-cid-service-account"
+  create: true
+  name: "kubecost-cid2"
+  role: arn:aws:iam::742719403826:role/kubecost_cid
 
 env:
   - name: "S3_BUCKET_NAME"
-    value: "udid-kubecost"
+    value: "kubecost-cid"
   - name: "KUBECOST_API_ENDPOINT"
     value: "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
   - name: "CLUSTER_ID"
