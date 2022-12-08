@@ -11,7 +11,7 @@ from boto3 import exceptions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
-# Environment variables to identify the S3 bucket, Kubecost API endpoint and EKS cluster ID
+# Environment variables to identify the S3 bucket, Kubecost API endpoint, cluster ID and granularity
 S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost")
 CLUSTER_ID = os.environ.get("CLUSTER_ID")
