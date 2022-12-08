@@ -1,3 +1,47 @@
+resource "aws_iam_policy" "kubecost_cid_service_account_policy" {
+    name      = local.name
+    policy    = jsonencode(
+        {
+            Statement = [
+                {
+                    Action   = "s3:PutObject"
+                    Effect   = "Allow"
+                    Resource = "arn:aws:s3:::${local.bucket}*"
+                },
+            ]
+            Version   = "2012-10-17"
+        }
+    )
+}
+
+
+resource "aws_iam_role" "kubecost_cid_service_account_role" {
+    assume_role_policy    = jsonencode(
+        {
+            Statement = [
+                {
+                    Action    = "sts:AssumeRoleWithWebIdentity"
+                    Condition = {
+                        StringEquals = {
+                            "oidc.eks.us-east-1.amazonaws.com/id/842C756C29C13E7A449FA13B06A228BB:aud" = "sts.amazonaws.com"
+                            "oidc.eks.us-east-1.amazonaws.com/id/842C756C29C13E7A449FA13B06A228BB:sub" = "system:serviceaccount:${local.k8s_namespace}:${local.k8s_service_account}"
+                        }
+                    }
+                    Effect    = "Allow"
+                    Principal = {
+                        Federated = "${local.eks_oidc_url}"
+                    }
+                },
+            ]
+            Version   = "2012-10-17"
+        }
+    )
+    managed_policy_arns   = [
+        "arn:aws:iam::742719403826:policy/kubecost_cid",
+    ]
+    name                  = "kubecost_cid"
+}
+
 resource "aws_s3_bucket" "kubecost_cid_bucket" {
   bucket = local.bucket
 }
@@ -27,7 +71,7 @@ resource "aws_glue_catalog_table" "kubecost_cid_glue_table" {
   table_type = "EXTERNAL_TABLE"
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.kubecost_cid_bucket.bucket}/"
+    location      = "s3://${local.bucket}/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
     parameters                = {
