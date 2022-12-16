@@ -1,45 +1,45 @@
 resource "aws_iam_policy" "kubecost_cid_service_account_policy" {
-    name      = local.name
-    policy    = jsonencode(
+  name = local.name
+  policy = jsonencode(
+    {
+      Statement = [
         {
-            Statement = [
-                {
-                    Action   = "s3:PutObject"
-                    Effect   = "Allow"
-                    Resource = "arn:aws:s3:::${local.bucket}*"
-                },
-            ]
-            Version   = "2012-10-17"
-        }
-    )
+          Action   = "s3:PutObject"
+          Effect   = "Allow"
+          Resource = "arn:aws:s3:::${local.name}*"
+        },
+      ]
+      Version = "2012-10-17"
+    }
+  )
 }
 
 
 resource "aws_iam_role" "kubecost_cid_service_account_role" {
-    assume_role_policy    = jsonencode(
+  assume_role_policy = jsonencode(
+    {
+      Statement = [
         {
-            Statement = [
-                {
-                    Action    = "sts:AssumeRoleWithWebIdentity"
-                    Condition = {
-                        StringEquals = {
-                            "oidc.eks.us-east-1.amazonaws.com/id/842C756C29C13E7A449FA13B06A228BB:aud" = "sts.amazonaws.com"
-                            "oidc.eks.us-east-1.amazonaws.com/id/842C756C29C13E7A449FA13B06A228BB:sub" = "system:serviceaccount:${local.k8s_namespace}:${local.k8s_service_account}"
-                        }
-                    }
-                    Effect    = "Allow"
-                    Principal = {
-                        Federated = "${local.eks_oidc_url}"
-                    }
-                },
-            ]
-            Version   = "2012-10-17"
-        }
-    )
-    managed_policy_arns   = [
-        "arn:aws:iam::742719403826:policy/kubecost_cid",
-    ]
-    name                  = "kubecost_cid"
+          Action = "sts:AssumeRoleWithWebIdentity"
+          Condition = {
+            StringEquals = {
+              "${element(split(":oidc-provider/", local.eks_oidc_url), 1)}:aud" = "sts.amazonaws.com"
+              "${element(split(":oidc-provider/", local.eks_oidc_url), 1)}:sub" = "system:serviceaccount:${local.k8s_namespace}:${local.k8s_service_account}"
+            }
+          }
+          Effect = "Allow"
+          Principal = {
+            Federated = "${local.eks_oidc_url}"
+          }
+        },
+      ]
+      Version = "2012-10-17"
+    }
+  )
+  managed_policy_arns = [
+    "arn:aws:iam::742719403826:policy/${local.name}",
+  ]
+  name = local.name
 }
 
 resource "aws_s3_bucket" "kubecost_cid_bucket" {
@@ -62,10 +62,10 @@ resource "aws_glue_catalog_database" "kubecost_cid_glue_db" {
 resource "aws_glue_catalog_table" "kubecost_cid_glue_table" {
   name          = local.name
   database_name = aws_glue_catalog_database.kubecost_cid_glue_db.name
-  parameters    = {
-    "classification"                   = "csv"
-    "delimiter"                        = ","
-    "skip.header.line.count"           = "1"
+  parameters = {
+    "classification"         = "csv"
+    "delimiter"              = ","
+    "skip.header.line.count" = "1"
   }
 
   table_type = "EXTERNAL_TABLE"
@@ -74,17 +74,17 @@ resource "aws_glue_catalog_table" "kubecost_cid_glue_table" {
     location      = "s3://${local.bucket}/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
-    parameters                = {
-      "classification"                   = "csv"
-      "delimiter"                        = ","
-      "skip.header.line.count"           = "1"
+    parameters = {
+      "classification"         = "csv"
+      "delimiter"              = ","
+      "skip.header.line.count" = "1"
     }
 
     ser_de_info {
       name                  = local.name
       serialization_library = "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
-      parameters            = {
-        "field.delim"                        = ","
+      parameters = {
+        "field.delim" = ","
       }
     }
 
@@ -271,6 +271,13 @@ resource "aws_glue_catalog_table" "kubecost_cid_glue_table" {
     columns {
       name = "properties.providerid"
       type = "string"
+    }
+    dynamic "columns" {
+      for_each = [for k8s_label in local.k8s_labels : k8s_label]
+      content {
+        name = "properties.labels.${columns.value}"
+        type = "string"
+      }
     }
   }
 }
