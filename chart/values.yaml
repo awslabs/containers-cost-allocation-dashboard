@@ -7,7 +7,7 @@ schedule: "0 2 * * *"
 
 image:
   repository: udid/kubecost_cid
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
@@ -17,8 +17,8 @@ fullnameOverride: ""
 
 serviceAccount:
   create: true
-  name: "kubecost-cid2"
-  role: arn:aws:iam::742719403826:role/kubecost_cid
+  name: "kubecost-cid"
+  role: arn:aws:iam::742719403826:role/kubecost-cid
 
 env:
   - name: "S3_BUCKET_NAME"
@@ -29,5 +29,7 @@ env:
     value: "cluster-one"
   - name: "GRANULARITY"
     value: "hourly"
+  - name: "LABELS"
+    value: "app, chart"
   - name: "PYTHONUNBUFFERED"
     value: "1"
