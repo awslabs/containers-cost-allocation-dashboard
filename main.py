@@ -16,6 +16,70 @@ S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost")
 CLUSTER_ID = os.environ.get("CLUSTER_ID")
 GRANULARITY_INPUT = os.environ.get("GRANULARITY", "hourly")
+LABELS = os.environ.get("LABELS")
+
+
+def define_csv_headers(labels):
+    """Defines the CSV headers, including static headers, and input comma-separated string of K8s labels
+
+    :param labels: Comma-separated string of K8s labels
+    :return: List of CSV headers
+    """
+
+    # CSV headers definition
+    columns = [
+        'name',
+        'window.start',
+        'window.end',
+        'minutes',
+        'cpuCores',
+        'cpuCoreRequestAverage',
+        'cpuCoreUsageAverage',
+        'cpuCoreHours',
+        'cpuCost',
+        'cpuCostAdjustment',
+        'cpuEfficiency',
+        'gpuCount',
+        'gpuHours',
+        'gpuCost',
+        'gpuCostAdjustment',
+        'networkTransferBytes',
+        'networkReceiveBytes',
+        'networkCost',
+        'networkCostAdjustment',
+        'loadBalancerCost',
+        'loadBalancerCostAdjustment',
+        'pvBytes',
+        'pvByteHours',
+        'pvCost',
+        'pvCostAdjustment',
+        'ramBytes',
+        'ramByteRequestAverage',
+        'ramByteUsageAverage',
+        'ramByteHours',
+        'ramCost',
+        'ramCostAdjustment',
+        'ramEfficiency',
+        'sharedCost',
+        'externalCost',
+        'totalCost',
+        'totalEfficiency',
+        'rawAllocationOnly',
+        'properties.cluster',
+        'properties.container',
+        'properties.namespace',
+        'properties.pod',
+        'properties.node',
+        'properties.controller',
+        'properties.controllerKind',
+        'properties.providerID'
+    ]
+
+    if labels:
+        labels_columns = ['properties.labels.' + x.strip() for x in labels.split(",")]
+        return columns + labels_columns
+    else:
+        return columns
 
 
 def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granularity, aggregate, accumulate=False):
@@ -129,6 +193,9 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, mont
 
 def main():
 
+    # Define CSV columns
+    columns = define_csv_headers(LABELS)
+
     # Kubecost window definition
     three_days_ago = datetime.datetime.now() - datetime.timedelta(days=3)
     three_days_ago_midnight = three_days_ago.replace(microsecond=0, second=0, minute=0, hour=0)
@@ -141,55 +208,6 @@ def main():
     kubecost_allocation_api_response = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
                                                                        three_days_ago_midnight_plus_one_day,
                                                                        GRANULARITY_INPUT, "pod")
-
-    # CSV headers definition
-    columns = [
-        'name',
-        'window.start',
-        'window.end',
-        'minutes',
-        'cpuCores',
-        'cpuCoreRequestAverage',
-        'cpuCoreUsageAverage',
-        'cpuCoreHours',
-        'cpuCost',
-        'cpuCostAdjustment',
-        'cpuEfficiency',
-        'gpuCount',
-        'gpuHours',
-        'gpuCost',
-        'gpuCostAdjustment',
-        'networkTransferBytes',
-        'networkReceiveBytes',
-        'networkCost',
-        'networkCostAdjustment',
-        'loadBalancerCost',
-        'loadBalancerCostAdjustment',
-        'pvBytes',
-        'pvByteHours',
-        'pvCost',
-        'pvCostAdjustment',
-        'ramBytes',
-        'ramByteRequestAverage',
-        'ramByteUsageAverage',
-        'ramByteHours',
-        'ramCost',
-        'ramCostAdjustment',
-        'ramEfficiency',
-        'sharedCost',
-        'externalCost',
-        'totalCost',
-        'totalEfficiency',
-        'rawAllocationOnly',
-        'properties.cluster',
-        'properties.container',
-        'properties.namespace',
-        'properties.pod',
-        'properties.node',
-        'properties.controller',
-        'properties.controllerKind',
-        'properties.providerID'
-    ]
 
     # Transforming Kubecost's allocation API response to a list of lists, and updating timestamps
     kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(kubecost_allocation_api_response)
