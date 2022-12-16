@@ -193,7 +193,7 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, mont
 
 def main():
 
-    # Define CSV columns
+    # Define CSV headers
     columns = define_csv_headers(LABELS)
 
     # Kubecost window definition
