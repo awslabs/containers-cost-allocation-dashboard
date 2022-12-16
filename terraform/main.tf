@@ -6,7 +6,7 @@ resource "aws_iam_policy" "kubecost_cid_service_account_policy" {
         {
           Action   = "s3:PutObject"
           Effect   = "Allow"
-          Resource = "arn:aws:s3:::${local.name}*"
+          Resource = "${aws_s3_bucket.kubecost_cid_bucket.arn}*"
         },
       ]
       Version = "2012-10-17"
@@ -37,7 +37,7 @@ resource "aws_iam_role" "kubecost_cid_service_account_role" {
     }
   )
   managed_policy_arns = [
-    "arn:aws:iam::742719403826:policy/${local.name}",
+    aws_iam_policy.kubecost_cid_service_account_policy.arn,
   ]
   name = local.name
 }
