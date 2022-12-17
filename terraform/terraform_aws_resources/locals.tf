@@ -1,13 +1,14 @@
-# AWS resources
+# General locals
 locals {
-  name         = "kubecost-cid"
-  bucket       = "kubecost-cid"
-  eks_oidc_url = "arn:aws:iam::742719403826:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/842C756C29C13E7A449FA13B06A228BB"
+  name = "my_name" # This name will be prepended to different resources names in AWS and in K8s
 }
 
-# K8s resources referenced in AWS resources
+# AWS resources, and K8s resources referenced in AWS resources
 locals {
-  k8s_namespace       = local.name
-  k8s_service_account = local.name
-  k8s_labels          = ["app", "chart"]
+  region              = "<region>"   # Example: "us-east-1"
+  eks_oidc_url        = "<oidc_url>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>
+  bucket              = "${local.name}-kubecost-data"
+  k8s_namespace       = "${local.name}-kubecost-s3-exporter"
+  k8s_service_account = "${local.name}-kubecost-s3-exporter"
+  k8s_labels          = [] # Example: ["app", "chart"]
 }
