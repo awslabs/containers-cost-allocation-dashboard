@@ -1,12 +1,12 @@
-resource "aws_iam_policy" "kubecost_cid_service_account_policy" {
-  name = local.name
+resource "aws_iam_policy" "kubecost_s3_exporter_service_account_policy" {
+  name = "${local.name}-kubecost-s3-exporter"
   policy = jsonencode(
     {
       Statement = [
         {
           Action   = "s3:PutObject"
           Effect   = "Allow"
-          Resource = "${aws_s3_bucket.kubecost_cid_bucket.arn}*"
+          Resource = "${aws_s3_bucket.kubecost_s3_exporter_bucket.arn}*"
         },
       ]
       Version = "2012-10-17"
@@ -15,7 +15,7 @@ resource "aws_iam_policy" "kubecost_cid_service_account_policy" {
 }
 
 
-resource "aws_iam_role" "kubecost_cid_service_account_role" {
+resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
   assume_role_policy = jsonencode(
     {
       Statement = [
@@ -37,17 +37,17 @@ resource "aws_iam_role" "kubecost_cid_service_account_role" {
     }
   )
   managed_policy_arns = [
-    aws_iam_policy.kubecost_cid_service_account_policy.arn,
+    aws_iam_policy.kubecost_s3_exporter_service_account_policy.arn,
   ]
-  name = local.name
+  name = "${local.name}-kubecost-s3-exporter"
 }
 
-resource "aws_s3_bucket" "kubecost_cid_bucket" {
+resource "aws_s3_bucket" "kubecost_s3_exporter_bucket" {
   bucket = local.bucket
 }
 
 resource "aws_s3_bucket_public_access_block" "s3_block_all_public_access" {
-  bucket = aws_s3_bucket.kubecost_cid_bucket.id
+  bucket = aws_s3_bucket.kubecost_s3_exporter_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -55,13 +55,13 @@ resource "aws_s3_bucket_public_access_block" "s3_block_all_public_access" {
   restrict_public_buckets = true
 }
 
-resource "aws_glue_catalog_database" "kubecost_cid_glue_db" {
-  name = local.name
+resource "aws_glue_catalog_database" "kubecost_s3_exporter_glue_db" {
+  name = "${local.name}-kubecost-db"
 }
 
-resource "aws_glue_catalog_table" "kubecost_cid_glue_table" {
-  name          = local.name
-  database_name = aws_glue_catalog_database.kubecost_cid_glue_db.name
+resource "aws_glue_catalog_table" "kubecost_s3_exporter_glue_table" {
+  name          = "${local.name}-kubecost-table"
+  database_name = aws_glue_catalog_database.kubecost_s3_exporter_glue_db.name
   parameters = {
     "classification"         = "csv"
     "delimiter"              = ","
@@ -81,7 +81,7 @@ resource "aws_glue_catalog_table" "kubecost_cid_glue_table" {
     }
 
     ser_de_info {
-      name                  = local.name
+      name                  = "${local.name}-kubecost-table-serde"
       serialization_library = "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
       parameters = {
         "field.delim" = ","
