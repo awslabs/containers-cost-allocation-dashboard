@@ -1,6 +1,6 @@
 apiVersion: v2
-name: kubecost-athena-exporter
-description: A Python exporter from Kubecost to Athena
+name: kubecost-s3-exporter
+description: A Python exporter from Kubecost to S3
 
 # A chart can be either an 'application' or a 'library' chart.
 #
