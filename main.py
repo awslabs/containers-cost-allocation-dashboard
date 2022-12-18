@@ -190,7 +190,7 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, mont
         s3 = boto3.resource('s3')
         s3_bucket_prefix = 'year={}/month={}'.format(year, month)
 
-        logger.info("Uploading file {} to S3 bucket {}...".format(s3_file_name, s3_bucket_name))
+        logger.info("Uploading file {}.gz to S3 bucket {}...".format(s3_file_name, s3_bucket_name))
         s3.Bucket(s3_bucket_name).upload_file('./{}.gz'.format(s3_file_name),
                                               '{}/{}.gz'.format(s3_bucket_prefix, s3_file_name))
     except boto3.exceptions.S3UploadFailedError as error:
