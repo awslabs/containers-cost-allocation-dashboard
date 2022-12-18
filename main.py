@@ -1,5 +1,7 @@
 import os
+import shutil
 import sys
+import gzip
 import logging
 import requests
 import datetime
@@ -168,7 +170,7 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
 
 
 def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, month, year):
-    """Uploads the Kubecost Allocation CSV to an S3 bucket.
+    """Compresses and uploads the Kubecost Allocation CSV to an S3 bucket.
 
     :param s3_bucket_name: the S3 bucket name to use
     :param cluster_id: the K8s cluster ID to use in the CSV file name
@@ -178,16 +180,21 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, mont
     :return:
     """
 
-    # Uploading the CSV file to the S3 bucket
-    s3_csv_file_name = "{}_{}.csv".format(_date, cluster_id)
+    # Compressing and uploading the CSV file to the S3 bucket
+    s3_file_name = "{}_{}".format(_date, cluster_id)
+    os.rename('output.csv', "{}.csv".format(s3_file_name))
+    with open("{}.csv".format(s3_file_name), "rb") as f_in:
+        with gzip.open("{}.gz".format(s3_file_name), "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
     try:
         s3 = boto3.resource('s3')
         s3_bucket_prefix = 'year={}/month={}'.format(year, month)
 
-        logger.info("Uploading file {} to S3 bucket {}...".format(s3_csv_file_name, s3_bucket_name))
-        s3.Bucket(s3_bucket_name).upload_file('./output.csv', '{}/{}'.format(s3_bucket_prefix, s3_csv_file_name))
+        logger.info("Uploading file {} to S3 bucket {}...".format(s3_file_name, s3_bucket_name))
+        s3.Bucket(s3_bucket_name).upload_file('./{}.gz'.format(s3_file_name),
+                                              '{}/{}.gz'.format(s3_bucket_prefix, s3_file_name))
     except boto3.exceptions.S3UploadFailedError as error:
-        logger.error("Unable to upload file {} to S3 bucket {}: {}".format(s3_csv_file_name, s3_bucket_name, error))
+        logger.error("Unable to upload file {}.gz to S3 bucket {}: {}".format(s3_file_name, s3_bucket_name, error))
         sys.exit(1)
 
 
