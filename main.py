@@ -1,7 +1,7 @@
 import os
-import shutil
 import sys
 import gzip
+import shutil
 import logging
 import requests
 import datetime
@@ -117,7 +117,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
         r = requests.get('{}/model/allocation/compute'.format(kubecost_api_endpoint), params=params)
         if not r.json()["data"]:
             logger.error("API response appears to be empty, check window")
-            sys.exit(1)
+            sys.exit()
 
         return r
     except requests.exceptions.ConnectionError as error:
@@ -216,10 +216,10 @@ def main():
                                                                        three_days_ago_midnight_plus_one_day,
                                                                        GRANULARITY_INPUT, "pod")
 
-    # Transforming Kubecost's allocation API response to a list of lists, and updating timestamps
+    # Transforming Kubecost's Allocation API response to a list of lists, and updating timestamps
     kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(kubecost_allocation_api_response)
 
-    # Transforming Kubecost's updated allocation data to CSV and uploading to S3
+    # Transforming Kubecost's updated allocation data to CSV, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
     upload_kubecost_allocation_csv_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
                                          three_days_ago_year)
