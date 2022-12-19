@@ -14,7 +14,7 @@
 * Provide an option to write the API output to S3 (for troubleshooting)
 * Provide an option for back-filling data
 * Support for gp3 IOPS and Throughput costs
-* Bubblewant access
+* Bubblewand access
 * Add PVCs list - relevant for __unmounted__ allocation (Unmounted PVs cost)
 * Support connecting to Kubecost API using HTTPS
 * Test with multiple EKS clusters
