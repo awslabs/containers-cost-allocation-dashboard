@@ -6,7 +6,7 @@ resource "aws_iam_policy" "kubecost_s3_exporter_service_account_policy" {
         {
           Action   = "s3:PutObject"
           Effect   = "Allow"
-          Resource = "${aws_s3_bucket.kubecost_s3_exporter_bucket.arn}*"
+          Resource = "${local.bucket_arn}*"
         },
       ]
       Version = "2012-10-17"
@@ -42,19 +42,6 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
   name = "${local.name}-kubecost-s3-exporter"
 }
 
-resource "aws_s3_bucket" "kubecost_s3_exporter_bucket" {
-  bucket = local.bucket
-}
-
-resource "aws_s3_bucket_public_access_block" "s3_block_all_public_access" {
-  bucket = aws_s3_bucket.kubecost_s3_exporter_bucket.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
 resource "aws_glue_catalog_database" "kubecost_s3_exporter_glue_db" {
   name = "${local.name}-kubecost-db"
 }
@@ -71,7 +58,7 @@ resource "aws_glue_catalog_table" "kubecost_s3_exporter_glue_table" {
   table_type = "EXTERNAL_TABLE"
 
   storage_descriptor {
-    location      = "s3://${local.bucket}/"
+    location      = "s3://${element(split(":::", local.bucket_arn), 1)}/"
     input_format  = "org.apache.hadoop.mapred.TextInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
     parameters = {
