@@ -1,14 +1,14 @@
-FROM python:3.11.1-slim-bullseye
+FROM --platform=$TARGETPLATFORM python:3.11.1-slim-bullseye AS build
 
-RUN adduser -u 10001 worker
+RUN useradd -u 10001 worker
 USER worker
 WORKDIR /home/worker
 
-RUN pip install --upgrade pip
+RUN pip3 install --upgrade pip
 
 COPY --chown=worker:worker requirements.txt .
 
-RUN pip3 install --user -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 COPY --chown=worker:worker main.py .
 
