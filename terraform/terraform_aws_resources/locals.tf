@@ -7,7 +7,7 @@ locals {
 locals {
   region              = "<region>"   # Example: "us-east-1"
   eks_oidc_url        = "<oidc_url>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>
-  bucket              = "${local.name}-kubecost-data"
+  bucket_arn          = "<arn>"
   k8s_namespace       = "${local.name}-kubecost-s3-exporter"
   k8s_service_account = "${local.name}-kubecost-s3-exporter"
   k8s_labels          = [] # Example: ["app", "chart"]
