@@ -1,11 +1,15 @@
 FROM python:3.8-slim-buster
 
-WORKDIR /app
+RUN pip install --upgrade pip
 
-COPY requirements.txt requirements.txt
+RUN adduser -u 10001 worker
+USER worker
+WORKDIR /home/worker
 
-RUN pip3 install -r requirements.txt
+COPY --chown=worker:worker requirements.txt .
 
-COPY main.py .
+RUN pip3 install --user -r requirements.txt
+
+COPY --chown=worker:worker main.py .
 
 CMD ["python3", "./main.py"]
