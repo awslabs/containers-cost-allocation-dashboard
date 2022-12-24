@@ -1,19 +1,31 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "{{ .Values.cronJob.name }}"
+  name: {{ .Values.cronJob.name }}
+  namespace: {{ .Values.cronJob.namespace }}
 spec:
   schedule: "{{ .Values.cronJob.schedule }}"
   jobTemplate:
     spec:
       template:
         spec:
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile:
+              type: RuntimeDefault
           serviceAccountName: {{ .Values.serviceAccount.name }}
           restartPolicy: OnFailure
           containers:
             - name: kubecost-s3-exporter
-              image: {{ .Values.image.repository }}
-              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              image: {{ .Values.image }}
+              imagePullPolicy: {{ .Values.imagePullPolicy }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
               env:
                 {{- range .Values.env }}
                 - name: "{{ .name }}"
