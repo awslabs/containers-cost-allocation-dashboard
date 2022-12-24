@@ -15,7 +15,7 @@ locals {
 
 # Kubecost S3 Exporter locals
 locals {
-  image_repository      = "udid/kubecost_cid"
+  image                 = "udid/kubecost_cid:0.1.0"
   image_pull_policy     = "Always"
   schedule              = "@midnight"                                   # The kubecost-s3-exporter pod schedule, in cron format (UTC)
   kubecost_api_endpoint = "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
