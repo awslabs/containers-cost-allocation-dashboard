@@ -276,8 +276,8 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
   create_namespace = true
   values = [yamlencode(
     {
-      "image.repository" : local.image_repository
-      "image.pullPolicy" : local.image_pull_policy
+      "image" : local.image
+      "imagePullPolicy" : local.image_pull_policy
       "cronJob" : {
         "name" : "${local.name}-kubecost-s3-exporter",
         "schedule" : local.schedule
