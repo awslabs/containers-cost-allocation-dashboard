@@ -273,7 +273,7 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
   name             = "${local.name}-kubecost-s3-exporter"
   chart            = "../../helm/kubecost-s3-exporter"
   namespace        = local.k8s_namespace
-  create_namespace = true
+  create_namespace = local.k8s_create_namespace
   values = [yamlencode(
     {
       "image" : local.image
