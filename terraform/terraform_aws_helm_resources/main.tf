@@ -315,4 +315,9 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
       ]
     }
   )]
+
+  depends_on = [
+    aws_glue_catalog_table.kubecost_s3_exporter_glue_table
+  ]
+
 }
