@@ -75,7 +75,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 | eks_oidc_url (required) |  | The EKS OIDC URL  |  |
 | bucket_arn (required) |  | the ARN of the bucket to which the CSV files will be written |  |
 | image (required) |  | The registry, repository and tag to pull (`<your_registry_url>/<your_repo>:<tag>`) |  |
-| cluster_id (required) |  | Your EKS cluster name |  |
+| cluster_name (required) |  | Your EKS cluster name |  |
 | k8s_config_path | `~/.kube/config` | Full path of the K8s config file |  |
 | k8s_namespace | `${local.name}-kubecost-s3-exporter` | The namespace to use for the data collection pod |  |
 | k8s_service_account | `${local.name}-kubecost-s3-exporter` | The K8s service account name |  |
