@@ -14,7 +14,6 @@ resource "aws_iam_policy" "kubecost_s3_exporter_service_account_policy" {
   )
 }
 
-
 resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
   assume_role_policy = jsonencode(
     {
@@ -297,8 +296,8 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
           "value" : local.kubecost_api_endpoint
         },
         {
-          "name" : "CLUSTER_ID",
-          "value" : local.cluster_id
+          "name" : "CLUSTER_NAME",
+          "value" : local.clustername
         },
         {
           "name" : "GRANULARITY",
