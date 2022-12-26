@@ -12,9 +12,9 @@ The solution deploys the following resources:
 
 1. A CronJob and Service Account in your EKS cluster
 2. The following AWS resources:
-	3. IAM Role for Service Account
-	4. Glue Database
-	5. Glue Table
+    3. IAM Role for Service Account
+    4. Glue Database
+    5. Glue Table
 
 The CronJob runs daily and collects cost allocation data from Kubecost.
 It runs the [Allocation API on-demand query](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.
@@ -38,7 +38,7 @@ There are 3 high-level steps to deploy the solution:
 2. Deploy both the AWS resources and the data collection pod using Terraform and Helm
 3. Deploy the QuickSight dashboard using `cid-cmd` tool
 
-### Building and Pushing the Container Image
+### Build and Push the Container Image
 
 We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.
 In this section, choose wither "Build and Push for a Single Platform" or "Build and Push for Multiple Platforms".
@@ -61,7 +61,7 @@ Push:
 
     docker buildx build --push --platform linux/amd64,linux/arm64/v8 --tag <your_registry_url>/<your_repo>:<tag> .
 
-### Deploying the AWS Resources and Pod
+### Deploy the AWS and K8s Resources
 
 #### Provide Terraform Inputs
 
@@ -97,9 +97,9 @@ Notes:
 From `terraform/terraform_aws_helm_resources`, run `terraform apply`.
 It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and Service Account.
 
-### Deploying the Dashboard
+### Deploy the Dashboard
 
-#### Deploy the Dashboard from the YAML File
+#### Deploy the Dashboard from the CID YAML File
 
 From the `cid` folder, run `cid-cmd deploy --resources kubecost-v0.1.0.yaml`.
 When prompted, choose `kubecost`, then choose the Athena table (this is the same as the Glue Table that was created by Terraform)
