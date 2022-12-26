@@ -16,8 +16,8 @@ logger = logging.getLogger()
 # Environment variables to identify the S3 bucket, Kubecost API endpoint, cluster ID and granularity
 S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost")
-CLUSTER_ID = os.environ.get("CLUSTER_ID")
-GRANULARITY_INPUT = os.environ.get("GRANULARITY", "hourly")
+CLUSTER_NAME = os.environ.get("CLUSTER_NAME")
+GRANULARITY = os.environ.get("GRANULARITY", "hourly")
 LABELS = os.environ.get("LABELS")
 
 
@@ -214,14 +214,14 @@ def main():
     # Executing Kubecost Allocation API call
     kubecost_allocation_api_response = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
                                                                        three_days_ago_midnight_plus_one_day,
-                                                                       GRANULARITY_INPUT, "pod")
+                                                                       GRANULARITY, "pod")
 
     # Transforming Kubecost's Allocation API response to a list of lists, and updating timestamps
     kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(kubecost_allocation_api_response)
 
     # Transforming Kubecost's updated allocation data to CSV, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
-    upload_kubecost_allocation_csv_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
+    upload_kubecost_allocation_csv_to_s3(S3_BUCKET_NAME, CLUSTER_NAME, three_days_ago_date, three_days_ago_month,
                                          three_days_ago_year)
 
 
