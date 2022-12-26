@@ -80,7 +80,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 | k8s_namespace | `${local.name}-kubecost-s3-exporter` | The namespace to use for the data collection pod |  |
 | k8s_service_account | `${local.name}-kubecost-s3-exporter` | The K8s service account name |  |
 | k8s_create_namespace | `true` | Specifies whether to create the namespace | `true`, `false` |
-| image_pull_policy | `Always` | Specifies whether to create the namespace | `Always`, `IfNotPresent`, `Never` |
+| image_pull_policy | `Always` | Specifies the image pull policy | `Always`, `IfNotPresent`, `Never` |
 | schedule | `@midnight` | Cron schedule (in UTC) | Any Cron schedule |
 | kubecost_api_endpoint | `http://kubecost-cost-analyzer.kubecost:9090` | The Kubecost API endpoint URL and port | `http://<host>:<port>` |
 | granularity | `hourly` | The granularity of the collected data | `hourly`, `daily` |
