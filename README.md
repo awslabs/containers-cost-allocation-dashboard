@@ -38,10 +38,10 @@ There are 3 high-level steps to deploy the solution:
 2. Deploy both the AWS resources and the data collection pod using Terraform and Helm
 3. Deploy the QuickSight dashboard using `cid-cmd` tool
 
-### Build and Push the Container Image
+### Step 1: Build and Push the Container Image
 
 We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.
-In this section, choose wither "Build and Push for a Single Platform" or "Build and Push for Multiple Platforms".
+In this section, choose either "Build and Push for a Single Platform" or "Build and Push for Multiple Platforms".
 
 #### Build and Push for a Single Platform
 
@@ -61,7 +61,7 @@ Push:
 
     docker buildx build --push --platform linux/amd64,linux/arm64/v8 --tag <your_registry_url>/<your_repo>:<tag> .
 
-### Deploy the AWS and K8s Resources
+### Step 2: Deploy the AWS and K8s Resources
 
 #### Provide Terraform Inputs
 
@@ -97,7 +97,7 @@ Notes:
 From `terraform/terraform_aws_helm_resources`, run `terraform apply`.
 It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and Service Account.
 
-### Deploy the Dashboard
+### Step 3: Deploy the Dashboard
 
 #### Deploy the Dashboard from the CID YAML File
 
