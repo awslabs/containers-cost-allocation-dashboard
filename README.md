@@ -85,9 +85,9 @@ The below table lists the required and optional inputs from the `locals.tf` file
 
 Notes:
 
-1. Most resources we create will have the `name` values prefixed
+1. Most resources we create will have the `name` value prefixed
 2. The `region` specifies where to create the AWS resources for the data collection pod. It doens't have to be the same as the region where the EKS cluster is
-3. Cron always runs in UTC, so the `schedule` input is in UTC. For example, if you specify `@midnight`, and you're in GMT +2, the CronJob will run in 02:00am
+3. Cron always runs in UTC, so the `schedule` input is in UTC. For example, if you specify `@midnight` (00:00:00am), and you're in GMT +2, the CronJob will run at 02:00:00am and not at 00:00:00am
 
 #### Apply the Terraform Template
 
