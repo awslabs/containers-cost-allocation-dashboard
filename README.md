@@ -11,10 +11,7 @@ The following is the solution's architecture:
 The solution deploys the following resources:
 
 1. A CronJob and Service Account in your EKS cluster
-2. The following AWS resources:
-    3. IAM Role for Service Account
-    4. Glue Database
-    5. Glue Table
+2. The following AWS resources: IAM Role for Service Account, Glue Database and Glue Table
 
 The CronJob runs daily and collects cost allocation data from Kubecost.
 It runs the [Allocation API on-demand query](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.
