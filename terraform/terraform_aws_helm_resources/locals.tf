@@ -1,26 +1,21 @@
-# General locals
+# Required Inputs
 locals {
-  name = "my_name" # This name will be prepended to different resources names in AWS and in K8s
+  region       = "<region>"   # Example: "us-east-1"
+  eks_oidc_url = "<oidc_url>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>"
+  bucket_arn   = "<arn>"
+  image        = "<your_registry_url>/<your_repo>:<tag>"
+  cluster_name = "<cluster_name>" # Your EKS cluster name
 }
 
-# AWS and K8s locals
+# Optional Inputs
 locals {
-  region               = "<region>"   # Example: "us-east-1"
-  eks_oidc_url         = "<oidc_url>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>"
-  bucket_arn           = "<arn>"
-  k8s_config_path      = "~/.kube/config"
-  k8s_namespace        = "${local.name}-kubecost-s3-exporter"
-  k8s_service_account  = "${local.name}-kubecost-s3-exporter"
-  k8s_create_namespace = true
-}
-
-# Kubecost S3 Exporter locals
-locals {
-  image                 = "<your_registry_url>/<your_repo>:<tag>"
+  k8s_config_path       = "~/.kube/config"
+  k8s_namespace         = "kubecost-s3-exporter"
+  k8s_service_account   = "kubecost-s3-exporter"
+  k8s_create_namespace  = true
   image_pull_policy     = "Always"
-  schedule              = "@midnight"                                   # The kubecost-s3-exporter pod schedule, in cron format (UTC)
+  schedule              = "0 0 * * *"                                   # The kubecost-s3-exporter pod schedule, in cron format (UTC)
   kubecost_api_endpoint = "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
-  cluster_name          = "<cluster_name>"                              # Your EKS cluster name
   granularity           = "hourly"
   k8s_labels            = [] # Example: ["app", "chart"]
 }
