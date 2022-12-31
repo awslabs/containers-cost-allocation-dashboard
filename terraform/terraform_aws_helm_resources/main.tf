@@ -386,7 +386,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
 
 resource "helm_release" "kubecost_s3_exporter_helm_release" {
   name             = "kubecost-s3-exporter"
-  chart            = "../../../helm/kubecost_s3_exporter"
+  chart            = "../../helm/kubecost_s3_exporter"
   namespace        = local.k8s_namespace
   create_namespace = local.k8s_create_namespace
   values = [yamlencode(
