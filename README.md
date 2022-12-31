@@ -17,11 +17,11 @@ Glue Database<br />
 Glue Table<br />
 Glue Crawler (along with its IAM Role, IAM Policy, CloudWatch Log Group and CloudWatch Log Stream)
 
-The CronJob runs daily and collects cost allocation data from Kubecost.
-It runs the [Allocation API on-demand query](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.
-It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.
-It then converts the data to a CSV, compresses it and uploads it to an S3 bucket of your choice.
-The data is made available in Athena, and QuickSight uses the Athena table as a data source to visualize the data.
+The CronJob runs daily and collects cost allocation data from Kubecost.<br />
+It runs the [Allocation API on-demand query](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
+It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
+It then converts the data to a CSV, compresses it and uploads it to an S3 bucket of your choice.<br />
+The data is made available in Athena, and QuickSight uses the Athena table as a data source to visualize the data.<br />
 
 ## Requirements
 
@@ -41,7 +41,7 @@ There are 3 high-level steps to deploy the solution:
 
 ### Step 1: Build and Push the Container Image
 
-We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.
+We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.<br />
 In this section, choose either "Build and Push for a Single Platform" or "Build and Push for Multiple Platforms".
 
 #### Build and Push for a Single Platform
@@ -66,7 +66,7 @@ Push:
 
 #### Provide Terraform Inputs
 
-Edit `terraform/terraform_aws_helm_resources/locals.tf` and provide at least the required inputs.
+Edit `terraform/terraform_aws_helm_resources/locals.tf` and provide at least the required inputs.<br />
 The below table lists the required and optional inputs from the `locals.tf` file:
 
 | Input | Default | Description | Supported Values
@@ -93,14 +93,14 @@ Notes:
 
 #### Apply the Terraform Template
 
-From `terraform/terraform_aws_helm_resources`, run `terraform apply`.
+From `terraform/terraform_aws_helm_resources`, run `terraform apply`.<br />
 It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and Service Account.
 
 ### Step 3: Deploy the Dashboard
 
 #### Deploy the Dashboard from the CID YAML File
 
-From the `cid` folder, run `cid-cmd deploy --resources kubecost_v0.1.0.yaml`.
+From the `cid` folder, run `cid-cmd deploy --resources kubecost_v0.1.0.yaml`.<br />
 When prompted, choose `Kubecost`, then choose the Athena table (this is the same as the Glue Table that was created by Terraform)
 
 #### Set Dataset Refresh Schedule
@@ -122,6 +122,6 @@ We need to create a dataset refresh schedule, so that the data from Athena will 
 
 ### AWS and K8s Resources Cleanup
 
-1. From `terraform/terraform_aws_helm_resources`, run `terraform destroy`.
+1. From `terraform/terraform_aws_helm_resources`, run `terraform destroy`.<br />
 It'll remove both the AWS resources, and invoke Helm to remove the CronJob and Service Account.
 2. Run `kubectl delete ns <namespace>` to remove the namespace
