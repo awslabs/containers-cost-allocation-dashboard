@@ -11,7 +11,7 @@ The following is the solution's architecture:
 The solution deploys the following resources:
 
 1. CronJob and Service Account in your EKS cluster
-2. The following AWS resources:__
+2. The following AWS resources:<br />
 IAM Role for Service Account__
 Glue Database__
 Glue Table__
