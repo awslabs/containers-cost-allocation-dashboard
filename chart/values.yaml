@@ -10,7 +10,7 @@ imagePullPolicy: Always
 
 cronJob:
   name: "kubecost-s3-exporter"
-  schedule: "@midnight"
+  schedule: "0 0 * * *"
 
 serviceAccount:
   create: true
