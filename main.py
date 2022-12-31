@@ -8,6 +8,7 @@ import datetime
 import pandas as pd
 
 import boto3
+import botocore.exceptions
 from boto3 import exceptions
 
 logging.basicConfig(level=logging.INFO)
@@ -195,6 +196,9 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, mont
                                               '{}/{}.gz'.format(s3_bucket_prefix, s3_file_name))
     except boto3.exceptions.S3UploadFailedError as error:
         logger.error("Unable to upload file {}.gz to S3 bucket {}: {}".format(s3_file_name, s3_bucket_name, error))
+        sys.exit(1)
+    except botocore.exceptions.ClientError as error:
+        logger.error(error)
         sys.exit(1)
 
 
