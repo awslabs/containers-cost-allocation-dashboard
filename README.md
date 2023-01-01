@@ -132,7 +132,7 @@ The output should be similar to the below:
        [kubecost] Kubecost Dashboard
 
 From the list, choose `[Kubecost] Kubecost Dashboard`.<br />
-After choosing, wait for dashboards discovery to be completed, and then the additional output show be similar to the below:
+After choosing, wait for dashboards discovery to be completed, and then the additional output should be similar to the below:
 
     ? [dashboard-id] Please select dashboard to install: [kubecost] Kubecost Dashboard
     Discovering deployed dashboards...  [####################################]  100%  "CUDOS Dashboard" (cudos)
@@ -154,7 +154,7 @@ After choosing, wait for dashboards discovery to be completed, and then the addi
 
 From the list, choose the Athena database that was created by the Terraform template.<br />
 If you didn't change the Glue Database name in the Terraform template, then it'll be `kubecost_db` - please choose it.
-After choosing, wait for the dataset to be created, and then the additional output show be similar to the below:
+After choosing, wait for the dataset to be created, and then the additional output should be similar to the below:
 
     ? [athena-database] Select AWS Athena database to use: kubecost_db
     Dataset "kubecost" created
