@@ -5,7 +5,7 @@
 replicaCount: 1
 namespace: "kubecost-s3-exporter"
 
-image: "udid/kubecost_cid:0.1.0"
+image: "<registry_url>/<repo>:<tag>"
 imagePullPolicy: Always
 
 cronJob:
