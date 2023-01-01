@@ -1,3 +1,4 @@
+
 # Kubecost CID Integration
 
 This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards), means to provide the users with a dashboard to view a breakdown of their EKS clusters costs, in a single-pane-of-glass with their other dashboards.
@@ -91,7 +92,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 
 Notes:
 
-1. The `region` specifies where to create the AWS resources for the data collection pod. It doens't have to be the same as the region where the EKS cluster is
+1. The `region` specifies where to create the AWS resources for the data collection pod. It doesn't have to be the same as the region where the EKS cluster is
 2. Cron always runs in UTC, so the `schedule` input is in UTC. For example, if you specify `0 0 * * *` (daily at 00:00:00am), and you're in GMT +2, the CronJob will run daily at 02:00:00am and not daily at 00:00:00am
 
 #### Apply the Terraform Template
@@ -99,20 +100,115 @@ Notes:
 From `terraform/terraform_aws_helm_resources`, run `terraform apply`.<br />
 It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and Service Account.
 
-### Step 3: Deploy the Dashboard
+### Step 3: Dashboard Deployment and Configuration
 
 #### Deploy the Dashboard from the CID YAML File
 
 From the `cid` folder, run `cid-cmd deploy --resources kubecost_v0.1.0.yaml`.<br />
-When prompted, choose `Kubecost`, then choose the Athena table (this is the same as the Glue Table that was created by Terraform)
+The output should be similar to the below:
+
+    CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.3 Beta
+    
+    Loading plugins...
+        Core loaded
+        Internal loaded
+    
+    
+    Checking AWS environment...
+        profile name: <>
+        accountId: <account_id>
+        AWS userId: <user_id>
+        Region: <region>
+    
+    
+    
+    ? [dashboard-id] Please select dashboard to install: (Use arrow keys)
+     » [cudos] CUDOS Dashboard
+       [cost_intelligence_dashboard] Cost Intelligence Dashboard
+       [kpi_dashboard] KPI Dashboard
+       [ta-organizational-view] Trusted Advisor Organizational View
+       [trends-dashboard] Trends Dashboard
+       [compute-optimizer-dashboard] Compute Optimizer Dashboard
+       [kubecost] Kubecost Dashboard
+
+From the list, choose `[Kubecost] Kubecost Dashboard`.<br />
+After choosing, wait for dashboards discovery to be completed, and then the additional output show be similar to the below:
+
+    ? [dashboard-id] Please select dashboard to install: [kubecost] Kubecost Dashboard
+    Discovering deployed dashboards...  [####################################]  100%  "CUDOS Dashboard" (cudos)
+    
+    Required datasets:
+     - kubecost
+    
+    
+    Looking by DataSetId defined in template...complete
+    
+    There are still 1 datasets missing: kubecost
+    Creating dataset: kubecost
+    Detected views:
+    
+    ? [athena-database] Select AWS Athena database to use: (Use arrow keys)
+     » athenacurcfn_udid_cur1
+       kubecost_db
+       spectrumdb
+
+From the list, choose the Athena database that was created by the Terraform template.<br />
+If you didn't change the Glue Database name in the Terraform template, then it'll be `kubecost_db` - please choose it.
+After choosing, wait for the dataset to be created, and then the additional output show be similar to the below:
+
+    ? [athena-database] Select AWS Athena database to use: kubecost_db
+    Dataset "kubecost" created
+    Latest template: arn:aws:quicksight:us-east-1:742719403826:template/kubecost/version/2
+    Deploying dashboard kubecost
+    
+    #######
+    ####### Congratulations!
+    ####### Kubecost Dashboard is available at: https://us-east-1.quicksight.aws.amazon.com/sn/dashboards/kubecost
+    #######
+    
+    ? [share-with-account] Share this dashboard with everyone in the account?: (Use arrow keys)
+     » yes
+       no
+
+Choose whether to share the dashboard with everyone in this account.<br />
+This selection will complete the deployment.
+
+#### Share the Dataset with Users
+
+Share the dataset with users that are authorized to make changes to it.
+
+1. Login to QuickSight, then click on the person icon on the top right, and click "Manage QuickSight"
+2. On the left pane, navigate to "Manage assets", then choose "Datasets"
+3. From the list, choose the `kubecost` dataset (ID `e88edf48-f2cd-4c23-b6a4-e2b3034e2c41`)
+4. Click "Share", select the desired permissions, start typing your user or group, select it and click "Share"
 
 #### Set Dataset Refresh Schedule
 
-We need to create a dataset refresh schedule, so that the data from Athena will be fresh in QuickSight.
+A dataset refresh schedule needs to be set, so that the data from Athena will be fresh daily in QuickSight.
+
+1. Login as a user that has "Owner" permissions to the dataset (you set it in the previous step)
+2. Navigate to "Datasets" and click on the `Kubecost` dataset
+3. Under "Refresh" tab, click "ADD NEW SCHEDULE"
+4. Make sure that "Full refresh" is selected
+5. Set the refresh schedule to be at least 2 hours after the K8s CronJob schedule (because 1 hour after the CronJob runs, the Glue Crawler runs), and click "Save"
+
+#### Share the Dashboard with Users
+
+Share the dashboard with users, for them to be able to view it and create Analysis from it.
 
 1. Login to QuickSight
-2. Under "Datasets", edit the `Kubecost` dataset
-3. Under "Schedule" tab, create a schedule. We recommend setting to 1 hour after the CronJob schedule time
+2. Navigate to "Dashboards" and click the `Kubecost Dashboard`
+3. On the top right, click the "Share" icon, then click "Share dashboard"
+4. In the "Invite users and groups to dashboard", search for users to share the dashboard with, and add them
+5. For users that require Analysis creation (to edit the dashboard), tick the `Allow "save as"` button under "Save as Analysis" column, then click "Confirm"
+6. Navigate back to the dashboard once done, by clicking "← Go back to 'Kubecost Dashboard'" on the top left
+
+#### Create an Analysis from the Dashboard
+
+1. Login to QuickSight as a user that is allowed to save the dashboard as Analysis
+2. Navigate to "Dashboards" and click the `Kubecost Dashboard`
+3. On the top right, click the "Save as" icon (refresh the dashboard if you don't see it), name the Analysis, then click "SAVE" - you'll be navigated to the Analysis
+4. You can edit the Analysis as you wish, and save it again as a dashboard, by clicking the "Share" icon on the top right, then click "Publish dashboard"
 
 ## Cleanup
 
@@ -121,7 +217,6 @@ We need to create a dataset refresh schedule, so that the data from Athena will 
 1. Delete any analysis you created from the dashboard
 2. Delete the dashboard
 3. Delete the dataset
-4. Delete the datasource
 
 ### AWS and K8s Resources Cleanup
 
