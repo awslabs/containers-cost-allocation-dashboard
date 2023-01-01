@@ -175,7 +175,7 @@ This selection will complete the deployment.
 
 #### Share the Dataset with Users
 
-Share the dataset with users that are authorized to make changes to it.
+Share the dataset with users that are authorized to make changes to it:
 
 1. Login to QuickSight, then click on the person icon on the top right, and click "Manage QuickSight"
 2. On the left pane, navigate to "Manage assets", then choose "Datasets"
@@ -184,7 +184,7 @@ Share the dataset with users that are authorized to make changes to it.
 
 #### Set Dataset Refresh Schedule
 
-A dataset refresh schedule needs to be set, so that the data from Athena will be fresh daily in QuickSight.
+A dataset refresh schedule needs to be set, so that the data from Athena will be fresh daily in QuickSight:
 
 1. Login to QuickSight as a user that has "Owner" permissions to the dataset (you set it in the previous step)
 2. Navigate to "Datasets" and click on the `Kubecost` dataset
@@ -194,7 +194,7 @@ A dataset refresh schedule needs to be set, so that the data from Athena will be
 
 #### Share the Dashboard with Users
 
-Share the dashboard with users, for them to be able to view it and create Analysis from it.
+Share the dashboard with users, for them to be able to view it and create Analysis from it:
 
 1. Login to QuickSight
 2. Navigate to "Dashboards" and click the `Kubecost Dashboard`
@@ -204,6 +204,8 @@ Share the dashboard with users, for them to be able to view it and create Analys
 6. Navigate back to the dashboard once done, by clicking "← Go back to 'Kubecost Dashboard'" on the top left
 
 #### Create an Analysis from the Dashboard
+
+Create an Analysis from the Dashboard, to edit it and create custom visuals:
 
 1. Login to QuickSight as a user that is allowed to save the dashboard as Analysis
 2. Navigate to "Dashboards" and click the `Kubecost Dashboard`
