@@ -186,7 +186,7 @@ Share the dataset with users that are authorized to make changes to it.
 
 A dataset refresh schedule needs to be set, so that the data from Athena will be fresh daily in QuickSight.
 
-1. Login as a user that has "Owner" permissions to the dataset (you set it in the previous step)
+1. Login to QuickSight as a user that has "Owner" permissions to the dataset (you set it in the previous step)
 2. Navigate to "Datasets" and click on the `Kubecost` dataset
 3. Under "Refresh" tab, click "ADD NEW SCHEDULE"
 4. Make sure that "Full refresh" is selected
