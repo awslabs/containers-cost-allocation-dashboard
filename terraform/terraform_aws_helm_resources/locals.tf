@@ -3,7 +3,7 @@ locals {
   region       = "<region>"   # Example: "us-east-1"
   eks_oidc_url = "<oidc_url>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>"
   bucket_arn   = "<arn>"
-  image        = "<your_registry_url>/<your_repo>:<tag>"
+  image        = "<registry_url>/<repo>:<tag>"
   cluster_name = "<cluster_name>" # Your EKS cluster name
 }
 
