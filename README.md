@@ -23,7 +23,7 @@ High-level logic:
 It runs the [Allocation API on-demand query](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
 2. Once data is collected, it's then converted to a CSV, compressed it and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
-3. The data is made available in Athena using Glue. In addition, a Glue Crawler runs on the 1st day of each month, 1 hour after the CronJob started, to create partitions
+3. The data is made available in Athena using Glue. In addition, a Glue Crawler runs daily, 1 hour after the CronJob started, to create partitions
 4. QuickSight uses the Athena table as a data source to visualize the data
 
 ## Requirements
