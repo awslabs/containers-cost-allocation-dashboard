@@ -311,7 +311,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
 resource "aws_glue_crawler" "kubecost_glue_crawler" {
   name          = "kubecost_crawler"
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
-  schedule      = "cron(0 ${element(split(" ", local.schedule), 1) + 1} 1 * ? *)"
+  schedule      = "cron(0 ${element(split(" ", local.schedule), 1) + 1} * * ? *)"
   role          = aws_iam_role.kubecost_glue_crawler_role.name
 
   catalog_target {
