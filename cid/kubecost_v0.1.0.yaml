@@ -1,17 +1,17 @@
 dashboards:
-  KUBECOST:
-    name: Kubecost
-    templateId: Kubecost
+  KUBECOST ANALYSIS:
+    name: Kubecost Dashboard
+    templateId: kubecost
     sourceAccountId: '742719403826'
-    dashboardId: Kubecost
+    dashboardId: kubecost
     dependsOn:
       datasets:
-      - Kubecost
+      - kubecost
 datasets:
-  Kubecost:
+  kubecost:
     Data:
       DataSetId: e88edf48-f2cd-4c23-b6a4-e2b3034e2c41
-      Name: Kubecost
+      Name: kubecost
       PhysicalTableMap:
         06f7b96e-4cd6-4d7f-83a8-e8b9302da3f4:
           RelationalTable:
@@ -114,6 +114,10 @@ datasets:
               Type: STRING
             - Name: properties.labels.chart
               Type: STRING
+            - Name: year
+              Type: INTEGER
+            - Name: month
+              Type: INTEGER
       LogicalTableMap:
         06f7b96e-4cd6-4d7f-83a8-e8b9302da3f4:
           Alias: kubecost_table
@@ -177,6 +181,8 @@ datasets:
               - properties.providerid
               - properties.labels.app
               - properties.labels.chart
+              - year
+              - month
               - cpu_and_ram_cost
               - pvgbytes
           Source:
