@@ -111,7 +111,7 @@ When prompted, choose `Kubecost`, then choose the Athena table (this is the same
 We need to create a dataset refresh schedule, so that the data from Athena will be fresh in QuickSight.
 
 1. Login to QuickSight
-2. Under "Datasets", edit the `Kubecost`
+2. Under "Datasets", edit the `Kubecost` dataset
 3. Under "Schedule" tab, create a schedule. We recommend setting to 1 hour after the CronJob schedule time
 
 ## Cleanup
