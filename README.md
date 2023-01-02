@@ -16,7 +16,7 @@ The solution deploys the following resources:
 IAM Role for Service Account<br />
 Glue Database<br />
 Glue Table<br />
-Glue Crawler (along with its IAM Role, IAM Policy)
+Glue Crawler (along with its IAM Role and IAM Policy)
 
 High-level logic:
 
