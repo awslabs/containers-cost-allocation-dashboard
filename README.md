@@ -52,19 +52,19 @@ In this section, choose either "Build and Push for a Single Platform" or "Build 
 
 Build for a platform as the source machine:
 
-    docker build -t <your_registry_url>/<your_repo>:<tag> .
+    docker build -t <registry_url>/<repo>:<tag> .
 
 Build for a specific target platform:
 
-    docker build --platform linux/amd64 -t <your_registry_url>/<your_repo>:<tag> .
+    docker build --platform linux/amd64 -t <registry_url>/<repo>:<tag> .
 
 Push:
 
-    docker push <your_registry_url>/<your_repo>:<tag>
+    docker push <registry_url>/<repo>:<tag>
 
 #### Build and Push for Multiple Platforms
 
-    docker buildx build --push --platform linux/amd64,linux/arm64/v8 --tag <your_registry_url>/<your_repo>:<tag> .
+    docker buildx build --push --platform linux/amd64,linux/arm64/v8 --tag <registry_url>/<repo>:<tag> .
 
 ### Step 2: Deploy the AWS and K8s Resources
 
@@ -78,7 +78,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 | region (required) |  | The AWS region to deploy the resources (it doesn't have to be the same region as the EKS cluster | AWS Region code (for example, `us-east-1` |
 | eks_oidc_url (required) |  | The EKS OIDC URL  |  |
 | bucket_arn (required) |  | the ARN of the bucket to which the CSV files will be written |  |
-| image (required) |  | The registry, repository and tag to pull (`<your_registry_url>/<your_repo>:<tag>`) |  |
+| image (required) |  | The registry, repository and tag to pull (`<registry_url>/<repo>:<tag>`) |  |
 | cluster_name (required) |  | Your EKS cluster name |  |
 | k8s_config_path | `~/.kube/config` | Full path of the K8s config file |  |
 | k8s_namespace | `kubecost-s3-exporter` | The namespace to use for the data collection pod |  |
