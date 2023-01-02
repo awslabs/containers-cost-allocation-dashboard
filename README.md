@@ -224,4 +224,6 @@ Create an Analysis from the Dashboard, to edit it and create custom visuals:
 
 1. From `terraform/terraform_aws_helm_resources`, run `terraform destroy`.<br />
 It'll remove both the AWS resources, and invoke Helm to remove the CronJob and Service Account.
-2. Run `kubectl delete ns <namespace>` to remove the namespace
+2. Manually remove the CloudWatch Log Stream that was created by the Glue Crawler
+3. Empty and delete the S3 bucket you created
+4. Run `kubectl delete ns <namespace>` to remove the K8s namespace
