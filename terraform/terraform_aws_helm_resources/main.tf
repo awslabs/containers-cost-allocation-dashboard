@@ -1,12 +1,3 @@
-resource "aws_cloudwatch_log_group" "kubecost_glue_crawler_log_group" {
-  name = "kubecost_glue_crawler_log_group"
-}
-
-resource "aws_cloudwatch_log_stream" "kubecost_glue_crawler_log_stream" {
-  name           = "kubecost_glue_crawler_log_stream"
-  log_group_name = aws_cloudwatch_log_group.kubecost_glue_crawler_log_group.name
-}
-
 resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
   name = "kubecost_glue_crawler_policy"
   policy = jsonencode(
@@ -16,6 +7,7 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
           Action = [
             "glue:GetTable",
             "glue:GetDatabase",
+            "glue:UpdatePartition",
             "glue:BatchGetPartition",
             "glue:BatchCreatePartition",
           ]
@@ -23,7 +15,8 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
           Resource = [
             "${element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0)}catalog",
             aws_glue_catalog_database.kubecost_glue_db.arn,
-            aws_glue_catalog_table.kubecost_glue_table.arn
+            aws_glue_catalog_table.kubecost_glue_table.arn,
+            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace("${element(split(":::", local.bucket_arn), 1)}", "-", "_"))}*"
           ]
           Sid = "AllowGlueKubecostTable"
         },
@@ -40,11 +33,23 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
           Sid = "AllowS3KubecostBucket"
         },
         {
+          Action   = "logs:CreateLogGroup"
+          Effect   = "Allow"
+          Resource = "${replace(element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0), ":glue:", ":logs:")}*"
+          Sid      = "AllowCloudWatchLogsCreateLogGroupForGlueCrawlers"
+        },
+        {
+          Action   = "logs:CreateLogStream"
+          Effect   = "Allow"
+          Resource = "${replace(element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0), ":glue:", ":logs:")}log-group:/aws-glue/crawlers:*"
+          Sid      = "AllowCloudWatchLogsCreateLogStreamForKubecostCrawler"
+        },
+        {
           Action   = "logs:PutLogEvents"
           Effect   = "Allow"
-          Resource = aws_cloudwatch_log_group.kubecost_glue_crawler_log_group.arn
+          Resource = "${replace(element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0), ":glue:", ":logs:")}log-group:/aws-glue/crawlers:log-stream:kubecost_crawler"
           Sid      = "AllowCloudWatchLogsPutLogs"
-        },
+        }
       ]
       Version = "2012-10-17"
     }
