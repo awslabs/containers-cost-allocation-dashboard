@@ -7,9 +7,12 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
           Action = [
             "glue:GetTable",
             "glue:GetDatabase",
+            "glue:GetPartition",
+            "glue:CreatePartition",
             "glue:UpdatePartition",
             "glue:BatchGetPartition",
             "glue:BatchCreatePartition",
+            "glue:BatchUpdatePartition"
           ]
           Effect = "Allow"
           Resource = [
