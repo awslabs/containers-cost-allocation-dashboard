@@ -33,7 +33,7 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
  2. Kubecost deployed in the EKS cluster
  3. An S3 bucket
  4. QuickSight Enterprise with CID deployed
- 5. The `cid-cmd` tool
+ 5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/))
 
 ## Deployment
 
