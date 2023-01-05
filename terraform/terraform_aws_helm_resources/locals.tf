@@ -14,7 +14,7 @@ locals {
   k8s_service_account   = "kubecost-s3-exporter"
   k8s_create_namespace  = true
   image_pull_policy     = "Always"
-  schedule              = "0 0 * * *"                                   # The kubecost-s3-exporter pod schedule, in cron format (UTC)
+  schedule              = "0 0 * * *"                                   # The kubecost-s3-exporter CronJob schedule, in cron format (UTC)
   kubecost_api_endpoint = "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
   granularity           = "hourly"
   k8s_labels            = [] # Example: ["app", "chart"]
