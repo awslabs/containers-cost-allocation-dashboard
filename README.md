@@ -29,7 +29,7 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
 
 ## Requirements
 
- 1. An EKS cluster
+ 1. An EKS cluster, and an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
  2. Kubecost deployed in the EKS cluster
  3. An S3 bucket
  4. QuickSight Enterprise with CID deployed
@@ -76,7 +76,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 | Input | Default | Description | Supported Values
 |--|--|--|--|
 | region (required) |  | The AWS region to deploy the resources (it doesn't have to be the same region as the EKS cluster | AWS Region code (for example, `us-east-1` |
-| eks_oidc_url (required) |  | The EKS OIDC URL  |  |
+| eks_iam_oidc_provider_arn (required) |  | The EKS IAM OIDC Provider ARN.<br />Retrive by navigating to IAM console -> Access management -> Identity providers -> click the EKS IAM Identity Provider -> copy the value of "ARN" |  |
 | bucket_arn (required) |  | the ARN of the bucket to which the CSV files will be written |  |
 | image (required) |  | The registry, repository and tag to pull (`<registry_url>/<repo>:<tag>`) |  |
 | cluster_name (required) |  | Your EKS cluster name |  |
