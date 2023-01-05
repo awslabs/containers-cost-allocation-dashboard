@@ -373,13 +373,13 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
           Action = "sts:AssumeRoleWithWebIdentity"
           Condition = {
             StringEquals = {
-              "${element(split(":oidc-provider/", local.eks_oidc_url), 1)}:aud" = "sts.amazonaws.com"
-              "${element(split(":oidc-provider/", local.eks_oidc_url), 1)}:sub" = "system:serviceaccount:${local.k8s_namespace}:${local.k8s_service_account}"
+              "${element(split(":oidc-provider/", local.eks_iam_oidc_provider_arn), 1)}:aud" = "sts.amazonaws.com"
+              "${element(split(":oidc-provider/", local.eks_iam_oidc_provider_arn), 1)}:sub" = "system:serviceaccount:${local.k8s_namespace}:${local.k8s_service_account}"
             }
           }
           Effect = "Allow"
           Principal = {
-            Federated = "${local.eks_oidc_url}"
+            Federated = "${local.eks_iam_oidc_provider_arn}"
           }
         },
       ]
