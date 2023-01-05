@@ -40,7 +40,7 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
 There are 3 high-level steps to deploy the solution:
 
 1. Build an image using `Dockerfile` and push it
-2. Deploy both the AWS resources and the data collection pod using Terraform and Helm
+2. Deploy both the AWS resources and the data collection CronJob using Terraform and Helm
 3. Deploy the QuickSight dashboard using `cid-cmd` tool
 
 ### Step 1: Build and Push the Container Image
