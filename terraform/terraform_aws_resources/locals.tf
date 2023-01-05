@@ -1,8 +1,8 @@
 # Required Inputs
 locals {
-  region       = "<region>"   # Example: "us-east-1"
-  eks_oidc_url = "<oidc_url>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>
-  bucket_arn   = "<arn>"
+  region                    = "<region>"                    # Example: "us-east-1"
+  eks_iam_oidc_provider_arn = "<eks_iam_oidc_provider_arn>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>
+  bucket_arn                = "<bucket_arn>"
 }
 
 # Optional Inputs
