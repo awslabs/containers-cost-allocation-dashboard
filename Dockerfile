@@ -1,6 +1,6 @@
 FROM --platform=$TARGETPLATFORM python:3.11.1-slim-bullseye AS build
 
-RUN useradd -u 10001 worker
+RUN useradd -u 10001 worker -m
 USER worker
 WORKDIR /home/worker
 ENV PATH="/home/worker/.local/bin:${PATH}"
