@@ -11,7 +11,7 @@ The following is the solution's architecture:
 
 The solution deploys the following resources:
 
-1. CronJob and Service Account in your EKS cluster
+1. Data collection Pod (deployed using a CronJob controller) and Service Account in your EKS cluster
 2. The following AWS resources:<br />
 IAM Role for Service Account<br />
 Glue Database<br />
@@ -20,11 +20,11 @@ Glue Crawler (along with its IAM Role and IAM Policy)
 
 High-level logic:
 
-1. The CronJob runs daily and collects cost allocation data from Kubecost.<br />
+1. The CronJob runs daily and creates a Pod that collects cost allocation data from Kubecost.<br />
 It runs the [Allocation API on-demand query (experimental)](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
-2. Once data is collected, it's then converted to a CSV, compressed it and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
-3. The data is made available in Athena using Glue. In addition, a Glue Crawler runs daily, 1 hour after the CronJob started, to create partitions
+2. Once data is collected, it's then converted to a CSV, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
+3. The data is made available in Athena using Glue. In addition, a Glue Crawler runs daily, 1 hour after the CronJob started, to create or update partitions
 4. QuickSight uses the Athena table as a data source to visualize the data
 
 ## Requirements
