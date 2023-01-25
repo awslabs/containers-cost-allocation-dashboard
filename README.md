@@ -100,7 +100,7 @@ Notes:
 From `terraform/terraform_aws_helm_resources`, run `terraform apply`.<br />
 It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and Service Account.
 
-### Step 3: Dashboard Deployment and Configuration
+### Step 3: Dashboard Deployment
 
 #### Deploy the Dashboard from the CID YAML File
 
@@ -173,7 +173,9 @@ After choosing, wait for the dataset to be created, and then the additional outp
 Choose whether to share the dashboard with everyone in this account.<br />
 This selection will complete the deployment.
 
-#### Share the Dataset with Users
+## Post-deployment Steps
+
+### Share the Dataset with Users
 
 Share the dataset with users that are authorized to make changes to it:
 
@@ -182,7 +184,7 @@ Share the dataset with users that are authorized to make changes to it:
 3. From the list, choose the `kubecost` dataset (ID `e88edf48-f2cd-4c23-b6a4-e2b3034e2c41`)
 4. Click "Share", select the desired permissions, start typing your user or group, select it and click "Share"
 
-#### Set Dataset Refresh Schedule
+### Set Dataset Refresh Schedule
 
 A dataset refresh schedule needs to be set, so that the data from Athena will be fresh daily in QuickSight:
 
@@ -192,7 +194,7 @@ A dataset refresh schedule needs to be set, so that the data from Athena will be
 4. Make sure that "Full refresh" is selected
 5. Set the refresh schedule to be at least 2 hours after the K8s CronJob schedule (because 1 hour after the CronJob runs, the Glue Crawler runs), and click "Save"
 
-#### Share the Dashboard with Users
+### Share the Dashboard with Users
 
 Share the dashboard with users, for them to be able to view it and create Analysis from it:
 
@@ -203,7 +205,7 @@ Share the dashboard with users, for them to be able to view it and create Analys
 5. For users that require Analysis creation (to edit the dashboard), tick the `Allow "save as"` button under "Save as Analysis" column, then click "Confirm"
 6. Navigate back to the dashboard once done, by clicking "← Go back to 'Kubecost Dashboard'" on the top left
 
-#### Create an Analysis from the Dashboard
+### Create an Analysis from the Dashboard
 
 Create an Analysis from the Dashboard, to edit it and create custom visuals:
 
