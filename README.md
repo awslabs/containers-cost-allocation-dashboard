@@ -184,7 +184,6 @@ This selection will complete the deployment.
 Note - if at step 2 above, you get the following error:
 
 *Something went wrong*
-
 *For more information see Set IAM policy (https://docs.aws.amazon.com/console/quicksight/iam-qs-create-users)*
 
 1. Navigate to the IAM console
