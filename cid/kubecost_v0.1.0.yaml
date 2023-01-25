@@ -112,10 +112,6 @@ datasets:
               Type: STRING
             - Name: properties.providerid
               Type: STRING
-            - Name: properties.labels.app
-              Type: STRING
-            - Name: properties.labels.chart
-              Type: STRING
             - Name: year
               Type: INTEGER
             - Name: month
@@ -181,8 +177,6 @@ datasets:
               - properties.controller
               - properties.controllerkind
               - properties.providerid
-              - properties.labels.app
-              - properties.labels.chart
               - year
               - month
               - cpu_and_ram_cost
