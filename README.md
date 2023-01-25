@@ -1,7 +1,8 @@
 
-# Kubecost CID Integration
+# EKS Insights Dashboard
 
-This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards), means to provide the users with a dashboard to view a breakdown of their EKS clusters costs, in a single-pane-of-glass with their other dashboards.
+This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards) to create the EKS Insights Dashboard.
+This dashboard is meant to provide the users with breakdown of their EKS clusters in-cluster costs, in a single-pane-of-glass with their other dashboards.
 
 ## Architecture
 
@@ -34,6 +35,7 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
  3. An S3 bucket
  4. QuickSight Enterprise with CID deployed
  5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/))
+ 6. Terraform
 
 ## Deployment
 
@@ -115,7 +117,7 @@ The output should be similar to the below:
     
     
     Checking AWS environment...
-        profile name: <>
+        profile name: <profile_name>
         accountId: <account_id>
         AWS userId: <user_id>
         Region: <region>
@@ -158,7 +160,7 @@ After choosing, wait for the dataset to be created, and then the additional outp
 
     ? [athena-database] Select AWS Athena database to use: kubecost_db
     Dataset "kubecost" created
-    Latest template: arn:aws:quicksight:us-east-1:742719403826:template/kubecost/version/2
+    Latest template: arn:aws:quicksight:us-east-1:<account_id>:template/kubecost/version/2
     Deploying dashboard kubecost
     
     #######
@@ -166,7 +168,7 @@ After choosing, wait for the dataset to be created, and then the additional outp
     ####### Kubecost Dashboard is available at: https://us-east-1.quicksight.aws.amazon.com/sn/dashboards/kubecost
     #######
     
-    ? [share-with-account] Share this dashboard with everyone in the account?: (Use arrow keys)
+    ? [share-with-account] Share this dashboard with everyone in the QuickSight account?: (Use arrow keys)
      » yes
        no
 
