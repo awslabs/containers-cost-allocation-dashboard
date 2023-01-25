@@ -173,7 +173,24 @@ After choosing, wait for the dataset to be created, and then the additional outp
 Choose whether to share the dashboard with everyone in this account.<br />
 This selection will complete the deployment.
 
-## Post-deployment Steps
+## Post-Deployment Steps
+
+### Configure QuickSight Permissions
+
+1. Navigate to “Manage QuickSight → Security & permissions”
+2. Under “Access granted to X services”, click “Manage”
+3. Under “S3 Bucket”, check the S3 bucket you create, and check the “Write permissions for Athena Workgroup” for this bucket
+
+Note - if at step 2 above, you get the following error:
+
+*Something went wrong*
+
+*For more information see Set IAM policy (https://docs.aws.amazon.com/console/quicksight/iam-qs-create-users)*
+
+1. Navigate to the IAM console
+2. Edit the QuickSight-managed S3 IAM Policy (usually named AWSQuickSightS3Policy
+3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket. Example:
+    `"arn:aws:s3:::kubecost-data*"`
 
 ### Share the Dataset with Users
 
