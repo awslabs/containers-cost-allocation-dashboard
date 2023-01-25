@@ -1,6 +1,8 @@
+# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
+
 dashboards:
   KUBECOST ANALYSIS:
-    name: Kubecost Dashboard
+    name: EKS Insights Dashboard
     templateId: kubecost
     sourceAccountId: '742719403826'
     dashboardId: kubecost
