@@ -199,7 +199,7 @@ Share the dataset with users that are authorized to make changes to it:
 
 1. Login to QuickSight, then click on the person icon on the top right, and click "Manage QuickSight"
 2. On the left pane, navigate to "Manage assets", then choose "Datasets"
-3. From the list, choose the `kubecost` dataset (ID `e88edf48-f2cd-4c23-b6a4-e2b3034e2c41`)
+3. From the list, choose the `eks_insights` dataset (ID `e88edf48-f2cd-4c23-b6a4-e2b3034e2c41`)
 4. Click "Share", select the desired permissions, start typing your user or group, select it and click "Share"
 
 ### Set Dataset Refresh Schedule
@@ -207,28 +207,22 @@ Share the dataset with users that are authorized to make changes to it:
 A dataset refresh schedule needs to be set, so that the data from Athena will be fresh daily in QuickSight:
 
 1. Login to QuickSight as a user that has "Owner" permissions to the dataset (you set it in the previous step)
-2. Navigate to "Datasets" and click on the `Kubecost` dataset
+2. Navigate to "Datasets" and click on the `eks_insights` dataset
 3. Under "Refresh" tab, click "ADD NEW SCHEDULE"
 4. Make sure that "Full refresh" is selected
 5. Set the refresh schedule to be at least 2 hours after the K8s CronJob schedule (because 1 hour after the CronJob runs, the Glue Crawler runs), and click "Save"
 
 ### Share the Dashboard with Users
 
-Share the dashboard with users, for them to be able to view it and create Analysis from it:
-
-1. Login to QuickSight
-2. Navigate to "Dashboards" and click the `Kubecost Dashboard`
-3. On the top right, click the "Share" icon, then click "Share dashboard"
-4. In the "Invite users and groups to dashboard", search for users to share the dashboard with, and add them
-5. For users that require Analysis creation (to edit the dashboard), tick the `Allow "save as"` button under "Save as Analysis" column, then click "Confirm"
-6. Navigate back to the dashboard once done, by clicking "← Go back to 'Kubecost Dashboard'" on the top left
+To share the dashboard with users, for them to be able to view it and create Analysis from it, see the following link:
+https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/postdeploymentsteps/share/
 
 ### Create an Analysis from the Dashboard
 
 Create an Analysis from the Dashboard, to edit it and create custom visuals:
 
 1. Login to QuickSight as a user that is allowed to save the dashboard as Analysis
-2. Navigate to "Dashboards" and click the `Kubecost Dashboard`
+2. Navigate to "Dashboards" and click the `EKS Insights`
 3. On the top right, click the "Save as" icon (refresh the dashboard if you don't see it), name the Analysis, then click "SAVE" - you'll be navigated to the Analysis
 4. You can edit the Analysis as you wish, and save it again as a dashboard, by clicking the "Share" icon on the top right, then click "Publish dashboard"
 
