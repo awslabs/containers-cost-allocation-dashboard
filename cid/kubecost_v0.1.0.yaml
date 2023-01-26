@@ -5,7 +5,7 @@ dashboards:
     name: EKS Insights Dashboard
     templateId: kubecost
     sourceAccountId: '742719403826'
-    dashboardId: kubecost
+    dashboardId: eks_insights
     dependsOn:
       datasets:
       - kubecost
