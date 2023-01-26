@@ -1,19 +1,17 @@
-# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
 dashboards:
-  KUBECOST ANALYSIS:
-    name: EKS Insights Dashboard
-    templateId: kubecost
+  EKS INSIGHTS:
+    name: EKS Insights
+    templateId: eks_insights
     sourceAccountId: '742719403826'
     dashboardId: eks_insights
     dependsOn:
       datasets:
-      - kubecost
+      - eks_insights
 datasets:
-  kubecost:
+  eks_insights:
     Data:
       DataSetId: e88edf48-f2cd-4c23-b6a4-e2b3034e2c41
-      Name: kubecost
+      Name: eks_insights
       PhysicalTableMap:
         06f7b96e-4cd6-4d7f-83a8-e8b9302da3f4:
           RelationalTable:
