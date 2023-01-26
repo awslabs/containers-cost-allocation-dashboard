@@ -106,7 +106,7 @@ It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and S
 
 #### Deploy the Dashboard from the CID YAML File
 
-From the `cid` folder, run `cid-cmd deploy --resources kubecost_v0.1.0.yaml`.<br />
+From the `cid` folder, run `cid-cmd deploy --resources eks_insights_v0.1.0.yaml`.<br />
 The output should be similar to the below:
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.3 Beta
@@ -131,22 +131,22 @@ The output should be similar to the below:
        [ta-organizational-view] Trusted Advisor Organizational View
        [trends-dashboard] Trends Dashboard
        [compute-optimizer-dashboard] Compute Optimizer Dashboard
-       [kubecost] Kubecost Dashboard
+       [eks_insights] EKS Insights
 
-From the list, choose `[Kubecost] Kubecost Dashboard`.<br />
+From the list, choose `[eks_insights] EKS Insights`.<br />
 After choosing, wait for dashboards discovery to be completed, and then the additional output should be similar to the below:
 
-    ? [dashboard-id] Please select dashboard to install: [kubecost] Kubecost Dashboard
+    ? [dashboard-id] Please select dashboard to install: [eks_insights] EKS Insights
     Discovering deployed dashboards...  [####################################]  100%  "CUDOS Dashboard" (cudos)
     
     Required datasets:
-     - kubecost
+     - eks_insights
     
     
     Looking by DataSetId defined in template...complete
     
-    There are still 1 datasets missing: kubecost
-    Creating dataset: kubecost
+    There are still 1 datasets missing: eks_insights
+    Creating dataset: eks_insights
     Detected views:
     
     ? [athena-database] Select AWS Athena database to use: (Use arrow keys)
@@ -159,13 +159,13 @@ If you didn't change the Glue Database name in the Terraform template, then it'l
 After choosing, wait for the dataset to be created, and then the additional output should be similar to the below:
 
     ? [athena-database] Select AWS Athena database to use: kubecost_db
-    Dataset "kubecost" created
-    Latest template: arn:aws:quicksight:us-east-1:<account_id>:template/kubecost/version/2
-    Deploying dashboard kubecost
+    Dataset "eks_insights" created
+    Latest template: arn:aws:quicksight:us-east-1:<account_id>:template/eks_insights/version/1
+    Deploying dashboard eks_insights
     
     #######
     ####### Congratulations!
-    ####### Kubecost Dashboard is available at: https://us-east-1.quicksight.aws.amazon.com/sn/dashboards/kubecost
+    ####### EKS Insights is available at: https://us-east-1.quicksight.aws.amazon.com/sn/dashboards/eks_insights
     #######
     
     ? [share-with-account] Share this dashboard with everyone in the QuickSight account?: (Use arrow keys)
