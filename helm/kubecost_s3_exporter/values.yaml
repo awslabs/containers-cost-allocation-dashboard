@@ -1,6 +1,4 @@
-# Default values for kubecost-s3-exporter.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 replicaCount: 1
 namespace: "kubecost-s3-exporter"
@@ -22,8 +20,8 @@ env:
     value: "kubecost-data"
   - name: "KUBECOST_API_ENDPOINT"
     value: "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
-  - name: "CLUSTER_NAME"
-    value: "cluster-one" # Change to your EKS cluster name
+  - name: "CLUSTER_ARN"
+    value: "<cluster_arn>" # Change to your EKS cluster ARN
   - name: "GRANULARITY"
     value: "hourly"
   - name: "LABELS"
