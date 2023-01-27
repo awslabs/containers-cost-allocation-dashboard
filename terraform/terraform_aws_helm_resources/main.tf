@@ -1,3 +1,5 @@
+# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
+
 resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
   name = "kubecost_glue_crawler_policy"
   policy = jsonencode(
@@ -96,12 +98,20 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   table_type = "EXTERNAL_TABLE"
 
   partition_keys {
+    name = "region"
+    type = "string"
+  }
+  partition_keys {
+    name = "account_id"
+    type = "string"
+  }
+  partition_keys {
     name = "year"
-    type = "int"
+    type = "string"
   }
   partition_keys {
     name = "month"
-    type = "int"
+    type = "string"
   }
 
   storage_descriptor {
@@ -421,8 +431,8 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
           "value" : local.kubecost_api_endpoint
         },
         {
-          "name" : "CLUSTER_NAME",
-          "value" : local.cluster_name
+          "name" : "CLUSTER_ARN",
+          "value" : local.cluster_arn
         },
         {
           "name" : "GRANULARITY",
