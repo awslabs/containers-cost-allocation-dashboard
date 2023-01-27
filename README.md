@@ -81,7 +81,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 | eks_iam_oidc_provider_arn (required) |  | The EKS IAM OIDC Provider ARN.<br />Retrieve by navigating to IAM console -> Access management -> Identity providers -> click on the provider for the EKS cluster -> copy the value of "ARN" |  |
 | bucket_arn (required) |  | the ARN of the bucket to which the CSV files will be written |  |
 | image (required) |  | The registry, repository and tag to pull (`<registry_url>/<repo>:<tag>`) |  |
-| cluster_name (required) |  | Your EKS cluster name |  |
+| cluster_arn (required) |  | Your EKS cluster ARN |  |
 | k8s_config_path | `~/.kube/config` | Full path of the K8s config file |  |
 | k8s_namespace | `kubecost-s3-exporter` | The namespace to use for the data collection pod |  |
 | k8s_service_account | `kubecost-s3-exporter` | The K8s service account name |  |
