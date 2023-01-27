@@ -1,3 +1,5 @@
+# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
+
 import os
 import sys
 import gzip
@@ -17,69 +19,69 @@ logger = logging.getLogger()
 # Environment variables to identify the S3 bucket, Kubecost API endpoint, cluster ID and granularity
 S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost")
-CLUSTER_NAME = os.environ.get("CLUSTER_NAME")
+CLUSTER_ARN = os.environ.get("CLUSTER_ARN")
 GRANULARITY = os.environ.get("GRANULARITY", "hourly")
 LABELS = os.environ.get("LABELS")
 
 
-def define_csv_headers(labels):
-    """Defines the CSV headers, including static headers, and input comma-separated string of K8s labels
+def define_csv_columns(labels):
+    """Defines the CSV columns, including static columns, and input comma-separated string of K8s labels
 
     :param labels: Comma-separated string of K8s labels
-    :return: List of CSV headers
+    :return: List of CSV columns
     """
 
-    # CSV headers definition
+    # CSV columns definition
     columns = [
-        'name',
-        'window.start',
-        'window.end',
-        'minutes',
-        'cpuCores',
-        'cpuCoreRequestAverage',
-        'cpuCoreUsageAverage',
-        'cpuCoreHours',
-        'cpuCost',
-        'cpuCostAdjustment',
-        'cpuEfficiency',
-        'gpuCount',
-        'gpuHours',
-        'gpuCost',
-        'gpuCostAdjustment',
-        'networkTransferBytes',
-        'networkReceiveBytes',
-        'networkCost',
-        'networkCostAdjustment',
-        'loadBalancerCost',
-        'loadBalancerCostAdjustment',
-        'pvBytes',
-        'pvByteHours',
-        'pvCost',
-        'pvCostAdjustment',
-        'ramBytes',
-        'ramByteRequestAverage',
-        'ramByteUsageAverage',
-        'ramByteHours',
-        'ramCost',
-        'ramCostAdjustment',
-        'ramEfficiency',
-        'sharedCost',
-        'externalCost',
-        'totalCost',
-        'totalEfficiency',
-        'rawAllocationOnly',
-        'properties.cluster',
-        'properties.container',
-        'properties.namespace',
-        'properties.pod',
-        'properties.node',
-        'properties.controller',
-        'properties.controllerKind',
-        'properties.providerID'
+        "name",
+        "window.start",
+        "window.end",
+        "minutes",
+        "cpuCores",
+        "cpuCoreRequestAverage",
+        "cpuCoreUsageAverage",
+        "cpuCoreHours",
+        "cpuCost",
+        "cpuCostAdjustment",
+        "cpuEfficiency",
+        "gpuCount",
+        "gpuHours",
+        "gpuCost",
+        "gpuCostAdjustment",
+        "networkTransferBytes",
+        "networkReceiveBytes",
+        "networkCost",
+        "networkCostAdjustment",
+        "loadBalancerCost",
+        "loadBalancerCostAdjustment",
+        "pvBytes",
+        "pvByteHours",
+        "pvCost",
+        "pvCostAdjustment",
+        "ramBytes",
+        "ramByteRequestAverage",
+        "ramByteUsageAverage",
+        "ramByteHours",
+        "ramCost",
+        "ramCostAdjustment",
+        "ramEfficiency",
+        "sharedCost",
+        "externalCost",
+        "totalCost",
+        "totalEfficiency",
+        "rawAllocationOnly",
+        "properties.cluster",
+        "properties.container",
+        "properties.namespace",
+        "properties.pod",
+        "properties.node",
+        "properties.controller",
+        "properties.controllerKind",
+        "properties.providerID"
     ]
 
     if labels:
-        labels_columns = ['properties.labels.' + x.strip() for x in labels.split(",")]
+        labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
         return columns + labels_columns
     else:
         return columns
@@ -103,7 +105,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
     }
 
     # Calculate window and step
-    window = "{},{}".format(start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
     try:
         step = granularity_map[granularity.lower()]
     except KeyError:
@@ -112,17 +114,19 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
 
     # Executing Kubecost Allocation API call (On-demand query)
     try:
-        logger.info("Querying Kubecost API for data between {} and {} in {} granularity...".format(start, end,
-                                                                                                   granularity.lower()))
-        params = {'window': window, 'aggregate': aggregate, 'accumulate': accumulate, "step": step}
-        r = requests.get('{}/model/allocation/compute'.format(kubecost_api_endpoint), params=params)
+        logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
+                    f"in {granularity.lower()} granularity...")
+        params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step}
+        r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params)
         if not r.json()["data"]:
-            logger.error("API response appears to be empty, check window")
+            logger.error("API response appears to be empty.\n"
+                         "This script collects data between 72 hours ago and 48 hours ago.\n"
+                         "Make sure that you have data at least within this timeframe")
             sys.exit()
 
         return r
     except requests.exceptions.ConnectionError as error:
-        logger.error("Error connecting to Kubecost API: {}".format(error))
+        logger.error(f"Error connecting to Kubecost Allocation API: {error}")
         sys.exit(1)
 
 
@@ -158,7 +162,7 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
     :param updated_allocation_data: Kubecost's Allocation data after:
      1. Transforming to a nested list
      2. Updating timestamps
-    :param csv_columns: the list of columns to use as CSV headers
+    :param csv_columns: the list of columns to use as CSV columns
     :return:
     """
 
@@ -167,35 +171,38 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
     df = pd.concat(all_dfs)
 
     # Transforming the DataFrame to a CSV and creating the CSV file locally
-    df.to_csv('output.csv', sep=',', encoding='utf-8', index=False, quotechar="'", escapechar="\\", columns=csv_columns)
+    df.to_csv("output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\", columns=csv_columns)
 
 
-def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, month, year):
+def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_arn, date, month, year):
     """Compresses and uploads the Kubecost Allocation CSV to an S3 bucket.
 
     :param s3_bucket_name: the S3 bucket name to use
-    :param cluster_id: the K8s cluster ID to use in the CSV file name
-    :param _date: the date to use in the CSV file name
+    :param cluster_arn: the K8s cluster ID to use in the CSV file name
+    :param date: the date to use in the CSV file name
     :param month: the month to use as part of the S3 bucket prefix
     :param year: the year to use as part of the S3 bucket prefix
     :return:
     """
 
+    cluster_name = cluster_arn.split("/")[-1]
+    cluster_account_id = cluster_arn.split(":")[4]
+    cluster_region_code = cluster_arn.split(":")[3]
+
     # Compressing and uploading the CSV file to the S3 bucket
-    s3_file_name = "{}_{}".format(_date, cluster_id)
+    s3_file_name = "{}_{}".format(date, cluster_name)
     os.rename('output.csv', "{}.csv".format(s3_file_name))
     with open("{}.csv".format(s3_file_name), "rb") as f_in:
-        with gzip.open("{}.gz".format(s3_file_name), "wb") as f_out:
+        with gzip.open(f"{s3_file_name}.gz", "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
     try:
         s3 = boto3.resource('s3')
-        s3_bucket_prefix = 'year={}/month={}'.format(year, month)
+        s3_bucket_prefix = f"region={cluster_region_code}/account_id={cluster_account_id}/year={year}/month={month}"
 
-        logger.info("Uploading file {}.gz to S3 bucket {}...".format(s3_file_name, s3_bucket_name))
-        s3.Bucket(s3_bucket_name).upload_file('./{}.gz'.format(s3_file_name),
-                                              '{}/{}.gz'.format(s3_bucket_prefix, s3_file_name))
+        logger.info(f"Uploading file {s3_file_name}.gz to S3 bucket {s3_bucket_name}...")
+        s3.Bucket(s3_bucket_name).upload_file(f"./{s3_file_name}.gz", f"{s3_bucket_prefix}/{s3_file_name}.gz")
     except boto3.exceptions.S3UploadFailedError as error:
-        logger.error("Unable to upload file {}.gz to S3 bucket {}: {}".format(s3_file_name, s3_bucket_name, error))
+        logger.error(f"Unable to upload file {s3_file_name}.gz to S3 bucket {s3_bucket_name}: {error}")
         sys.exit(1)
     except botocore.exceptions.ClientError as error:
         logger.error(error)
@@ -204,8 +211,8 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_id, _date, mont
 
 def main():
 
-    # Define CSV headers
-    columns = define_csv_headers(LABELS)
+    # Define CSV columns
+    columns = define_csv_columns(LABELS)
 
     # Kubecost window definition
     three_days_ago = datetime.datetime.now() - datetime.timedelta(days=3)
@@ -225,7 +232,7 @@ def main():
 
     # Transforming Kubecost's updated allocation data to CSV, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
-    upload_kubecost_allocation_csv_to_s3(S3_BUCKET_NAME, CLUSTER_NAME, three_days_ago_date, three_days_ago_month,
+    upload_kubecost_allocation_csv_to_s3(S3_BUCKET_NAME, CLUSTER_ARN, three_days_ago_date, three_days_ago_month,
                                          three_days_ago_year)
 
 
