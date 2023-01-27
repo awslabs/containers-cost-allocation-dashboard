@@ -1,10 +1,12 @@
+# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
+
 # Required Inputs
 locals {
   region                    = "<region>"                    # Example: "us-east-1"
   eks_iam_oidc_provider_arn = "<eks_iam_oidc_provider_arn>" # Example: "arn:aws:iam::<account_id>:oidc-provider/oidc.eks.<region>.amazonaws.com/id/<id>"
   bucket_arn                = "<bucket_arn>"
   image                     = "<registry_url>/<repo>:<tag>"
-  cluster_name              = "<cluster_name>" # Your EKS cluster name
+  cluster_arn               = "<cluster_arn>" # Your EKS cluster arn
 }
 
 # Optional Inputs
