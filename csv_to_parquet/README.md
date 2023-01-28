@@ -1,5 +1,5 @@
 
-# CSV to Parquet Converstion Script
+# CSV to Parquet Conversion Script
 
 This script is used to:
 
