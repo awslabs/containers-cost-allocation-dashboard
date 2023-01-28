@@ -44,7 +44,6 @@ def main():
             logger.info(f"Converting CSV to Parquet...")
             df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
             df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
-            df.sort_values(by=["name", "window.start"], ascending=True, inplace=True)
             df.to_parquet(f"{parquet_file_name}.snappy.parquet", engine="pyarrow")
 
             # Uploading the Parquet to the S3 bucket
