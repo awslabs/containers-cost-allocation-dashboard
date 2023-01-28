@@ -24,7 +24,7 @@ High-level logic:
 1. The CronJob runs daily and creates a Pod that collects cost allocation data from Kubecost.<br />
 It runs the [Allocation API on-demand query (experimental)](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
-2. Once data is collected, it's then converted to a CSV, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
+2. Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
 3. The data is made available in Athena using AWS Glue. In addition, a AWS Glue Crawler runs daily, 1 hour after the CronJob started, to create or update partitions
 4. QuickSight uses the Athena table as a data source to visualize the data
 
@@ -79,7 +79,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 |--|--|--|--|
 | region (required) |  | The AWS region to deploy the resources (it doesn't have to be the same region as the EKS cluster | AWS Region code (for example, `us-east-1` |
 | eks_iam_oidc_provider_arn (required) |  | The EKS IAM OIDC Provider ARN.<br />Retrieve by navigating to IAM console -> Access management -> Identity providers -> click on the provider for the EKS cluster -> copy the value of "ARN" |  |
-| bucket_arn (required) |  | the ARN of the bucket to which the CSV files will be written |  |
+| bucket_arn (required) |  | the ARN of the bucket to which the Parquet files will be written |  |
 | image (required) |  | The registry, repository and tag to pull (`<registry_url>/<repo>:<tag>`) |  |
 | cluster_arn (required) |  | Your EKS cluster ARN |  |
 | k8s_config_path | `~/.kube/config` | Full path of the K8s config file |  |
@@ -90,7 +90,7 @@ The below table lists the required and optional inputs from the `locals.tf` file
 | schedule | `0 0 * * *` | Cron schedule (in UTC) | Any Cron schedule |
 | kubecost_api_endpoint | `http://kubecost-cost-analyzer.kubecost:9090` | The Kubecost API endpoint URL and port | `http://<host>:<port>` |
 | granularity | `hourly` | The granularity of the collected data | `hourly`, `daily` |
-| k8s_labels | `[]` | A list of labels (as strings) to include in the CSV | For example: `["app", "chart"]` |
+| k8s_labels | `[]` | A list of labels (as strings) to include in the Parquet | For example: `["app", "chart"]` |
 
 Notes:
 
