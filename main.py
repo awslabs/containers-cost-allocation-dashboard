@@ -1,6 +1,6 @@
 # Copyright 2022 Amazon.com and its affiliates; all rights reserved.
 # This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
+import json
 import os
 import sys
 import gzip
@@ -77,6 +77,13 @@ def define_csv_columns(labels):
         "properties.namespace",
         "properties.pod",
         "properties.node",
+        "properties.node_instance_type",
+        "properties.node_availability_zone",
+        "properties.node_capacity_type",
+        "properties.node_architecture",
+        "properties.node_os",
+        "properties.node_nodegroup",
+        "properties.node_nodegroup_image",
         "properties.controller",
         "properties.controllerKind",
         "properties.providerID"
@@ -98,7 +105,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
     :param granularity: the user input time granularity, to use for calculating the step (daily or hourly)
     :param aggregate: the K8s object used for aggregation, as per Kubecost Allocation API On-demand query documentation
     :param accumulate: dictates whether to return data for the entire window, or divide to time sets
-    :return: the Kubecost Allocation API On-demand query response
+    :return: the Kubecost Allocation API On-demand query "data" list from the HTTP response
     """
 
     granularity_map = {
@@ -126,27 +133,97 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
                          "Make sure that you have data at least within this timeframe")
             sys.exit()
 
-        return r
+        return r.json()["data"]
     except requests.exceptions.ConnectionError as error:
         logger.error(f"Error connecting to Kubecost Allocation API: {error}")
         sys.exit(1)
 
 
-def kubecost_allocation_data_add_eks_cluster_name(allocation_api_http_response, cluster_arn):
-    """Adds the real EKS cluster name from the CLUSTER_ARN input, to each allocation.
+def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, accumulate=False):
+    """Executes Kubecost Allocation API On-demand query.
 
-    :param allocation_api_http_response: the HTTP response from Kubecost Allocation API On-demand query
-    :param cluster_arn: the EKS cluster ARN
-    :return: Kubecost allocation data (the "data" list from the API response) with the real EKS cluster name
+    :param kubecost_api_endpoint: the Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
+    :param start: the start time for calculating Kubecost Allocation API window
+    :param end: the end time for calculating Kubecost Allocation API window
+    :param accumulate: dictates whether to return data for the entire window, or divide to time sets
+    :return: the Kubecost Assets API On-demand query "data" list from the HTTP response
     """
 
-    allocation_data = allocation_api_http_response.json()["data"]
+    # Calculate window and step
+    window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
+
+    # Executing Kubecost Allocation API call (On-demand query)
+    try:
+        logger.info(f"Querying Kubecost Assets API for data between {start} and {end}")
+        params = {"window": window, "accumulate": accumulate}
+        r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params)
+        if not r.json()["data"]:
+            logger.error("API response appears to be empty.\n"
+                         "This script collects data between 72 hours ago and 48 hours ago.\n"
+                         "Make sure that you have data at least within this timeframe")
+            sys.exit()
+
+        return r.json()["data"]
+    except requests.exceptions.ConnectionError as error:
+        logger.error(f"Error connecting to Kubecost Assets API: {error}")
+        sys.exit(1)
+
+
+def kubecost_allocation_data_add_eks_cluster_name(allocation_data, cluster_arn):
+    """Adds the real EKS cluster name from the CLUSTER_ARN input, to each allocation.
+
+    :param allocation_data: the allocation "data" list from Kubecost Allocation API On-demand query HTTP response
+    :param cluster_arn: the EKS cluster ARN
+    :return: Kubecost allocation data with the real EKS cluster name
+    """
 
     for time_set in allocation_data:
         for allocation in time_set.values():
             if "properties" in allocation.keys():
                 if "cluster" in allocation["properties"].keys():
                     allocation["properties"]["eksClusterName"] = cluster_arn.split("/")[-1]
+
+    return allocation_data
+
+
+def kubecost_allocation_data_add_assets_data(allocation_data, assets_data, cluster_arn):
+    """Adds assets data from the Kubecost Assets API to the Kubecost allocation data.
+
+    :param allocation_data: the allocation "data" list from Kubecost Allocation API
+    :param assets_data: the asset "data" list from the Kubecost Assets API query HTTP response
+    :param cluster_arn: the EKS cluster ARN
+    :return: Kubecost allocation data with matching asset data
+    """
+
+    cluster_account_id = cluster_arn.split(":")[4]
+
+    for time_set in allocation_data:
+        for allocation in time_set.values():
+            if "properties" in allocation.keys():
+                if "providerID" in allocation["properties"].keys() \
+                        and "cluster" in allocation["properties"].keys() \
+                        and "node" in allocation["properties"].keys():
+
+                    # Build assets ID from the allocation, to identify the asset in the Assets API response
+                    allocation_cluster = allocation["properties"]["cluster"]
+                    allocation_provider_id = allocation["properties"]["providerID"]
+                    allocation_node = allocation["properties"]["node"]
+                    asset_id = f'AWS/{cluster_account_id}/__undefined__/Compute/{allocation_cluster}/Node/Kubernetes/' \
+                               f'{allocation_provider_id}/{allocation_node}'
+
+                    # Updating matching asset data from the Assets API, on the allocation properties
+                    allocation["properties"]["node_instance_type"] = assets_data[0][asset_id]["nodeType"]
+                    allocation["properties"]["node_availability_zone"] = assets_data[0][asset_id]["labels"][
+                        "label_topology_kubernetes_io_zone"]
+                    allocation["properties"]["node_capacity_type"] = assets_data[0][asset_id]["labels"][
+                        "label_eks_amazonaws_com_capacityType"]
+                    allocation["properties"]["node_architecture"] = assets_data[0][asset_id]["labels"][
+                        "label_kubernetes_io_arch"]
+                    allocation["properties"]["node_os"] = assets_data[0][asset_id]["labels"]["label_kubernetes_io_os"]
+                    allocation["properties"]["node_nodegroup"] = assets_data[0][asset_id]["labels"][
+                        "label_eks_amazonaws_com_nodegroup"]
+                    allocation["properties"]["node_nodegroup_image"] = assets_data[0][asset_id]["labels"][
+                        "label_eks_amazonaws_com_nodegroup_image"]
 
     return allocation_data
 
@@ -240,7 +317,6 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name):
     df = pd.read_csv(csv_file_name, encoding='utf8', sep=",", quotechar="'", escapechar="\\")
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
-    df.sort_values(by=["name", "window.start"], ascending=True, inplace=True)
     df.to_parquet("output.snappy.parquet", engine="pyarrow")
 
 
@@ -291,17 +367,23 @@ def main():
     three_days_ago_month = three_days_ago_midnight.strftime("%m")
 
     # Executing Kubecost Allocation API call
-    kubecost_allocation_api_response = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
-                                                                       three_days_ago_midnight_plus_one_day,
-                                                                       GRANULARITY, "pod")
+    kubecost_allocation_data = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
+                                                               three_days_ago_midnight_plus_one_day, GRANULARITY, "pod")
+
+    kubecost_assets_data = execute_kubecost_assets_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
+                                                       three_days_ago_midnight_plus_one_day)
 
     # Adding the real EKS cluster name from the cluster ARN
     kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_eks_cluster_name(
-        kubecost_allocation_api_response, CLUSTER_ARN)
+        kubecost_allocation_data, CLUSTER_ARN)
+
+    # Assing assets data from the Kubecost Assets API
+    kubecost_allocation_data_with_assets_data = kubecost_allocation_data_add_assets_data(
+        kubecost_allocation_data_with_eks_cluster_name, kubecost_assets_data, CLUSTER_ARN)
 
     # Transforming Kubecost's Allocation API data to a list of lists, and updating timestamps
     kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(
-        kubecost_allocation_data_with_eks_cluster_name)
+        kubecost_allocation_data_with_assets_data)
 
     # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
