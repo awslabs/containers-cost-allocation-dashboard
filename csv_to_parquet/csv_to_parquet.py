@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
-DELETE_OBJECT = os.environ.get("DELETE_OBJECT")
+DELETE_OBJECTS = os.environ.get("DELETE_OBJECTS")
 
 
 def main():
@@ -53,7 +53,7 @@ def main():
                                                   f"{s3_bucket_prefix}{parquet_file_name}.snappy.parquet")
 
             # Deleting the compressed CSV from the S3 bucket
-            if DELETE_OBJECT:
+            if DELETE_OBJECTS:
                 logger.info(f'Deleting object {s3_object["Key"]} from S3 bucket {S3_BUCKET_NAME}...')
                 client.delete_object(Bucket=S3_BUCKET_NAME, Key=s3_object["Key"])
 
