@@ -90,9 +90,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   name          = "kubecost_table"
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
   parameters = {
-    "classification"         = "csv"
-    "delimiter"              = ","
-    "skip.header.line.count" = "1"
+    "classification" = "parquet"
   }
 
   table_type = "EXTERNAL_TABLE"
@@ -116,20 +114,15 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
 
   storage_descriptor {
     location      = "s3://${element(split(":::", local.bucket_arn), 1)}/"
-    input_format  = "org.apache.hadoop.mapred.TextInputFormat"
-    output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
     parameters = {
-      "classification"         = "csv"
-      "delimiter"              = ","
-      "skip.header.line.count" = "1"
+      "classification" = "parquet"
     }
 
     ser_de_info {
-      name                  = "kubecost_table_serde"
-      serialization_library = "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
-      parameters = {
-        "field.delim" = ","
-      }
+      name                  = "kubecost_table_parquet_serde"
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
     }
 
     columns {
@@ -286,6 +279,10 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
     }
     columns {
       name = "properties.cluster"
+      type = "string"
+    }
+    columns {
+      name = "properties.eksClusterName"
       type = "string"
     }
     columns {
