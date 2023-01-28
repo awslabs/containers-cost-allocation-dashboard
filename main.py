@@ -1,4 +1,5 @@
-# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
+# Copyright 2022 Amazon.com and its affiliates; all rights reserved.
+# This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 import os
 import sys
@@ -19,13 +20,13 @@ logger = logging.getLogger()
 # Environment variables to identify the S3 bucket, Kubecost API endpoint, cluster ID and granularity
 S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost")
-CLUSTER_ARN = os.environ.get("CLUSTER_ARN")
+CLUSTER_ARN = os.environ["CLUSTER_ARN"]
 GRANULARITY = os.environ.get("GRANULARITY", "hourly")
 LABELS = os.environ.get("LABELS")
 
 
 def define_csv_columns(labels):
-    """Defines the CSV columns, including static columns, and input comma-separated string of K8s labels
+    """Defines the CSV columns, including static columns, and comma-separated string of K8s labels
 
     :param labels: Comma-separated string of K8s labels
     :return: List of CSV columns
@@ -71,6 +72,7 @@ def define_csv_columns(labels):
         "totalEfficiency",
         "rawAllocationOnly",
         "properties.cluster",
+        "properties.eksClusterName",
         "properties.container",
         "properties.namespace",
         "properties.pod",
@@ -130,11 +132,30 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
         sys.exit(1)
 
 
+def kubecost_allocation_data_add_eks_cluster_name(allocation_api_http_response, cluster_arn):
+    """Adds the real EKS cluster name from the CLUSTER_ARN input, to each allocation.
+
+    :param allocation_api_http_response: the HTTP response from Kubecost Allocation API On-demand query
+    :param cluster_arn: the EKS cluster ARN
+    :return: Kubecost allocation data (the "data" list from the API response) with the real EKS cluster name
+    """
+
+    allocation_data = allocation_api_http_response.json()["data"]
+
+    for time_set in allocation_data:
+        for allocation in time_set.values():
+            if "properties" in allocation.keys():
+                if "cluster" in allocation["properties"].keys():
+                    allocation["properties"]["eksClusterName"] = cluster_arn.split("/")[-1]
+
+    return allocation_data
+
+
 def kubecost_allocation_data_timestamp_update(allocation_data):
     """Replaces Kubecost's ISO8601 timestamp format to java.sql.Timestamp format, using dictionary comprehension.
     The replacement is necessary due to Athena's requirement for java.sql.Timestamp format.
 
-    :param allocation_data: the Kubecost Allocation API On-demand query response
+    :param allocation_data: Kubecost's allocation data (the "data" list from the API response), after any modifications
     :return: A list of lists, where each nested list is a time set with all the unique K8s aggregation values
     """
 
@@ -150,7 +171,7 @@ def kubecost_allocation_data_timestamp_update(allocation_data):
                 "end": d["end"].replace("T", " ").replace("Z", ".000")
             }
              } for d in y] for y in
-        [list(x.values()) for x in allocation_data.json()["data"]]
+        [list(x.values()) for x in allocation_data]
     ]
 
     return allocation_data_with_updated_timestamps
@@ -166,7 +187,7 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
     :return:
     """
 
-    # Dataframe definition, including all time sets from Kubecost API response
+    # DataFrame definition, including all time sets from Kubecost Allocation data
     all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
     df = pd.concat(all_dfs)
 
@@ -178,7 +199,7 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_arn, date, mont
     """Compresses and uploads the Kubecost Allocation CSV to an S3 bucket.
 
     :param s3_bucket_name: the S3 bucket name to use
-    :param cluster_arn: the K8s cluster ID to use in the CSV file name
+    :param cluster_arn: the K8s cluster ARN to use for the S3 bucket prefix and CSV file name
     :param date: the date to use in the CSV file name
     :param month: the month to use as part of the S3 bucket prefix
     :param year: the year to use as part of the S3 bucket prefix
@@ -209,9 +230,56 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_arn, date, mont
         sys.exit(1)
 
 
+def kubecost_csv_allocation_data_to_parquet(csv_file_name):
+    """Converting Kubecost Allocation data from CSV to Parquet.
+
+    :param csv_file_name: the name of the CSV file
+    :return:
+    """
+
+    df = pd.read_csv(csv_file_name, encoding='utf8', sep=",", quotechar="'", escapechar="\\")
+    df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
+    df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
+    df.sort_values(by=["name", "window.start"], ascending=True, inplace=True)
+    df.to_parquet("output.snappy.parquet", engine="pyarrow")
+
+
+def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_arn, date, month, year):
+    """Compresses and uploads the Kubecost Allocation Parquet to an S3 bucket.
+
+    :param s3_bucket_name: the S3 bucket name to use
+    :param cluster_arn: the K8s cluster ARN to use for the S3 bucket prefix and Parquet file name
+    :param date: the date to use in the Parquet file name
+    :param month: the month to use as part of the S3 bucket prefix
+    :param year: the year to use as part of the S3 bucket prefix
+    :return:
+    """
+
+    cluster_name = cluster_arn.split("/")[-1]
+    cluster_account_id = cluster_arn.split(":")[4]
+    cluster_region_code = cluster_arn.split(":")[3]
+
+    # Compressing and uploading the Parquet file to the S3 bucket
+    s3_file_name = f"{date}_{cluster_name}"
+    os.rename("output.snappy.parquet", f"{s3_file_name}.snappy.parquet")
+    try:
+        s3 = boto3.resource("s3")
+        s3_bucket_prefix = f"region={cluster_region_code}/account_id={cluster_account_id}/year={year}/month={month}"
+
+        logger.info(f"Uploading file {s3_file_name}.snappy.parquet to S3 bucket {s3_bucket_name}...")
+        s3.Bucket(s3_bucket_name).upload_file(f"./{s3_file_name}.snappy.parquet",
+                                              f"{s3_bucket_prefix}/{s3_file_name}.snappy.parquet")
+    except boto3.exceptions.S3UploadFailedError as error:
+        logger.error(f"Unable to upload file {s3_file_name}.snappy.parquet to S3 bucket {s3_bucket_name}: {error}")
+        sys.exit(1)
+    except botocore.exceptions.ClientError as error:
+        logger.error(error)
+        sys.exit(1)
+
+
 def main():
 
-    # Define CSV columns
+    # Defining CSV columns
     columns = define_csv_columns(LABELS)
 
     # Kubecost window definition
@@ -227,13 +295,19 @@ def main():
                                                                        three_days_ago_midnight_plus_one_day,
                                                                        GRANULARITY, "pod")
 
-    # Transforming Kubecost's Allocation API response to a list of lists, and updating timestamps
-    kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(kubecost_allocation_api_response)
+    # Adding the real EKS cluster name from the cluster ARN
+    kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_eks_cluster_name(
+        kubecost_allocation_api_response, CLUSTER_ARN)
 
-    # Transforming Kubecost's updated allocation data to CSV, compressing, and uploading it to S3
+    # Transforming Kubecost's Allocation API data to a list of lists, and updating timestamps
+    kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(
+        kubecost_allocation_data_with_eks_cluster_name)
+
+    # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
-    upload_kubecost_allocation_csv_to_s3(S3_BUCKET_NAME, CLUSTER_ARN, three_days_ago_date, three_days_ago_month,
-                                         three_days_ago_year)
+    kubecost_csv_allocation_data_to_parquet("output.csv")
+    upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ARN, three_days_ago_date, three_days_ago_month,
+                                             three_days_ago_year)
 
 
 if __name__ == "__main__":
