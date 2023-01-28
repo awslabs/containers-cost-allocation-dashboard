@@ -302,6 +302,34 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       type = "string"
     }
     columns {
+      name = "properties.node_instance_type"
+      type = "string"
+    }
+    columns {
+      name = "properties.node_availability_zone"
+      type = "string"
+    }
+    columns {
+      name = "properties.node_capacity_type"
+      type = "string"
+    }
+    columns {
+      name = "properties.node_architecture"
+      type = "string"
+    }
+    columns {
+      name = "properties.node_os"
+      type = "string"
+    }
+    columns {
+      name = "properties.node_nodegroup"
+      type = "string"
+    }
+    columns {
+      name = "properties.node_nodegroup_image"
+      type = "string"
+    }
+    columns {
       name = "properties.controller"
       type = "string"
     }
