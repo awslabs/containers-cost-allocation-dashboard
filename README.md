@@ -15,9 +15,9 @@ The solution deploys the following resources:
 1. Data collection Pod (deployed using a CronJob controller) and Service Account in your EKS cluster
 2. The following AWS resources:<br />
 IAM Role for Service Account<br />
-Glue Database<br />
-Glue Table<br />
-Glue Crawler (along with its IAM Role and IAM Policy)
+AWS Glue Database<br />
+AWS Glue Table<br />
+AWS Glue Crawler (along with its IAM Role and IAM Policy)
 
 High-level logic:
 
@@ -25,7 +25,7 @@ High-level logic:
 It runs the [Allocation API on-demand query (experimental)](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
 2. Once data is collected, it's then converted to a CSV, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
-3. The data is made available in Athena using Glue. In addition, a Glue Crawler runs daily, 1 hour after the CronJob started, to create or update partitions
+3. The data is made available in Athena using AWS Glue. In addition, a AWS Glue Crawler runs daily, 1 hour after the CronJob started, to create or update partitions
 4. QuickSight uses the Athena table as a data source to visualize the data
 
 ## Requirements
@@ -155,7 +155,7 @@ After choosing, wait for dashboards discovery to be completed, and then the addi
        spectrumdb
 
 From the list, choose the Athena database that was created by the Terraform template.<br />
-If you didn't change the Glue Database name in the Terraform template, then it'll be `kubecost_db` - please choose it.
+If you didn't change the AWS Glue Database name in the Terraform template, then it'll be `kubecost_db` - please choose it.
 After choosing, wait for the dataset to be created, and then the additional output should be similar to the below:
 
     ? [athena-database] Select AWS Athena database to use: kubecost_db
@@ -210,7 +210,7 @@ A dataset refresh schedule needs to be set, so that the data from Athena will be
 2. Navigate to "Datasets" and click on the `eks_insights` dataset
 3. Under "Refresh" tab, click "ADD NEW SCHEDULE"
 4. Make sure that "Full refresh" is selected
-5. Set the refresh schedule to be at least 2 hours after the K8s CronJob schedule (because 1 hour after the CronJob runs, the Glue Crawler runs), and click "Save"
+5. Set the refresh schedule to be at least 2 hours after the K8s CronJob schedule (because 1 hour after the CronJob runs, the AWS Glue Crawler runs), and click "Save"
 
 ### Share the Dashboard with Users
 
@@ -238,6 +238,6 @@ Create an Analysis from the Dashboard, to edit it and create custom visuals:
 
 1. From `terraform/terraform_aws_helm_resources`, run `terraform destroy`.<br />
 It'll remove both the AWS resources, and invoke Helm to remove the CronJob and Service Account.
-2. Manually remove the CloudWatch Log Stream that was created by the Glue Crawler
+2. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
 3. Empty and delete the S3 bucket you created
 4. Run `kubectl delete ns <namespace>` to remove the K8s namespace
