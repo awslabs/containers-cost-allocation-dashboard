@@ -213,7 +213,7 @@ A dataset refresh schedule needs to be set, so that the data from Athena will be
 4. Select "Incremental refresh", and click "CONFIGURE INCREMENTAL REFRESH"
 5. On "Date column", make sure that "window.start" is selected
 6. Set "Window size (number)" to "4", set "Window size (unit)" to "Days", and click "CONTINUE".<br />
-Notice that any value that is less than "4" in the "Window size (number)" will miss some data. 
+Notice that any value that is less than "4" in the "Window size (number)" will miss some data.
 7. Select "Timezone" and "Start time".<br />
 Notice that these options set the refresh schedule.
 The refresh schedule should be at least 2 hours after the K8s CronJob schedule.
