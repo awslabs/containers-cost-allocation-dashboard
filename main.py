@@ -295,7 +295,7 @@ def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_arn, date, mont
             shutil.copyfileobj(f_in, f_out)
     try:
         s3 = boto3.resource('s3')
-        s3_bucket_prefix = f"region={cluster_region_code}/account_id={cluster_account_id}/year={year}/month={month}"
+        s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
 
         logger.info(f"Uploading file {s3_file_name}.gz to S3 bucket {s3_bucket_name}...")
         s3.Bucket(s3_bucket_name).upload_file(f"./{s3_file_name}.gz", f"{s3_bucket_prefix}/{s3_file_name}.gz")
@@ -340,7 +340,7 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_arn, date, 
     os.rename("output.snappy.parquet", f"{s3_file_name}.snappy.parquet")
     try:
         s3 = boto3.resource("s3")
-        s3_bucket_prefix = f"region={cluster_region_code}/account_id={cluster_account_id}/year={year}/month={month}"
+        s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
 
         logger.info(f"Uploading file {s3_file_name}.snappy.parquet to S3 bucket {s3_bucket_name}...")
         s3.Bucket(s3_bucket_name).upload_file(f"./{s3_file_name}.snappy.parquet",
