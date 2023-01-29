@@ -96,11 +96,11 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   table_type = "EXTERNAL_TABLE"
 
   partition_keys {
-    name = "region"
+    name = "account_id"
     type = "string"
   }
   partition_keys {
-    name = "account_id"
+    name = "region"
     type = "string"
   }
   partition_keys {
