@@ -96,11 +96,11 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   table_type = "EXTERNAL_TABLE"
 
   partition_keys {
-    name = "account_id"
+    name = "region"
     type = "string"
   }
   partition_keys {
-    name = "region"
+    name = "account_id"
     type = "string"
   }
   partition_keys {
@@ -425,4 +425,56 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
     aws_iam_policy.kubecost_s3_exporter_service_account_policy.arn,
   ]
   name = "kubecost_s3_exporter_service_account_role"
+}
+
+resource "helm_release" "kubecost_s3_exporter_helm_release" {
+  name             = "kubecost-s3-exporter"
+  chart            = "../../helm/kubecost_s3_exporter"
+  namespace        = local.k8s_namespace
+  create_namespace = local.k8s_create_namespace
+  values = [yamlencode(
+    {
+      "namespace" : local.k8s_namespace
+      "image" : local.image
+      "imagePullPolicy" : local.image_pull_policy
+      "cronJob" : {
+        "name" : "kubecost-s3-exporter",
+        "schedule" : local.schedule
+      }
+      "serviceAccount" : {
+        "create" : true,
+        "name" : local.k8s_service_account
+        "role" : aws_iam_role.kubecost_s3_exporter_service_account_role.arn
+      }
+      "env" : [
+        {
+          "name" : "S3_BUCKET_NAME",
+          "value" : "${element(split(":::", local.bucket_arn), 1)}"
+        },
+        {
+          "name" : "KUBECOST_API_ENDPOINT",
+          "value" : local.kubecost_api_endpoint
+        },
+        {
+          "name" : "CLUSTER_ARN",
+          "value" : local.cluster_arn
+        },
+        {
+          "name" : "GRANULARITY",
+          "value" : local.granularity
+        },
+        {
+          "name" : "LABELS",
+          "value" : join(", ", local.k8s_labels)
+        },
+        {
+          "name" : "PYTHONUNBUFFERED",
+          "value" : "1"
+        }
+      ]
+    }
+  )]
+  depends_on = [
+    aws_glue_catalog_table.kubecost_glue_table
+  ]
 }
