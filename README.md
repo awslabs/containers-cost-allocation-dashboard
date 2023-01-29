@@ -210,8 +210,15 @@ A dataset refresh schedule needs to be set, so that the data from Athena will be
 1. Login to QuickSight as a user that has "Owner" permissions to the dataset (you set it in the previous step)
 2. Navigate to "Datasets" and click on the `eks_insights` dataset
 3. Under "Refresh" tab, click "ADD NEW SCHEDULE"
-4. Make sure that "Full refresh" is selected
-5. Set the refresh schedule to be at least 2 hours after the K8s CronJob schedule (because 1 hour after the CronJob runs, the AWS Glue Crawler runs), and click "Save"
+4. Select "Incremental refresh", and click "CONFIGURE INCREMENTAL REFRESH"
+5. On "Date column", make sure that "window.start" is selected
+6. Set "Window size (number)" to "4", set "Window size (unit)" to "Days", and click "CONTINUE".<br />
+Notice that any value that is less than "4" in the "Window size (number)" will miss some data. 
+7. Select "Timezone" and "Start time".<br />
+Notice that these options set the refresh schedule.
+The refresh schedule should be at least 2 hours after the K8s CronJob schedule.
+This is because 1 hour after the CronJob runs, the AWS Glue Crawler runs.
+8. Set the "Frequency" to "Daily" and click "SAVE"
 
 ### Share the Dashboard with Users
 
