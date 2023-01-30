@@ -31,12 +31,20 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
 
 ## Requirements
 
+### High-level Requirements
+
  1. An EKS cluster, and an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
  2. Kubecost (free tier is enough) deployed in the EKS cluster
  3. An S3 bucket
  4. QuickSight Enterprise with CID deployed
  5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/))
  6. Terraform
+
+### S3 Bucket
+
+As a preliminary requirement, an S3 bucket must be created in account where you’ll deploy the QuickSight dashboard.
+If some of your EKS clusters are on accounts that are different from the S3 bucket account, an S3 bucket policy should be created, allowing the EKS clusters to upload files to the S3 bucket
+
 
 ## Deployment
 
