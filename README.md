@@ -8,7 +8,7 @@ This dashboard is meant to provide the users with breakdown of their EKS cluster
 
 The following is the solution's architecture:
 
-![Screenshot of the solution's architecture](.screenshots/kubecost_cid_architecture.png)
+![Screenshot of the solution's architecture](./screenshots/kubecost_cid_architecture.png)
 
 The solution deploys the following resources:
 
@@ -185,24 +185,24 @@ To set the Athena Query Results Location, follow both steps below.
 #### Step 1: Set Query Results Location in the Athena Query Editor
 
 Navigate to Athena Console -> Query Editor -> Settings:
-![Screenshot of Athena Query Editor Settings View](.screenshots/athena_query_editor_view_settings.png)
+![Screenshot of Athena Query Editor Settings View](./screenshots/athena_query_editor_view_settings.png)
 
 If the "Query result location" field is empty, click "Manage", set the Query result location, and save:
-![Screenshot of Athena Query Editor Settings Edit](.screenshots/athena_query_editor_manage_settings.png)
+![Screenshot of Athena Query Editor Settings Edit](./screenshots/athena_query_editor_manage_settings.png)
 
 #### Step 2: Set Query Results Location in the Athena Workgroup Settings
 
 Navigate to Athena Console -> Administration -> Workgroups:
-![Screenshot of Athena Workgroups Page](.screenshots/athena_workgroups_page.png)
+![Screenshot of Athena Workgroups Page](./screenshots/athena_workgroups_page.png)
 
 Click on the relevant Workgroup, and you'll see the Workgroup settings:
-![Screenshot of Athena Workgroups Settings View](.screenshots/athena_workgroup_settings_view.png)
+![Screenshot of Athena Workgroups Settings View](./screenshots/athena_workgroup_settings_view.png)
 
 If the "Query result location" field is empty, go back to the Workgroups page, and edit the Workgroup settings:
-![Screenshot of Athena Workgroups Page Edit Workgroup](.screenshots/athena_workgroups_page_edit_workgroup.png)
+![Screenshot of Athena Workgroups Page Edit Workgroup](./screenshots/athena_workgroups_page_edit_workgroup.png)
 
 In the settings page, set the Query results location, and save:
-![Screenshot of Athena Workgroup Settings Edit](.screenshots/athena_workgroup_settings_edit.png)
+![Screenshot of Athena Workgroup Settings Edit](./screenshots/athena_workgroup_settings_edit.png)
 
 ### Configure QuickSight Permissions
 
