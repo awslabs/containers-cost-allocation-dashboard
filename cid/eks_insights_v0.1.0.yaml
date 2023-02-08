@@ -4,7 +4,7 @@ dashboards:
   EKS INSIGHTS:
     name: EKS Insights
     templateId: eks_insights
-    sourceAccountId: '742719403826'
+    sourceAccountId: '829389350341'
     dashboardId: eks_insights
     dependsOn:
       datasets:
@@ -98,6 +98,8 @@ datasets:
               Type: DECIMAL
             - Name: properties.cluster
               Type: STRING
+            - Name: properties.eksclustername
+              Type: STRING
             - Name: properties.container
               Type: STRING
             - Name: properties.namespace
@@ -106,16 +108,34 @@ datasets:
               Type: STRING
             - Name: properties.node
               Type: STRING
+            - Name: properties.node_instance_type
+              Type: STRING
+            - Name: properties.node_availability_zone
+              Type: STRING
+            - Name: properties.node_capacity_type
+              Type: STRING
+            - Name: properties.node_architecture
+              Type: STRING
+            - Name: properties.node_os
+              Type: STRING
+            - Name: properties.node_nodegroup
+              Type: STRING
+            - Name: properties.node_nodegroup_image
+              Type: STRING
             - Name: properties.controller
               Type: STRING
             - Name: properties.controllerkind
               Type: STRING
             - Name: properties.providerid
               Type: STRING
+            - Name: account_id
+              Type: STRING
+            - Name: region
+              Type: STRING
             - Name: year
-              Type: INTEGER
+              Type: STRING
             - Name: month
-              Type: INTEGER
+              Type: STRING
       LogicalTableMap:
         06f7b96e-4cd6-4d7f-83a8-e8b9302da3f4:
           Alias: kubecost_table
@@ -170,13 +190,23 @@ datasets:
               - totalefficiency
               - rawallocationonly
               - properties.cluster
+              - properties.eksclustername
               - properties.container
               - properties.namespace
               - properties.pod
               - properties.node
+              - properties.node_instance_type
+              - properties.node_availability_zone
+              - properties.node_capacity_type
+              - properties.node_architecture
+              - properties.node_os
+              - properties.node_nodegroup
+              - properties.node_nodegroup_image
               - properties.controller
               - properties.controllerkind
               - properties.providerid
+              - account_id
+              - region
               - year
               - month
               - cpu_and_ram_cost
