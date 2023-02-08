@@ -40,10 +40,54 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
  5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/))
  6. Terraform
 
+Please continue reading the specific requirements sections “S3 Bucket”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
+
 ### S3 Bucket
 
-As a preliminary requirement, an S3 bucket must be created in account where you’ll deploy the QuickSight dashboard.
-If some of your EKS clusters are on accounts that are different from the S3 bucket account, an S3 bucket policy should be created, allowing the EKS clusters to upload files to the S3 bucket
+As a preliminary requirement, an S3 bucket must be created in account where you’ll deploy the QuickSight dashboard (see step 3 in the "High-level Requirements" section above).
+You may create an S3 Bucket Policy, and in this case, make sure to allow the principals being used by the data collection pod to execute the `PutOject` action. 
+
+### Configure Athena Query Results Location
+
+To set the Athena Query Results Location, follow both steps below.
+
+#### Step 1: Set Query Results Location in the Athena Query Editor
+
+Navigate to Athena Console -> Query Editor -> Settings:
+![Screenshot of Athena Query Editor Settings View](./screenshots/athena_query_editor_view_settings.png)
+
+If the "Query result location" field is empty, click "Manage", set the Query result location, and save:
+![Screenshot of Athena Query Editor Settings Edit](./screenshots/athena_query_editor_manage_settings.png)
+
+#### Step 2: Set Query Results Location in the Athena Workgroup Settings
+
+Navigate to Athena Console -> Administration -> Workgroups:
+![Screenshot of Athena Workgroups Page](./screenshots/athena_workgroups_page.png)
+
+Click on the relevant Workgroup, and you'll see the Workgroup settings:
+![Screenshot of Athena Workgroups Settings View](./screenshots/athena_workgroup_settings_view.png)
+
+If the "Query result location" field is empty, go back to the Workgroups page, and edit the Workgroup settings:
+![Screenshot of Athena Workgroups Page Edit Workgroup](./screenshots/athena_workgroups_page_edit_workgroup.png)
+
+In the settings page, set the Query results location, and save:
+![Screenshot of Athena Workgroup Settings Edit](./screenshots/athena_workgroup_settings_edit.png)
+
+### Configure QuickSight Permissions
+
+1. Navigate to “Manage QuickSight → Security & permissions”
+2. Under “Access granted to X services”, click “Manage”
+3. Under “S3 Bucket”, check the S3 bucket you create, and check the “Write permissions for Athena Workgroup” for this bucket
+
+Note - if at step 2 above, you get the following error:
+
+*Something went wrong*
+*For more information see Set IAM policy (https://docs.aws.amazon.com/console/quicksight/iam-qs-create-users)*
+
+1. Navigate to the IAM console
+2. Edit the QuickSight-managed S3 IAM Policy (usually named AWSQuickSightS3Policy
+3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket. Example:
+    `"arn:aws:s3:::kubecost-data*"`
 
 
 ## Deployment
@@ -115,7 +159,7 @@ It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and S
 
 #### Deploy the Dashboard from the CID YAML File
 
-From the `cid` folder, run `cid-cmd deploy --resources eks_insights_v0.1.0.yaml`.<br />
+From the `cid` folder, run `cid-cmd deploy --resources eks_insights_<version>.yaml`.<br />
 The output should be similar to the below:
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.3 Beta
@@ -182,51 +226,13 @@ After choosing, wait for the dataset to be created, and then the additional outp
        no
 
 Choose whether to share the dashboard with everyone in this account.<br />
-This selection will complete the deployment.
+This selection will complete the deployment.<br />
+
+Note:<br />
+Data won't be available in the dashboard at least until the first time the data collection pod runs and collector data.
+You must have data from at lest 72 hours ago in Kubecost for the data collection pod to collect data.
 
 ## Post-Deployment Steps
-
-### Configure Athena Query Results Location
-
-To set the Athena Query Results Location, follow both steps below.
-
-#### Step 1: Set Query Results Location in the Athena Query Editor
-
-Navigate to Athena Console -> Query Editor -> Settings:
-![Screenshot of Athena Query Editor Settings View](./screenshots/athena_query_editor_view_settings.png)
-
-If the "Query result location" field is empty, click "Manage", set the Query result location, and save:
-![Screenshot of Athena Query Editor Settings Edit](./screenshots/athena_query_editor_manage_settings.png)
-
-#### Step 2: Set Query Results Location in the Athena Workgroup Settings
-
-Navigate to Athena Console -> Administration -> Workgroups:
-![Screenshot of Athena Workgroups Page](./screenshots/athena_workgroups_page.png)
-
-Click on the relevant Workgroup, and you'll see the Workgroup settings:
-![Screenshot of Athena Workgroups Settings View](./screenshots/athena_workgroup_settings_view.png)
-
-If the "Query result location" field is empty, go back to the Workgroups page, and edit the Workgroup settings:
-![Screenshot of Athena Workgroups Page Edit Workgroup](./screenshots/athena_workgroups_page_edit_workgroup.png)
-
-In the settings page, set the Query results location, and save:
-![Screenshot of Athena Workgroup Settings Edit](./screenshots/athena_workgroup_settings_edit.png)
-
-### Configure QuickSight Permissions
-
-1. Navigate to “Manage QuickSight → Security & permissions”
-2. Under “Access granted to X services”, click “Manage”
-3. Under “S3 Bucket”, check the S3 bucket you create, and check the “Write permissions for Athena Workgroup” for this bucket
-
-Note - if at step 2 above, you get the following error:
-
-*Something went wrong*
-*For more information see Set IAM policy (https://docs.aws.amazon.com/console/quicksight/iam-qs-create-users)*
-
-1. Navigate to the IAM console
-2. Edit the QuickSight-managed S3 IAM Policy (usually named AWSQuickSightS3Policy
-3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket. Example:
-    `"arn:aws:s3:::kubecost-data*"`
 
 ### Share the Dataset with Users
 
@@ -236,6 +242,10 @@ Share the dataset with users that are authorized to make changes to it:
 2. On the left pane, navigate to "Manage assets", then choose "Datasets"
 3. From the list, choose the `eks_insights` dataset (ID `e88edf48-f2cd-4c23-b6a4-e2b3034e2c41`)
 4. Click "Share", select the desired permissions, start typing your user or group, select it and click "Share"
+5. Navigate back to “Datasets” on the main QuickSight menus on the left, click the eks_insights dataset, and verify that the refresh status shows as “Completed”.<br />
+Once it is - the dashboard is ready to be used, and you can navigate to “Dashboards”, click the EKS Insights dashboard, and start using the dashboard.
+
+Please continue to the next steps to set dataset refresh (mandatory), and optionally share the dashboard with users and create an Analysis from the dashboard
 
 ### Set Dataset Refresh Schedule
 
@@ -249,14 +259,14 @@ A dataset refresh schedule needs to be set, so that the data from Athena will be
 6. Set "Window size (number)" to "4", set "Window size (unit)" to "Days", and click "CONTINUE".<br />
 Notice that any value that is less than "4" in the "Window size (number)" will miss some data.
 7. Select "Timezone" and "Start time".<br />
-Notice that these options set the refresh schedule.
-The refresh schedule should be at least 2 hours after the K8s CronJob schedule.
-This is because 1 hour after the CronJob runs, the AWS Glue Crawler runs.
+Notice that these options set the refresh schedule.<br />
+The refresh schedule should be at least 2 hours after the K8s CronJob schedule.<br />
+This is because 1 hour after the CronJob runs, the AWS Glue Crawler runs.<br />
 8. Set the "Frequency" to "Daily" and click "SAVE"
 
 ### Share the Dashboard with Users
 
-To share the dashboard with users, for them to be able to view it and create Analysis from it, see the following link:
+To share the dashboard with users, for them to be able to view it and create Analysis from it, see the following link:<br />
 https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/postdeploymentsteps/share/
 
 ### Create an Analysis from the Dashboard
