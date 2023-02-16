@@ -130,7 +130,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
         if not r.json()["data"]:
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
-                         "Make sure that you have data at least within this timeframe")
+                         "Make sure that you have data at least within this timeframe.")
             sys.exit()
 
         return r.json()["data"]
@@ -155,12 +155,12 @@ def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, accumulate=Fa
     # Executing Kubecost Allocation API call (On-demand query)
     try:
         logger.info(f"Querying Kubecost Assets API for data between {start} and {end}")
-        params = {"window": window, "accumulate": accumulate}
+        params = {"window": window, "accumulate": accumulate, "filterCategories": "Compute", "filterTypes": "Node"}
         r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params)
         if not r.json()["data"]:
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
-                         "Make sure that you have data at least within this timeframe")
+                         "Make sure that you have data at least within this timeframe.")
             sys.exit()
 
         return r.json()["data"]
