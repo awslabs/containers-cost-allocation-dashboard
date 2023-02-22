@@ -3,8 +3,6 @@
 
 import os
 import sys
-import gzip
-import shutil
 import logging
 import requests
 import datetime
@@ -127,7 +125,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
                     f"in {granularity.lower()} granularity...")
         params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step}
         r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params)
-        if not r.json()["data"]:
+        if not list(filter(None, r.json()["data"])):
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
                          "Make sure that you have data at least within this timeframe.")
@@ -157,7 +155,7 @@ def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, accumulate=Fa
         logger.info(f"Querying Kubecost Assets API for data between {start} and {end}")
         params = {"window": window, "accumulate": accumulate, "filterCategories": "Compute", "filterTypes": "Node"}
         r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params)
-        if not r.json()["data"]:
+        if not list(filter(None, r.json()["data"])):
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
                          "Make sure that you have data at least within this timeframe.")
@@ -186,16 +184,15 @@ def kubecost_allocation_data_add_eks_cluster_name(allocation_data, cluster_arn):
     return allocation_data
 
 
-def kubecost_allocation_data_add_assets_data(allocation_data, assets_data, cluster_arn):
+def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
     """Adds assets data from the Kubecost Assets API to the Kubecost allocation data.
 
     :param allocation_data: the allocation "data" list from Kubecost Allocation API
     :param assets_data: the asset "data" list from the Kubecost Assets API query HTTP response
-    :param cluster_arn: the EKS cluster ARN
     :return: Kubecost allocation data with matching asset data
     """
 
-    cluster_account_id = cluster_arn.split(":")[4]
+    all_assets_ids = assets_data[0].keys()
 
     for time_set in allocation_data:
         for allocation in time_set.values():
@@ -204,12 +201,9 @@ def kubecost_allocation_data_add_assets_data(allocation_data, assets_data, clust
                         and "cluster" in allocation["properties"].keys() \
                         and "node" in allocation["properties"].keys():
 
-                    # Build assets ID from the allocation, to identify the asset in the Assets API response
-                    allocation_cluster = allocation["properties"]["cluster"]
-                    allocation_provider_id = allocation["properties"]["providerID"]
-                    allocation_node = allocation["properties"]["node"]
-                    asset_id = f'AWS/{cluster_account_id}/__undefined__/Compute/{allocation_cluster}/Node/Kubernetes/' \
-                               f'{allocation_provider_id}/{allocation_node}'
+                    # Identify the asset ID that matches the allocation's instance ID
+                    asset_id = [asset_id_key for asset_id_key in all_assets_ids if
+                                asset_id_key.split("/")[-2] == allocation["properties"]["providerID"]][0]
 
                     # Updating matching asset data from the Assets API, on the allocation properties
                     allocation["properties"]["node_instance_type"] = assets_data[0][asset_id]["nodeType"]
@@ -270,41 +264,6 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
 
     # Transforming the DataFrame to a CSV and creating the CSV file locally
     df.to_csv("output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\", columns=csv_columns)
-
-
-def upload_kubecost_allocation_csv_to_s3(s3_bucket_name, cluster_arn, date, month, year):
-    """Compresses and uploads the Kubecost Allocation CSV to an S3 bucket.
-
-    :param s3_bucket_name: the S3 bucket name to use
-    :param cluster_arn: the K8s cluster ARN to use for the S3 bucket prefix and CSV file name
-    :param date: the date to use in the CSV file name
-    :param month: the month to use as part of the S3 bucket prefix
-    :param year: the year to use as part of the S3 bucket prefix
-    :return:
-    """
-
-    cluster_name = cluster_arn.split("/")[-1]
-    cluster_account_id = cluster_arn.split(":")[4]
-    cluster_region_code = cluster_arn.split(":")[3]
-
-    # Compressing and uploading the CSV file to the S3 bucket
-    s3_file_name = "{}_{}".format(date, cluster_name)
-    os.rename('output.csv', "{}.csv".format(s3_file_name))
-    with open("{}.csv".format(s3_file_name), "rb") as f_in:
-        with gzip.open(f"{s3_file_name}.gz", "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)
-    try:
-        s3 = boto3.resource('s3')
-        s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
-
-        logger.info(f"Uploading file {s3_file_name}.gz to S3 bucket {s3_bucket_name}...")
-        s3.Bucket(s3_bucket_name).upload_file(f"./{s3_file_name}.gz", f"{s3_bucket_prefix}/{s3_file_name}.gz")
-    except boto3.exceptions.S3UploadFailedError as error:
-        logger.error(f"Unable to upload file {s3_file_name}.gz to S3 bucket {s3_bucket_name}: {error}")
-        sys.exit(1)
-    except botocore.exceptions.ClientError as error:
-        logger.error(error)
-        sys.exit(1)
 
 
 def kubecost_csv_allocation_data_to_parquet(csv_file_name):
@@ -379,7 +338,7 @@ def main():
 
     # Assing assets data from the Kubecost Assets API
     kubecost_allocation_data_with_assets_data = kubecost_allocation_data_add_assets_data(
-        kubecost_allocation_data_with_eks_cluster_name, kubecost_assets_data, CLUSTER_ARN)
+        kubecost_allocation_data_with_eks_cluster_name, kubecost_assets_data)
 
     # Transforming Kubecost's Allocation API data to a list of lists, and updating timestamps
     kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(
