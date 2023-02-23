@@ -336,7 +336,7 @@ def main():
     kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_eks_cluster_name(
         kubecost_allocation_data, CLUSTER_ARN)
 
-    # Assing assets data from the Kubecost Assets API
+    # Adding assets data from the Kubecost Assets API
     kubecost_allocation_data_with_assets_data = kubecost_allocation_data_add_assets_data(
         kubecost_allocation_data_with_eks_cluster_name, kubecost_assets_data)
 
