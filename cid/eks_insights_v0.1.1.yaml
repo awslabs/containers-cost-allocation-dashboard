@@ -128,12 +128,6 @@ datasets:
               Type: STRING
             - Name: properties.providerid
               Type: STRING
-            - Name: properties.labels.app
-              Type: STRING
-            - Name: properties.labels.chart
-              Type: STRING
-            - Name: properties.labels.component
-              Type: STRING
             - Name: account_id
               Type: STRING
             - Name: region
@@ -211,8 +205,6 @@ datasets:
               - properties.controller
               - properties.controllerkind
               - properties.providerid
-              - properties.labels.app
-              - properties.labels.chart
               - account_id
               - region
               - year
