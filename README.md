@@ -1,7 +1,7 @@
 
 # EKS Insights Dashboard
 
-This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards) to create the EKS Insights Dashboard.
+This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards) to create the EKS Insights Dashboard.<br />
 This dashboard is meant to provide the users with breakdown of their EKS clusters in-cluster costs, in a single-pane-of-glass with their other dashboards.
 
 ## Architecture
@@ -12,9 +12,10 @@ The following is the solution's architecture:
 
 The solution deploys the following resources:
 
-1. Data collection Pod (deployed using a CronJob controller) and Service Account in your EKS cluster
+1. Data collection Pod (deployed using a CronJob controller) and Service Account in your EKS cluster.<br />
+It's referred to as Kubecost S3 Exporter throughout the documentation.
 2. The following AWS resources:<br />
-IAM Role for Service Account<br />
+IAM Role for Service Account for each cluster<br />
 AWS Glue Database<br />
 AWS Glue Table<br />
 AWS Glue Crawler (along with its IAM Role and IAM Policy)
@@ -23,29 +24,79 @@ High-level logic:
 
 1. The CronJob runs daily and creates a Pod that collects cost allocation data from Kubecost. It runs the following API calls:<br />
 The [Allocation API on-demand query (experimental)](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
-The [Assets API](https://docs.kubecost.com/apis/apis/assets-api) to retrieve the assets data.<br />
+The [Assets API](https://docs.kubecost.com/apis/apis/assets-api) to retrieve the assets' data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
 2. Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
-3. The data is made available in Athena using AWS Glue. In addition, a AWS Glue Crawler runs daily, 1 hour after the CronJob started, to create or update partitions
+3. The data is made available in Athena using AWS Glue. In addition, an AWS Glue Crawler runs daily, 1 hour after the CronJob started, to create or update partitions
 4. QuickSight uses the Athena table as a data source to visualize the data
 
 ## Requirements
 
-### High-level Requirements
+1. An S3 bucket, which will be used to store the Kubecost data
+2. QuickSight Enterprise with CID deployed
+3. Terraform and Helm installed 
+4. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
 
- 1. An EKS cluster, and an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
- 2. Kubecost (free tier is enough) deployed in the EKS cluster
- 3. An S3 bucket
- 4. QuickSight Enterprise with CID deployed
- 5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/))
- 6. Terraform
+For each EKS cluster, have the following
 
-Please continue reading the specific requirements sections “S3 Bucket”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
+1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).<br />
+In case your EKS cluster is in a different account than your S3 bucket, you must create the IAM OIDC Provider in the account where the S3 bucket is.<br />
+This is mandatory for cross-account authentication.
+2. Kubecost (free tier is enough) deployed in the EKS cluster
 
-### S3 Bucket
+Please continue reading the specific sections “S3 Bucket Specific Notes”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
 
-As a preliminary requirement, an S3 bucket must be created in account where you’ll deploy the QuickSight dashboard (see step 3 in the "High-level Requirements" section above).
-You may create an S3 Bucket Policy, and in this case, make sure to allow the principals being used by the data collection pod to execute the `PutOject` action. 
+### S3 Bucket Specific Notes
+
+You may create an S3 Bucket Policy on the bucket that you create to store the Kubecost data.<br />
+In this case, below is a recommended bucket policy to use.<br />
+This bucket policy, along with the identity-based policies of all the identities in this solution, provides minimum access:
+
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:*",
+                "Resource": [
+                    "arn:aws:s3:::kubecost-data-collection-bucket",
+                    "arn:aws:s3:::kubecost-data-collection-bucket/*"
+                ],
+                "Condition": {
+                    "StringNotLike": {
+                        "aws:PrincipalArn": [
+                            "arn:aws:iam::333333333333:role/<your_management_role>",
+                            "arn:aws:iam::333333333333:role/kubecost_glue_crawler_role",
+                            "arn:aws:iam::333333333333:role/service-role/aws-quicksight-service-role-v0"
+                        ],
+                        "aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"
+                    }
+                }
+            }
+        ]
+    }
+
+This S3 bucket denies all principals from performing all S3 actions, except the principals in the `Condition` section.<br />
+The list of principals shown in the above bucket policy are as follows:
+
+* The `arn:aws:iam::333333333333:role/<your_management_role>` principal:<br />
+This principal is an example of an IAM Role you may use to manage the bucket.
+Add the IAM Roles that will allow you to perform administrative tasks on the bucket.
+* The `arn:aws:iam::333333333333:role/kubecost_glue_crawler_role` principal:<br />
+This principal is the IAM Role that will be attached to the Glue Crawler when it's created by Terraform.<br />
+You must add it to the bucket policy, so that the Glue Crawler will be able to crawl the bucket.
+* The `arn:aws:iam::333333333333:role/service-role/aws-quicksight-service-role-v0` principal:<br />
+This principal is the IAM Role that will is automatically created for QuickSight.<br />
+If you use a different role, please change it in the bucket policy.<br />
+You must add this role to the bucket policy, for proper functionality of the QuickSight dataset that is created as part of this solution.
+* The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true` condition:<br />
+This condition identifies all the EKS clusters on which the Kubecost S3 Exporter pod will be deployed.<br />
+When Terraform creates the IRSA (IAM Role for Service Account) for each cluster, for the Kubecost S3 Exporter service account, it tags them the above tag.<br />
+This tag is automatically being used in the IAM session when the Kubecost S3 Exporter pod authenticates.<br />
+The reason for using this tag is to easily allow all EKS clusters with the Kubecost S3 Exporter pod in the bucket policy, without reaching the bucket policy size limit.<br />
+The other alternative is to specify the federated principals that represent each cluster one-by-one.<br />
+With this approach, the maximum bucket policy size will be quickly reached, and that's why the tag is used.
 
 ### Configure Athena Query Results Location
 
@@ -86,9 +137,7 @@ Note - if at step 2 above, you get the following error:
 
 1. Navigate to the IAM console
 2. Edit the QuickSight-managed S3 IAM Policy (usually named AWSQuickSightS3Policy
-3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket. Example:
-    `"arn:aws:s3:::kubecost-data*"`
-
+3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket
 
 ## Deployment
 
@@ -123,39 +172,55 @@ Push:
 
 ### Step 2: Deploy the AWS and K8s Resources
 
-#### Provide Terraform Inputs
-
-Edit `terraform/terraform_aws_helm_resources/locals.tf` and provide at least the required inputs.<br />
-The below table lists the required and optional inputs from the `locals.tf` file:
-
-| Input | Default | Description | Supported Values
-|--|--|--|--|
-| region (required) |  | The AWS region to deploy the resources (it doesn't have to be the same region as the EKS cluster | AWS Region code (for example, `us-east-1` |
-| eks_iam_oidc_provider_arn (required) |  | The EKS IAM OIDC Provider ARN.<br />Retrieve by navigating to IAM console -> Access management -> Identity providers -> click on the provider for the EKS cluster -> copy the value of "ARN" |  |
-| bucket_arn (required) |  | the ARN of the bucket to which the Parquet files will be written |  |
-| image (required) |  | The registry, repository and tag to pull (`<registry_url>/<repo>:<tag>`) |  |
-| cluster_arn (required) |  | Your EKS cluster ARN |  |
-| k8s_config_path | `~/.kube/config` | Full path of the K8s config file |  |
-| k8s_namespace | `kubecost-s3-exporter` | The namespace to use for the data collection pod |  |
-| k8s_service_account | `kubecost-s3-exporter` | The K8s service account name |  |
-| k8s_create_namespace | `true` | Specifies whether to create the namespace | `true`, `false` |
-| image_pull_policy | `Always` | Specifies the image pull policy | `Always`, `IfNotPresent`, `Never` |
-| schedule | `0 0 * * *` | Cron schedule (in UTC) | Any Cron schedule |
-| kubecost_api_endpoint | `http://kubecost-cost-analyzer.kubecost:9090` | The Kubecost API endpoint URL and port | `http://<host>:<port>` |
-| granularity | `hourly` | The granularity of the collected data | `hourly`, `daily` |
-| k8s_labels | `[]` | A list of labels (as strings) to include in the Parquet | For example: `["app", "chart"]` |
-
-Notes:
-
-1. The `region` specifies where to create the AWS resources for the data collection pod. It doesn't have to be the same as the region where the EKS cluster is
-2. Cron always runs in UTC, so the `schedule` input is in UTC. For example, if you specify `0 0 * * *` (daily at 00:00:00am), and you're in GMT +2, the CronJob will run daily at 02:00:00am and not daily at 00:00:00am
-
-#### Apply the Terraform Template
-
-From `terraform/terraform_aws_helm_resources`, run `terraform apply`.<br />
-It'll deploy both the AWS resources, and invoke Helm to deploy the CronJob and Service Account.
+This solution currently provides a Terraform module for deployment of both the AWS the K8s resources.<br />
+The Terraform module deploys the AWS resources, and invokes Helm to deploy the K8s resources.<br />
+Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.<br />
+For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.<br />
+Once you're done, continue to step 3 below.
 
 ### Step 3: Dashboard Deployment
+
+#### Adding Labels
+
+If as part of the Terraform deployment, you added labels in the `clusters_labels` input, those labels need to be added to the dashboard YAML .<br />
+If you didn't add labels in the `clusters_labels` input, you can skip this part.
+
+To easily get the list of distinct labels that were added, copy them from the Terraform outputs.<br />
+Below are example output labels that Terraform should show after apply:<br />
+
+    Outputs:
+    
+    labels = "app, chart, component"
+
+Please follow the below steps add those labels to the dashboard YAML:<br />
+
+Open the `cid/eks_insights_<version>.yaml`, and modify it as follows:<br />
+Look or the following lines:<br />
+
+            - Name: properties.providerid
+              Type: STRING
+            - Name: account_id
+              Type: STRING
+
+Between these lines, add the following line for each label:
+
+            - Name: properties.labels.<label_name>
+              Type: STRING
+
+For example, for the above output labels, the YAML should look like the below after adding the lines:
+
+            - Name: properties.providerid
+              Type: STRING
+            - Name: properties.labels.app
+              Type: STRING
+            - Name: properties.labels.chart
+              Type: STRING
+            - Name: properties.labels.component
+              Type: STRING
+            - Name: account_id
+              Type: STRING
+
+Save the file and continue to the next step.
 
 #### Deploy the Dashboard from the CID YAML File
 
@@ -203,7 +268,7 @@ After choosing, wait for dashboards discovery to be completed, and then the addi
     Detected views:
     
     ? [athena-database] Select AWS Athena database to use: (Use arrow keys)
-     » athenacurcfn_udid_cur1
+     » <cur_db>
        kubecost_db
        spectrumdb
 
@@ -278,6 +343,53 @@ Create an Analysis from the Dashboard, to edit it and create custom visuals:
 3. On the top right, click the "Save as" icon (refresh the dashboard if you don't see it), name the Analysis, then click "SAVE" - you'll be navigated to the Analysis
 4. You can edit the Analysis as you wish, and save it again as a dashboard, by clicking the "Share" icon on the top right, then click "Publish dashboard"
 
+## Maintenance
+
+After the solution is initially deployed, you might want to make changes.<br />
+Below are instruction for some common changes that you might do after the initial deployment.
+
+### Deploying on Additional Clusters
+
+To add additional clusters to the dashboard, you need to add them to the Terraform module and apply it.<br />
+Please follow the "Maintenance -> Deploying on Additional Clusters" part under `terraform/kubecost_cid_terraform_module/README.md`.<br />
+Wait for the next schedule of the Kubecost S3 Exporter and QuickSight refresh, so that it'll collect the new data.<br />
+
+Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
+Then, manually run the Glue Crawler and manually refresh the QuickSight dataset.
+
+### Adding/Removing Labels to/from the Dataset
+
+After the initial deployment, you might want to add or remove labels for some or all clusters, to/from the dataset.<br />
+To do this, perform the following:
+
+1. Add/remove the labels to/from the Terraform module and apply it.<br />
+Please follow the "Maintenance -> Adding/Removing Labels to/from the Dataset" part under `terraform/kubecost_cid_terraform_module/README.md`.
+2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels.<br />
+Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
+3. Login to QuickSight, navigate to "Datasets", click on the `eks_insights` dataset, click "EDIT DATASET", and click "SAVE & PUBLISH".<br/>
+Wait the full refresh is done, and the new set of labels should be present in the analysis.<br />
+For it to be available in the dashboard, export the analysis to a dashboard.
+
+### Running the Kubecost S3 Exporter Pod On-Demand
+
+In some cases, you'd like to run the Kubecost S3 Exporter pod on-demand.<br />
+For example, you may want to test it, or you may have added some data and would like to see it immediately.<br />
+To run the Kubecost S3 Exporter pod on-demand, run the following command (replace `<namespace>` with your namespace and `<context>` with your cluster ARN:
+
+    kubectl create job --from=cronjob/kubecost-s3-exporter kubecost-s3-exporter1 -n <namespace> --context <context>
+
+You can see the status by running `kubectl get all -n <namespace> --context <context>`
+
+### Getting Logs from the Kubecost S3 Exporter Pod
+
+To see the logs of the Kubecost S3 Exporter pod, you need to first get the list of pods by running the following command:
+
+    kubectl get all -n <namespace> --context <context>
+
+Then, run the following command to get the logs:
+
+    kubectl logs <pod> -c kubecost-s3-exporter -n <namespace> --context <context>
+
 ## Cleanup
 
 ### QuickSight Cleanup
@@ -288,8 +400,7 @@ Create an Analysis from the Dashboard, to edit it and create custom visuals:
 
 ### AWS and K8s Resources Cleanup
 
-1. From `terraform/terraform_aws_helm_resources`, run `terraform destroy`.<br />
-It'll remove both the AWS resources, and invoke Helm to remove the CronJob and Service Account.
+1. Follow the "Complete Cleanup" section in the Terraform README.md, located in the `terraform/kubecost_cid_terraform_module/README.md` directory
 2. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
 3. Empty and delete the S3 bucket you created
 4. Run `kubectl delete ns <namespace>` to remove the K8s namespace
