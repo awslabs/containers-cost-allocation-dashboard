@@ -246,6 +246,17 @@ Optionally, change module-specific optional inputs.
 Create such a module instance for each cluster on which you wish to deploy the Kubecost S3 Exporter pod.<br />
 Make sure that each module instance has a unique name (`module "<unique_name>"`).
 
+**_Important Note:_**<br />
+The inline policy created for the IRSA includes some wildcards.<br />
+The reason for using these wildcards is to specify:
+* All months (part of the S3 bucket prefix)
+* All years (part of the S3 bucket prefix)
+* All dates in the Parquet file name that is being uploaded to the bucket
+
+Even with these wildcards, the policy restricts access only to a very specific prefix of the bucket.<br />
+This is done specifying the account ID, region and EKS cluster name as part of the resource in the inline policy.<br />
+This is possible because the prefix we use in the S3 bucket includes the account and region for each cluster, and the Parquet file name includes the EKS cluster name.
+
 ### Step 3: Optionally, Add Outputs to the `outputs.tf` File
 
 The `deploy` directory has an `outputs.tf` file, used to show useful outputs after deployment.
