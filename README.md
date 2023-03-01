@@ -110,7 +110,8 @@ To set the Athena Query Results Location, follow both steps below.
 Navigate to Athena Console -> Query Editor -> Settings:
 ![Screenshot of Athena Query Editor Settings View](./screenshots/athena_query_editor_view_settings.png)
 
-If the "Query result location" field is empty, click "Manage", set the Query result location, and save:
+If the "Query result location" field is empty, click "Manage".<br />
+Then, set the Query result location, optionally (recommended) encrypt the query results, and save:
 ![Screenshot of Athena Query Editor Settings Edit](./screenshots/athena_query_editor_manage_settings.png)
 
 #### Step 2: Set Query Results Location in the Athena Workgroup Settings
@@ -124,7 +125,7 @@ Click on the relevant Workgroup, and you'll see the Workgroup settings:
 If the "Query result location" field is empty, go back to the Workgroups page, and edit the Workgroup settings:
 ![Screenshot of Athena Workgroups Page Edit Workgroup](./screenshots/athena_workgroups_page_edit_workgroup.png)
 
-In the settings page, set the Query results location, and save:
+In the settings page, set the Query results location, optionally (recommended) encrypt the query results, and save:
 ![Screenshot of Athena Workgroup Settings Edit](./screenshots/athena_workgroup_settings_edit.png)
 
 ### Configure QuickSight Permissions
