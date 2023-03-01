@@ -72,6 +72,9 @@ This bucket policy, along with the identity-based policies of all the identities
                         ],
                         "aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"
                     }
+                },
+                "Bool": {
+                    "aws:SecureTransport": "false"
                 }
             }
         ]
