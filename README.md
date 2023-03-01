@@ -101,6 +101,15 @@ The reason for using this tag is to easily allow all EKS clusters with the Kubec
 The other alternative is to specify the federated principals that represent each cluster one-by-one.<br />
 With this approach, the maximum bucket policy size will be quickly reached, and that's why the tag is used.
 
+The resources used in this S3 bucket policy include:
+
+* The bucket name, to allow access to it
+* All objects in the bucket, using the `arn:aws:s3:::kubecost-data-collection-bucket/*` string.<br />
+The reason for using a wildcard here is that multiple principals (multiple EKS clusters) require access to different objects in the bucket.<br />
+Using specific objects for each principal will result in a longer bucket policy that'll eventually exceed the bucket policy size limit.<br />
+the identity policy (IRSA) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.<br >
+Considering this, the access to the S3 bucket is more specific than what's specified in the "Resources" part of this bucket policy.
+
 ### Configure Athena Query Results Location
 
 To set the Athena Query Results Location, follow both steps below.
