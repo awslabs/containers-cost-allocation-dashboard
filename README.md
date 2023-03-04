@@ -186,9 +186,43 @@ Push:
 ### Step 2: Deploy the AWS and K8s Resources
 
 This solution currently provides a Terraform module for deployment of both the AWS the K8s resources.<br />
-The Terraform module deploys the AWS resources, and invokes Helm to deploy the K8s resources.<br />
+There are 2 options to use it:
+* Deployment Option 1: Deploy both the AWS resources and the K8s resources using Terraform (K8s resources are deployed by invoking Helm)
+* Deployment Option 2: Deploy only the AWS resources using Terraform, and deploy the K8s resources using the `helm` command.<br />
+With this option, Terraform will create a cluster-specific `values.yaml` file (with a unique name) for each cluster, which you can use
+
+You can use a mix of these options.<br />
+One some clusters, you can choose to deploy the K8s resources by having Terraform invoke Helm (the first option).<br />
+One other clusters, you can choose to deploy the K8s resources yourself using the `helm` command (the second option).
+
+#### Deployment Option 1
+
+With this deployment option, Terraform deploys both the AWS resources and the K8s resources (by invoking Helm).
+
 Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.<br />
 For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.<br />
+Once you're done with Terraform, continue to step 3 below.
+
+#### Deployment Option 2
+
+With this deployment option, Terraform deploys only the AWS resources, and the K8s resources are deployed using the `helm` command.
+
+1. Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.<br />
+For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.<br />
+When reaching the "Create an Instance of the `kubecost_s3_exporter` Module and Provide Module-Specific Inputs", do the following:<br />
+Make sure that as part of the optional module-specific inputs, you use the `invoke_helm` input with value of `false`.
+
+2. After successfully executing `terraform apply` (the last step - step 4 - of the "Initial Deployment" section), Terraform will create the following:<br /> 
+Per cluster for which you used the `invoke_helm` input with value of `false`, a YAML file will be created containing the Helm values for this cluster.<br />
+The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.<br />
+The YAML files will be placed in the `helm/kubecost_s3_exporter/clusters_values` directory
+
+3. For each cluster, deploy the K8s resources by executing the below command (when you're still in the Terraform `deploy` directory):<br />
+
+
+    helm upgrade -i kubecost-s3-exporter ../../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
+
+
 Once you're done, continue to step 3 below.
 
 ### Step 3: Dashboard Deployment
@@ -414,6 +448,11 @@ Then, run the following command to get the logs:
 ### AWS and K8s Resources Cleanup
 
 1. Follow the "Complete Cleanup" section in the Terraform README.md, located in the `terraform/kubecost_cid_terraform_module/README.md` directory
-2. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
-3. Empty and delete the S3 bucket you created
-4. Run `kubectl delete ns <namespace>` to remove the K8s namespace
+2. If you used "Deployment Options 2" for some or all clusters, run the following `helm` command per cluster, to remove the K8s resources:
+
+
+    helm uninstall kubecost-s3-exporter -n <namespace> --kube-context <cluster_context>
+
+3. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
+4. Empty and delete the S3 bucket you created
+5. Run `kubectl delete ns <namespace> --context <cluster_context>` to remove the K8s namespace
