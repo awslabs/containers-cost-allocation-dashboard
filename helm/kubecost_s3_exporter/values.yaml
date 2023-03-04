@@ -1,6 +1,9 @@
 # Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
-replicaCount: 1
+# Default values for kubecost-s3-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
 namespace: "kubecost-s3-exporter"
 
 image: "<registry_url>/<repo>:<tag>"
