@@ -77,3 +77,9 @@ variable "create_service_account" {
   default = true
   description = "Dictates whether to create the service account as part of the Helm Chart deployment"
 }
+
+variable "invoke_helm" {
+  type = bool
+  default = true
+  description = "Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account)"
+}
