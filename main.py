@@ -15,12 +15,66 @@ from boto3 import exceptions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
-# Environment variables to identify the S3 bucket, Kubecost API endpoint, cluster ID and granularity
-S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
-KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost")
-CLUSTER_ARN = os.environ["CLUSTER_ARN"]
+# Environment variables to identify the S3 bucket, cluster ARN, Kubecost API endpoint, granularity and labels
+try:
+    S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
+except KeyError:
+    logger.error("The 'S3_BUCKET_NAME' input is a required, but it's missing")
+    sys.exit(1)
+
+try:
+    CLUSTER_ARN = os.environ["CLUSTER_ARN"]
+except KeyError:
+    logger.error("The 'CLUSTER_ARN' input is a required, but it's missing")
+    sys.exit(1)
+
+KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost:9090")
+if not KUBECOST_API_ENDPOINT.startswith(("http://", "https://")):
+    logger.error("The 'KUBECOST_API_ENDPOINT' input must start with 'http://' or 'https://'")
+    sys.exit(1)
+elif not KUBECOST_API_ENDPOINT.split("://")[1]:
+    logger.error("The 'KUBECOST_API_ENDPOINT' must be in the format of 'http://<name_or_p>:[port]'")
+    sys.exit(1)
+
 GRANULARITY = os.environ.get("GRANULARITY", "hourly")
 LABELS = os.environ.get("LABELS")
+
+
+def cluster_arn_input_validation(cluster_arn):
+    """This function is used to validate the EKS cluster ARN input (CLUSTER_ARN).
+
+    :param cluster_arn: The EKS cluster ARN input
+    :return:
+    """
+
+    if not cluster_arn.startswith("arn:") or len(cluster_arn.split(":")) != 6:
+        logger.error(f"The 'CLUSTER_ARN' input contains an invalid ARN: '{cluster_arn}'")
+        sys.exit(1)
+
+    arn_partition = cluster_arn.split(":")[1]
+    arn_service = cluster_arn.split(":")[2]
+    arn_region = cluster_arn.split(":")[3]
+    arn_account_id = cluster_arn.split(":")[4]
+    arn_resource_type = cluster_arn.split(":")[5].split("/")[0]
+
+    try:
+        assert arn_partition in ["aws", "aws-cn", "aws-us-gov"], f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an invalid partition.\n" \
+                                                                 f"It should be one of 'aws', 'aws-cn' or 'aws-us-gov', not '{arn_partition}'"
+        assert arn_service == "eks", f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an invalid service.\n" \
+                                     f"It should be 'eks' and not '{arn_service}'"
+        assert arn_region, f"The 'CLUSTER_ARN' input ('{cluster_arn}') is missing a region-code.\n" \
+                           "The ARN of an EKS cluster must include a region-code"
+        assert arn_account_id, f"The 'CLUSTER_ARN' input ('{cluster_arn}') is missing an account ID.\n" \
+                               "The ARN of an EKS cluster must include an account ID"
+        assert arn_account_id.isdigit(), f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an account ID which is not a number: {arn_account_id}.\n" \
+                                         "The AWS account ID must be a number"
+        assert len(arn_account_id) == 12, f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an account ID with invalid length.\n" \
+                                          f"The AWS account ID must be a 12-digit number, instead it's {len(arn_account_id)}-digit number: {arn_account_id}"
+        assert arn_resource_type == "cluster", f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an invalid resource type.\n"\
+                                               f"It should be 'cluster' and not '{arn_resource_type}'"
+    except AssertionError as assertion_error:
+        logger.error(assertion_error)
+        sys.exit(1)
 
 
 def define_csv_columns(labels):
@@ -111,7 +165,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
         "daily": "1d"
     }
 
-    # Calculate window and step
+    # Calculate window and step, and validating the granularity input
     window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
     try:
         step = granularity_map[granularity.lower()]
@@ -313,6 +367,9 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_arn, date, 
 
 
 def main():
+
+    # Input validation for the EKS cluster ARN input
+    cluster_arn_input_validation(CLUSTER_ARN)
 
     # Defining CSV columns
     columns = define_csv_columns(LABELS)
