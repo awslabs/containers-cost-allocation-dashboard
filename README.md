@@ -217,8 +217,9 @@ Per cluster for which you used the `invoke_helm` input with value of `false`, a 
 The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.<br />
 The YAML files will be placed in the `helm/kubecost_s3_exporter/clusters_values` directory
 
-3. For each cluster, deploy the K8s resources by executing the below command (when you're still in the Terraform `deploy` directory):
+3. For each cluster, deploy the K8s resources by executing Helm
 
+Executing Helm when you're still in the Terraform `deploy` directory
 
     helm upgrade -i kubecost-s3-exporter ../../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
 
