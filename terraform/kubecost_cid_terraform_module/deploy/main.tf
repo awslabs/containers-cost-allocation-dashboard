@@ -2,7 +2,7 @@
 
 # Module instance for the pipeline module, to create the AWS pipeline resources
 module "pipeline" {
-  source   = "../modules/pipeline"
+  source = "../modules/pipeline"
 
   aws_profile           = ""
   aws_region            = ""
@@ -11,7 +11,7 @@ module "pipeline" {
 
 # Module instances for the kubecost_s3_exporter module, to create IRSA and deploy the Kubecost S3 Exporter pod
 module "cluster1" {
-  source   = "../modules/kubecost_s3_exporter"
+  source = "../modules/kubecost_s3_exporter"
 
   aws_profile                          = ""
   aws_region                           = ""
