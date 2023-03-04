@@ -1,7 +1,7 @@
 # Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 module "common" {
-  source   = "../common"
+  source = "../common"
 }
 
 locals {
@@ -9,42 +9,42 @@ locals {
   helm_chart_location = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
-      "namespace": var.namespace
-      "image": var.kubecost_s3_exporter_container_image
+      "namespace" : var.namespace
+      "image" : var.kubecost_s3_exporter_container_image
       "imagePullPolicy" : var.kubecost_s3_exporter_container_image_pull_policy
-      "cronJob": {
-        "name": "kubecost-s3-exporter",
+      "cronJob" : {
+        "name" : "kubecost-s3-exporter",
         "schedule" : var.kubecost_s3_exporter_cronjob_schedule
       }
       "serviceAccount" : {
-        "name": var.service_account
-        "create": var.create_service_account
-        "role": aws_iam_role.kubecost_s3_exporter_service_account_role.arn
+        "name" : var.service_account
+        "create" : var.create_service_account
+        "role" : aws_iam_role.kubecost_s3_exporter_service_account_role.arn
       }
-      "env": [
+      "env" : [
         {
-          "name": "S3_BUCKET_NAME",
-          "value": element(split(":::", module.common.bucket_arn), 1)
+          "name" : "S3_BUCKET_NAME",
+          "value" : element(split(":::", module.common.bucket_arn), 1)
         },
         {
-          "name": "KUBECOST_API_ENDPOINT",
-          "value": var.kubecost_api_endpoint
+          "name" : "KUBECOST_API_ENDPOINT",
+          "value" : var.kubecost_api_endpoint
         },
         {
-          "name": "CLUSTER_ARN",
-          "value": var.cluster_arn
+          "name" : "CLUSTER_ARN",
+          "value" : var.cluster_arn
         },
         {
-          "name": "GRANULARITY",
-          "value": module.common.granularity
+          "name" : "GRANULARITY",
+          "value" : module.common.granularity
         },
         {
-          "name": "LABELS",
-          "value": try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_arn, var.cluster_arn)), "labels", [])), "")
+          "name" : "LABELS",
+          "value" : try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_arn, var.cluster_arn)), "labels", [])), "")
         },
         {
-          "name": "PYTHONUNBUFFERED",
-          "value": "1"
+          "name" : "PYTHONUNBUFFERED",
+          "value" : "1"
         }
       ]
     }
@@ -81,17 +81,17 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
   inline_policy {
     name = "kubecost_s3_exporter_irsa_${element(split("/", var.cluster_oidc_provider_arn), 3)}"
     policy = jsonencode(
-    {
-      Statement = [
-        {
-          Action   = "s3:PutObject"
-          Effect   = "Allow"
-          Resource = "${module.common.bucket_arn}/account_id=${element(split(":", var.cluster_arn), 4)}/region=${var.aws_region}/year=*/month=*/*_${element(split("/", var.cluster_arn), 1)}.snappy.parquet"
-        }
-      ]
-      Version = "2012-10-17"
-    }
-  )
+      {
+        Statement = [
+          {
+            Action   = "s3:PutObject"
+            Effect   = "Allow"
+            Resource = "${module.common.bucket_arn}/account_id=${element(split(":", var.cluster_arn), 4)}/region=${var.aws_region}/year=*/month=*/*_${element(split("/", var.cluster_arn), 1)}.snappy.parquet"
+          }
+        ]
+        Version = "2012-10-17"
+      }
+    )
   }
 
   tags = {
@@ -116,17 +116,17 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
   chart            = local.helm_chart_location
   namespace        = var.namespace
   create_namespace = var.create_namespace
-  values = [local.helm_values_yaml]
+  values           = [local.helm_values_yaml]
 }
 
 resource "local_file" "kubecost_s3_exporter_helm_values_yaml" {
 
   count = var.invoke_helm ? 0 : 1
 
-  filename = "${local.helm_chart_location}/clusters_values/${element(split(":", var.cluster_arn), 4)}_${var.aws_region}_${element(split("/", var.cluster_arn), 1)}_values.yaml"
+  filename             = "${local.helm_chart_location}/clusters_values/${element(split(":", var.cluster_arn), 4)}_${var.aws_region}_${element(split("/", var.cluster_arn), 1)}_values.yaml"
   directory_permission = "0400"
-  file_permission = "0400"
-  content = <<-EOT
+  file_permission      = "0400"
+  content              = <<-EOT
 # Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 ${local.helm_values_yaml}
