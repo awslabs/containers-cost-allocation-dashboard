@@ -454,11 +454,13 @@ Then, run the following command to get the logs:
 1. Follow the "Complete Cleanup" section in the Terraform README.md, located in the `terraform/kubecost_cid_terraform_module/README.md` directory
 2. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
 3. Empty and delete the S3 bucket you created
-4. Clean K8s resources using Helm, for clusters on which the K8s resources were deployed using "Deployment Option 2".<br />
-Run the following `helm` command per cluster, to remove the K8s resources:
 
+### Helm K8s Resources Cleanup
+
+For clusters on which the K8s resources were deployed using "Deployment Option 2", run the following Helm command per cluster:
 
     helm uninstall kubecost-s3-exporter -n <namespace> --kube-context <cluster_context>
 
+### Remove Namespaces
 
-5. Run `kubectl delete ns <namespace> --context <cluster_context>` per cluster, to remove the K8s namespace
+For each cluster, remove the namespace by running `kubectl delete ns <namespace> --context <cluster_context>` per cluster.
