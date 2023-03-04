@@ -220,9 +220,7 @@ The YAML files will be placed in the `helm/kubecost_s3_exporter/clusters_values`
 3. For each cluster, deploy the K8s resources by executing the below command (when you're still in the Terraform `deploy` directory):
 
 
-
     helm upgrade -i kubecost-s3-exporter ../../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
-
 
 
 Once you're done, continue to step 3 below.
