@@ -1,13 +1,13 @@
 # Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 module "common" {
-  source   = "../common"
+  source = "../common"
 }
 
 locals {
   # A set of locals used to gather all labels from all K8s clusters, and create a distinct list of labels
   # This is used to define those labels as columns in the AWS Glue Table
-  distinct_labels = distinct(flatten(module.common.clusters_labels.*.labels))
+  distinct_labels   = distinct(flatten(module.common.clusters_labels.*.labels))
   labels_for_output = join(", ", local.distinct_labels)
 }
 
