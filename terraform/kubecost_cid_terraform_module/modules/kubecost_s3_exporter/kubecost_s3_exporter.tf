@@ -6,7 +6,7 @@ module "common" {
 
 locals {
 
-  helm_chart_location = "../../../../helm/kubecost_s3_exporter"
+  helm_chart_location = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
       "namespace": var.namespace
