@@ -198,22 +198,23 @@ Provide the module-specific required inputs, as listed in the above table. Examp
 
 The below table lists the required and optional inputs for the `kubecost_s3_exporter` module:
 
-| Name                                                                                                                         | Description                                                                             | Type     | Default                                         | Required |
-|------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|----------|-------------------------------------------------|:--------:|
-| <a name="input_cluster_arn"></a> cluster\_arn                                                                                | The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed              | `string` | n/a                                             |   yes    |
-| <a name="input_cluster_context"></a> cluster\_context                                                                        | The EKS cluster context name from the kubeconfig file                                   | `string` | n/a                                             |   yes    |
-| <a name="input_cluster_oidc_provider_arn"></a> cluster\_oidc\_provider\_arn                                                  | The IAM OIDC Provider ARN for the EKS cluster                                           | `string` | n/a                                             |   yes    |
-| <a name="input_aws_region"></a> aws\_region                                                                                  | The region where the EKS cluster resides                                                | `string` | n/a                                             |   yes    |
-| <a name="input_aws_profile"></a> aws\_profile                                                                                | The AWS profile to use for configuration and credentials to access the EKS cluster      | `string` | n/a                                             |   yes    |
-| <a name="input_kubecost_s3_exporter_container_image"></a> kubecost\_s3\_exporter\_container\_image                           | The Kubecost S3 Exporter container image                                                | `string` | n/a                                             |   yes    |
-| <a name="input_kubecost_s3_exporter_container_image_pull_policy"></a> kubecost\_s3\_exporter\_container\_image\_pull\_policy | The image pull policy that'll be used by the Kubecost S3 Exporter pod                   | `string` | `"Always"`                                      |    no    |
-| <a name="input_kubecost_s3_exporter_cronjob_schedule"></a> kubecost\_s3\_exporter\_cronjob\_schedule                         | The schedule of the Kubecost S3 Exporter CronJob                                        | `string` | `"0 0 * * *"`                                   |    no    |
-| <a name="input_kubecost_api_endpoint"></a> kubecost\_api\_endpoint                                                           | The Kubecost API endpoint in format of 'http://<name\_or\_ip>:<port>'                   | `string` | `"http://kubecost-cost-analyzer.kubecost:9090"` |    no    |
-| <a name="input_k8s_config_path"></a> k8s\_config\_path                                                                       | The K8s config file to be used by Helm                                                  | `string` | `"~/.kube/config"`                              |    no    |
-| <a name="input_namespace"></a> namespace                                                                                     | The namespace in which the Kubecost S3 Exporter pod and service account will be created | `string` | `"kubecost-s3-exporter"`                        |    no    |
-| <a name="input_create_namespace"></a> create\_namespace                                                                      | Dictates whether to create the namespace as part of the Helm Chart deployment           | `bool`   | `true`                                          |    no    |
-| <a name="input_service_account"></a> service\_account                                                                        | The service account for the Kubecost S3 Exporter pod                                    | `string` | `"kubecost-s3-exporter"`                        |    no    |
-| <a name="input_create_service_account"></a> create\_service\_account                                                         | Dictates whether to create the service account as part of the Helm Chart deployment     | `bool`   | `true`                                          |    no    |
+| Name                                                                                                                         | Description                                                                                                            | Type     | Default                                         | Required |
+|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|----------|-------------------------------------------------|:--------:|
+| <a name="input_cluster_arn"></a> cluster\_arn                                                                                | The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed                                             | `string` | n/a                                             |   yes    |
+| <a name="input_cluster_context"></a> cluster\_context                                                                        | The EKS cluster context name from the kubeconfig file                                                                  | `string` | n/a                                             |   yes    |
+| <a name="input_cluster_oidc_provider_arn"></a> cluster\_oidc\_provider\_arn                                                  | The IAM OIDC Provider ARN for the EKS cluster                                                                          | `string` | n/a                                             |   yes    |
+| <a name="input_aws_region"></a> aws\_region                                                                                  | The region where the EKS cluster resides                                                                               | `string` | n/a                                             |   yes    |
+| <a name="input_aws_profile"></a> aws\_profile                                                                                | The AWS profile to use for configuration and credentials to access the EKS cluster                                     | `string` | n/a                                             |   yes    |
+| <a name="input_kubecost_s3_exporter_container_image"></a> kubecost\_s3\_exporter\_container\_image                           | The Kubecost S3 Exporter container image                                                                               | `string` | n/a                                             |   yes    |
+| <a name="input_kubecost_s3_exporter_container_image_pull_policy"></a> kubecost\_s3\_exporter\_container\_image\_pull\_policy | The image pull policy that'll be used by the Kubecost S3 Exporter pod                                                  | `string` | `"Always"`                                      |    no    |
+| <a name="input_kubecost_s3_exporter_cronjob_schedule"></a> kubecost\_s3\_exporter\_cronjob\_schedule                         | The schedule of the Kubecost S3 Exporter CronJob                                                                       | `string` | `"0 0 * * *"`                                   |    no    |
+| <a name="input_kubecost_api_endpoint"></a> kubecost\_api\_endpoint                                                           | The Kubecost API endpoint in format of 'http://<name\_or\_ip>:<port>'                                                  | `string` | `"http://kubecost-cost-analyzer.kubecost:9090"` |    no    |
+| <a name="input_k8s_config_path"></a> k8s\_config\_path                                                                       | The K8s config file to be used by Helm                                                                                 | `string` | `"~/.kube/config"`                              |    no    |
+| <a name="input_namespace"></a> namespace                                                                                     | The namespace in which the Kubecost S3 Exporter pod and service account will be created                                | `string` | `"kubecost-s3-exporter"`                        |    no    |
+| <a name="input_create_namespace"></a> create\_namespace                                                                      | Dictates whether to create the namespace as part of the Helm Chart deployment                                          | `bool`   | `true`                                          |    no    |
+| <a name="input_service_account"></a> service\_account                                                                        | The service account for the Kubecost S3 Exporter pod                                                                   | `string` | `"kubecost-s3-exporter"`                        |    no    |
+| <a name="input_create_service_account"></a> create\_service\_account                                                         | Dictates whether to create the service account as part of the Helm Chart deployment                                    | `bool`   | `true`                                          |    no    |
+| <a name="input_invoke_helm"></a> invoke\_helm                                                                                | Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account) | `bool`   | `true`                                          |    no    |
 
 In the `main.tf` file in the `deploy` directory, you'll find a pre-created `kubecost-s3-exporter` module instance:
 
@@ -228,7 +229,7 @@ In the `main.tf` file in the `deploy` directory, you'll find a pre-created `kube
       kubecost_s3_exporter_container_image = ""
 
 Change the name of the module instance from "cluster1" to a name that uniquely represents your cluster.<br /> 
-Then, provide the module-specific required inputs, as listed in the above table. Example:
+Then, provide the module-specific required inputs, as listed in the above table. Example (more examples can be found in the `examples/deploy/main.tf` file):
 
     module "cluster1" {
       source   = "../modules/kubecost_s3_exporter"
@@ -259,7 +260,8 @@ This is possible because the prefix we use in the S3 bucket includes the account
 
 ### Step 3: Optionally, Add Outputs to the `outputs.tf` File
 
-The `deploy` directory has an `outputs.tf` file, used to show useful outputs after deployment.
+The `deploy` directory has an `outputs.tf` file, used to show useful outputs after deployment.<br />
+Below are explanations on how to use it.
 
 #### The `labels` Output
 
@@ -291,6 +293,7 @@ The `main.tf` file already has a sample output to get you started:
 
 Change the output name from `cluster1_irsa_iam_role_arn` to a name that uniquely represents your cluster.<br />
 Then, change the value to reference to the module instance of your cluster (`module.<module_instance_name>.irsa_iam_role_arn`).
+More examples cab be found in the `examples/deploy/outputs.tf` file.
 
 It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Role ARN.<br />
 Make sure you use a unique cluster name in the output name.
