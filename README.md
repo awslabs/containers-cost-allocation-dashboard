@@ -223,6 +223,9 @@ Executing Helm when you're still in the Terraform `deploy` directory
 
     helm upgrade -i kubecost-s3-exporter ../../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
 
+Executing Helm when from the `helm` directory
+
+    helm upgrade -i kubecost-s3-exporter kubecost_s3_exporter/ -n <namespace> --values kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
 
 Once you're done, continue to step 3 below.
 
@@ -449,11 +452,13 @@ Then, run the following command to get the logs:
 ### AWS and K8s Resources Cleanup
 
 1. Follow the "Complete Cleanup" section in the Terraform README.md, located in the `terraform/kubecost_cid_terraform_module/README.md` directory
-2. If you used "Deployment Options 2" for some or all clusters, run the following `helm` command per cluster, to remove the K8s resources:
+2. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
+3. Empty and delete the S3 bucket you created
+4. Clean K8s resources using Helm, for clusters on which the K8s resources were deployed using "Deployment Option 2".<br />
+Run the following `helm` command per cluster, to remove the K8s resources:
 
 
     helm uninstall kubecost-s3-exporter -n <namespace> --kube-context <cluster_context>
 
-3. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
-4. Empty and delete the S3 bucket you created
-5. Run `kubectl delete ns <namespace> --context <cluster_context>` to remove the K8s namespace
+
+5. Run `kubectl delete ns <namespace> --context <cluster_context>` per cluster, to remove the K8s namespace
