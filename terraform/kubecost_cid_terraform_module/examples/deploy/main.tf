@@ -72,6 +72,7 @@ module "cluster2-us-east-2-111111111111" {
   aws_region = "us-east-2"
   aws_profile = "profile1"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
+  invoke_helm = false
 }
 
 #                                  #
@@ -116,6 +117,7 @@ module "cluster1-us-east-2-222222222222" {
   aws_profile = "profile2"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_api_endpoint = "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
+  invoke_helm = false
 }
 
 module "cluster2-us-east-2-222222222222" {
