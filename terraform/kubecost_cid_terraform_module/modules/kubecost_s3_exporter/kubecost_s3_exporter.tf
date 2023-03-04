@@ -106,7 +106,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
 # Else, the second resource ("local_file") is created
 # This will NOT invoke Helm to deploy the K8s resources (data collection pod and service account) in the cluster
 # Instead, it'll create a local values.yaml file in the Helm chart's directory, to be used by the user to deploy the K8s using the "helm" command
-# The local file name will be "<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml, so it'll be unique"
+# The local file name will be "<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml", so it'll be unique
 
 resource "helm_release" "kubecost_s3_exporter_helm_release" {
 
