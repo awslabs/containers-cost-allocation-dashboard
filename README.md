@@ -215,7 +215,7 @@ Make sure that as part of the optional module-specific inputs, you use the `invo
 2. After successfully executing `terraform apply` (the last step - step 4 - of the "Initial Deployment" section), Terraform will create the following:<br /> 
 Per cluster for which you used the `invoke_helm` input with value of `false`, a YAML file will be created containing the Helm values for this cluster.<br />
 The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.<br />
-The YAML files will be placed in the `helm/kubecost_s3_exporter/clusters_values` directory
+The YAML files will be created in the `helm/kubecost_s3_exporter/clusters_values` directory.
 
 3. For each cluster, deploy the K8s resources by executing Helm
 
