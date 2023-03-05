@@ -6,6 +6,8 @@ module "common" {
 
 locals {
 
+  cluster_account_id = element(split(":", var.cluster_arn), 4)
+  cluster_name = element(split("/", var.cluster_arn), 1)
   helm_chart_location = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
@@ -86,7 +88,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${module.common.bucket_arn}/account_id=${element(split(":", var.cluster_arn), 4)}/region=${var.aws_region}/year=*/month=*/*_${element(split("/", var.cluster_arn), 1)}.snappy.parquet"
+            Resource = "${module.common.bucket_arn}/account_id=${local.cluster_account_id}/region=${var.aws_region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -123,7 +125,7 @@ resource "local_file" "kubecost_s3_exporter_helm_values_yaml" {
 
   count = var.invoke_helm ? 0 : 1
 
-  filename             = "${local.helm_chart_location}/clusters_values/${element(split(":", var.cluster_arn), 4)}_${var.aws_region}_${element(split("/", var.cluster_arn), 1)}_values.yaml"
+  filename             = "${local.helm_chart_location}/clusters_values/${local.cluster_account_id}_${var.aws_region}_${local.cluster_name}_values.yaml"
   directory_permission = "0400"
   file_permission      = "0400"
   content              = <<-EOT
