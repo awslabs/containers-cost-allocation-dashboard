@@ -16,26 +16,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 # Environment variables to identify the S3 bucket, cluster ARN, Kubecost API endpoint, granularity and labels
+
+# Mandatory environment variables, and input validations to make sure they're not empty
 try:
     S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 except KeyError:
     logger.error("The 'S3_BUCKET_NAME' input is a required, but it's missing")
     sys.exit(1)
-
 try:
     CLUSTER_ARN = os.environ["CLUSTER_ARN"]
 except KeyError:
     logger.error("The 'CLUSTER_ARN' input is a required, but it's missing")
     sys.exit(1)
 
+# Optional environment variables
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost:9090")
-if not KUBECOST_API_ENDPOINT.startswith(("http://", "https://")):
-    logger.error("The 'KUBECOST_API_ENDPOINT' input must start with 'http://' or 'https://'")
-    sys.exit(1)
-elif not KUBECOST_API_ENDPOINT.split("://")[1]:
-    logger.error("The 'KUBECOST_API_ENDPOINT' must be in the format of 'http://<name_or_p>:[port]'")
-    sys.exit(1)
-
 GRANULARITY = os.environ.get("GRANULARITY", "hourly")
 LABELS = os.environ.get("LABELS")
 
@@ -74,6 +69,21 @@ def cluster_arn_input_validation(cluster_arn):
                                                f"It should be 'cluster' and not '{arn_resource_type}'"
     except AssertionError as assertion_error:
         logger.error(assertion_error)
+        sys.exit(1)
+
+
+def kubecost_api_endpoint_input_validation(kubecost_api_endpoint):
+    """This function is used to validate the Kubecost API endpoint input (KUBECOST_API_ENDPOINT).
+
+    :param kubecost_api_endpoint: The Kubecost API endpoint input
+    :return:
+    """
+
+    if not kubecost_api_endpoint.startswith(("http://", "https://")):
+        logger.error("The 'KUBECOST_API_ENDPOINT' input must start with 'http://' or 'https://'")
+        sys.exit(1)
+    elif not kubecost_api_endpoint.split("://")[1]:
+        logger.error("The 'KUBECOST_API_ENDPOINT' must be in the format of 'http://<name_or_ip>:[port]'")
         sys.exit(1)
 
 
@@ -368,8 +378,9 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_arn, date, 
 
 def main():
 
-    # Input validation for the EKS cluster ARN input
+    # Input validation for the EKS cluster ARN and Kubecost API endpoint inputs
     cluster_arn_input_validation(CLUSTER_ARN)
+    kubecost_api_endpoint_input_validation(KUBECOST_API_ENDPOINT)
 
     # Defining CSV columns
     columns = define_csv_columns(LABELS)
