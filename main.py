@@ -42,7 +42,12 @@ def cluster_arn_input_validation(cluster_arn):
     :return:
     """
 
-    if not cluster_arn.startswith("arn:") or len(cluster_arn.split(":")) != 6:
+    # Use-cases for the below input validation:
+    # The "CLUSTER_ARN" input has some unstructured string (CLUSTER_ARN=test)
+    # The "CLUSTER_ARN" input has less than 6 fields (CLUSTER_ARN=arn:aws:eks)
+    # The "CLUSTER_ARN" input has less than 6 fields, but is missing the "/" before the resource ID
+    # CLUSTER_ARN=arn:aws:eks:us-east-1:111111111111:cluster
+    if len(cluster_arn.split(":")) != 6 or len(cluster_arn.split("/")) != 2:
         logger.error(f"The 'CLUSTER_ARN' input contains an invalid ARN: '{cluster_arn}'")
         sys.exit(1)
 
@@ -51,22 +56,33 @@ def cluster_arn_input_validation(cluster_arn):
     arn_region = cluster_arn.split(":")[3]
     arn_account_id = cluster_arn.split(":")[4]
     arn_resource_type = cluster_arn.split(":")[5].split("/")[0]
+    arn_resource_id = cluster_arn.split("/")[1]
 
     try:
+        # Example of an invalid input for the below validation: arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
         assert arn_partition in ["aws", "aws-cn", "aws-us-gov"], f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an invalid partition.\n" \
                                                                  f"It should be one of 'aws', 'aws-cn' or 'aws-us-gov', not '{arn_partition}'"
+        # Example of an invalid input for the below validation: arn:aws:s3:us-east-1:111111111111:cluster/cluster1
         assert arn_service == "eks", f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an invalid service.\n" \
                                      f"It should be 'eks' and not '{arn_service}'"
+        # Example of an invalid input for the below validation: arn:aws:eks::111111111111:cluster/cluster1
         assert arn_region, f"The 'CLUSTER_ARN' input ('{cluster_arn}') is missing a region-code.\n" \
                            "The ARN of an EKS cluster must include a region-code"
+        # Example of an invalid input for the below validation: arn:aws:eks:us-east-1::cluster/cluster1
         assert arn_account_id, f"The 'CLUSTER_ARN' input ('{cluster_arn}') is missing an account ID.\n" \
                                "The ARN of an EKS cluster must include an account ID"
+        # Example of an invalid input for the below validation: arn:aws:s3:us-east-1:aaa:cluster/cluster1
         assert arn_account_id.isdigit(), f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an account ID which is not a number: {arn_account_id}.\n" \
                                          "The AWS account ID must be a number"
+        # Example of an invalid input for the below validation: arn:aws:s3:us-east-1:11111111111:cluster/cluster1
         assert len(arn_account_id) == 12, f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an account ID with invalid length.\n" \
                                           f"The AWS account ID must be a 12-digit number, instead it's {len(arn_account_id)}-digit number: {arn_account_id}"
+        # Example of an invalid input for the below validation: arn:aws:s3:us-east-1:111111111111:bucket/cluster1
         assert arn_resource_type == "cluster", f"The 'CLUSTER_ARN' input ('{cluster_arn}') includes an invalid resource type.\n"\
                                                f"It should be 'cluster' and not '{arn_resource_type}'"
+        # Example of an invalid input for the below validation: arn:aws:s3:us-east-1:111111111111:cluster/
+        assert arn_resource_id, f"The 'CLUSTER_ARN' input ('{cluster_arn}') is missing a resource ID.\n" \
+                                f"The ARN of an EKS cluster must include a resource ID"
     except AssertionError as assertion_error:
         logger.error(assertion_error)
         sys.exit(1)
