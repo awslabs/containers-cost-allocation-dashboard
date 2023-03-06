@@ -13,11 +13,6 @@ variable "aws_region" {
 variable "aws_profile" {
   type        = string
   description = "The AWS profile to use for configuration and credentials to create the pipeline resources"
-
-  validation {
-    condition = var.aws_profile != ""
-    error_message = "The 'aws_profile' input is empty. It must contain an AWS Profile name"
-  }
 }
 
 variable "glue_crawler_schedule" {
