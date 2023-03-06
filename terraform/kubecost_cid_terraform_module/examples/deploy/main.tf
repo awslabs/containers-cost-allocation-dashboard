@@ -9,7 +9,7 @@ module "pipeline" {
 
   aws_region            = "us-east-1"
   aws_profile           = "pipeline_profile"
-  glue_crawler_schedule = "cron(0 1 * * ? *)"
+  glue_crawler_schedule = "0 1 * * ? *"
 }
 
 #########################################################
