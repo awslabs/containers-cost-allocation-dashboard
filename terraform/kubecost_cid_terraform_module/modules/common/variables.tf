@@ -46,7 +46,7 @@ variable "clusters_labels" {
 
   default = []
 
-  description = "A map of clusters and their K8s labels that you wish to include in the dataset"
+  description = "A list of objects containing clusters and their K8s labels that you wish to include in the dataset"
 
   # The below validation validates each "cluster_arn" key's value in each object in the "clusters_labels" list.
   # It'll return the specified error if at least one of the "cluster_arn" keys' value fails the validation.
