@@ -59,8 +59,8 @@ This bucket policy, along with the identity-based policies of all the identities
                 "Principal": "*",
                 "Action": "s3:*",
                 "Resource": [
-                    "arn:aws:s3:::udid-data-collection-kubecost-data",
-                    "arn:aws:s3:::udid-data-collection-kubecost-data/*"
+                    "arn:aws:s3:::kubecost-data-collection-bucket",
+                    "arn:aws:s3:::kubecost-data-collection-bucket/*"
                 ],
                 "Condition": {
                     "Bool": {
