@@ -10,12 +10,12 @@ data "aws_caller_identity" "irsa_parent_role_caller_identity" {
 
 locals {
 
-  cluster_account_id = element(split(":", var.cluster_arn), 4)
-  cluster_name = element(split("/", var.cluster_arn), 1)
-  cluster_oidc_provider_id = element(split("/", var.cluster_oidc_provider_arn), 3)
-  irsa_parent_role_partition = element(split(":", data.aws_caller_identity.irsa_parent_role_caller_identity.arn), 1)
+  cluster_account_id          = element(split(":", var.cluster_arn), 4)
+  cluster_name                = element(split("/", var.cluster_arn), 1)
+  cluster_oidc_provider_id    = element(split("/", var.cluster_oidc_provider_arn), 3)
+  irsa_parent_role_partition  = element(split(":", data.aws_caller_identity.irsa_parent_role_caller_identity.arn), 1)
   irsa_parent_role_account_id = data.aws_caller_identity.irsa_parent_role_caller_identity.account_id
-  helm_chart_location = "../../../helm/kubecost_s3_exporter"
+  helm_chart_location         = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
       "namespace" : var.namespace
