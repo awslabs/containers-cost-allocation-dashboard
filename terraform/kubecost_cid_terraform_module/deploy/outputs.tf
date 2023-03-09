@@ -8,6 +8,6 @@ output "labels" {
 
 # Outputs to show the IRSA IAM Role ARN that was created for each cluster
 output "cluster1_irsa_iam_role_arn" {
-  value       = module.cluster1.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+  value       = module.cluster1
+  description = "The outputs for 'cluster1'"
 }
