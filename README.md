@@ -26,7 +26,7 @@ The data collection pod is referred to as Kubecost S3 Exporter throughout some p
   * AWS Glue Table
   * AWS Glue Crawler (along with its IAM Role and IAM Policy)
 
-### High-Level Logic:
+### High-Level Logic
 
 1. The CronJob K8s controller runs daily and creates a pod that collects cost allocation data from Kubecost. It runs the following API calls:<br />
 The [Allocation API on-demand query (experimental)](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
@@ -37,7 +37,7 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
 The AWS Glue Crawler runs daily (using a schedule that you define), to create or update partitions.
 4. QuickSight uses the Athena table as a data source to visualize the data
 
-### Cross-Account Authentication Logic:
+### Cross-Account Authentication Logic
 
 This solution uses IRSA with IAM role chaining, to support cross-account authentication.<br />
 For each EKS cluster, the Terraform module that's provided with this solution, will create:
