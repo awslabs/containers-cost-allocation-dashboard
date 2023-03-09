@@ -220,7 +220,7 @@ With this option, Terraform will create a cluster-specific `values.yaml` file (w
 
 You can use a mix of these options.<br />
 One some clusters, you can choose to deploy the K8s resources by having Terraform invoke Helm (the first option).<br />
-One other clusters, you can choose to deploy the K8s resources yourself using the `helm` command (the second option).
+On other clusters, you can choose to deploy the K8s resources yourself using the `helm` command (the second option).
 
 #### Deployment Option 1
 
