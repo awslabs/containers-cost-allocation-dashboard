@@ -21,7 +21,7 @@ variable "cluster_arn" {
   # arn:aws:s3:us-east-1:111111111111:cluster/cluster1
   # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
   validation {
-    condition = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", var.cluster_arn))
+    condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", var.cluster_arn))
     error_message = "The 'cluster_arn' input contains an invalid ARN"
   }
 }
@@ -31,7 +31,7 @@ variable "cluster_context" {
   description = "The EKS cluster context name from the kubeconfig file"
 
   validation {
-    condition = var.cluster_context != ""
+    condition     = var.cluster_context != ""
     error_message = "The 'cluster_context' input is empty. It must contain a K8s cluster context"
   }
 }
@@ -55,7 +55,7 @@ variable "cluster_oidc_provider_arn" {
   # arn:aws:s3::333333333333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/123
   # arn:aaa:iam::333333333333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/123
   validation {
-    condition = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:oidc-provider\\/oidc\\.eks\\.(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d\\.amazonaws\\.com\\/id\\/[A-F0-9]*$", var.cluster_oidc_provider_arn))
+    condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:oidc-provider\\/oidc\\.eks\\.(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d\\.amazonaws\\.com\\/id\\/[A-F0-9]*$", var.cluster_oidc_provider_arn))
     error_message = "The 'cluster_oidc_provider_arn' input contains an invalid ARN"
   }
 }
@@ -65,7 +65,7 @@ variable "aws_region" {
   description = "The region where the EKS cluster resides"
 
   validation {
-    condition = can(regex("(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\\d", var.aws_region))
+    condition     = can(regex("(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\\d", var.aws_region))
     error_message = "The 'aws_region' contains an invalid region-code"
   }
 }
@@ -75,7 +75,7 @@ variable "aws_profile" {
   description = "The AWS profile to use for configuration and credentials to access the EKS cluster"
 
   validation {
-    condition = var.aws_profile != ""
+    condition     = var.aws_profile != ""
     error_message = "The 'aws_profile' input is empty. It must contain an AWS Profile name"
   }
 }
@@ -85,7 +85,7 @@ variable "kubecost_s3_exporter_container_image" {
   description = "The Kubecost S3 Exporter container image"
 
   validation {
-    condition = var.kubecost_s3_exporter_container_image != ""
+    condition     = var.kubecost_s3_exporter_container_image != ""
     error_message = "The 'kubecost_s3_exporter_container_image' input is empty. It must contain a Docker container image string"
   }
 }
@@ -96,7 +96,7 @@ variable "kubecost_s3_exporter_container_image_pull_policy" {
   description = "The image pull policy that'll be used by the Kubecost S3 Exporter pod"
 
   validation {
-    condition = contains(["Always", "IfNotPresent", "Never"], var.kubecost_s3_exporter_container_image_pull_policy)
+    condition     = contains(["Always", "IfNotPresent", "Never"], var.kubecost_s3_exporter_container_image_pull_policy)
     error_message = "The 'kubecost_s3_exporter_container_image_pull_policy' input includes an invalid value. It should be one of 'Always' or 'IfNotPresent' or 'Never'"
   }
 }
@@ -107,7 +107,7 @@ variable "kubecost_s3_exporter_cronjob_schedule" {
   description = "The schedule of the Kubecost S3 Exporter CronJob"
 
   validation {
-    condition = var.kubecost_s3_exporter_cronjob_schedule != ""
+    condition     = var.kubecost_s3_exporter_cronjob_schedule != ""
     error_message = "The 'kubecost_s3_exporter_cronjob_schedule' input is empty. It must contain a Cron expression"
   }
 }
@@ -118,7 +118,7 @@ variable "kubecost_api_endpoint" {
   description = "The Kubecost API endpoint in format of 'http://<name_or_ip>:<port>'"
 
   validation {
-    condition = (startswith(var.kubecost_api_endpoint, "http://") || startswith(var.kubecost_api_endpoint, "http://")) && length(compact(split("://", var.kubecost_api_endpoint))) > 1
+    condition     = (startswith(var.kubecost_api_endpoint, "http://") || startswith(var.kubecost_api_endpoint, "http://")) && length(compact(split("://", var.kubecost_api_endpoint))) > 1
     error_message = "The Kubecost API endpoint is invalid. It must be in the format of 'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'"
   }
 }
@@ -129,7 +129,7 @@ variable "k8s_config_path" {
   description = "The K8s config file to be used by Helm"
 
   validation {
-    condition = var.k8s_config_path != ""
+    condition     = var.k8s_config_path != ""
     error_message = "The 'k8s_config_path' input is empty. It must contain a K8s kubeconfig file"
   }
 }
@@ -140,7 +140,7 @@ variable "namespace" {
   description = "The namespace in which the Kubecost S3 Exporter pod and service account will be created"
 
   validation {
-    condition = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.namespace))
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.namespace))
     error_message = "The 'namespace' input contains an invalid Namespace name"
   }
 }
@@ -157,7 +157,7 @@ variable "service_account" {
   description = "The service account for the Kubecost S3 Exporter pod"
 
   validation {
-    condition = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.service_account))
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.service_account))
     error_message = "The 'service_account' input contains an invalid Service Account name"
   }
 }
