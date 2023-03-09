@@ -8,10 +8,10 @@ provider "aws" {
 }
 
 provider "aws" {
-  alias                    = "irsa"
+  alias                    = "irsa_parent_role"
   shared_config_files      = module.common.aws_shared_config_files
   shared_credentials_files = module.common.aws_shared_credentials_files
-  profile                  = module.common.irsa_aws_profile
+  profile                  = module.common.irsa_parent_role_aws_profile
 }
 
 provider "helm" {
