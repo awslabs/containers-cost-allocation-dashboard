@@ -25,6 +25,8 @@ env:
     value: "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
   - name: "CLUSTER_ARN"
     value: "<cluster_arn>" # Change to your EKS cluster ARN
+  - name: "IRSA_PARENT_IAM_ROLE_ARN"
+    value: ""
   - name: "GRANULARITY"
     value: "hourly"
   - name: "LABELS"
