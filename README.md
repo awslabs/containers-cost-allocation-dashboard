@@ -13,9 +13,9 @@ The following is the solution's architecture:
 The solution deploys the following resources:
 
 1. Data collection Pod (deployed using a CronJob controller) and Service Account in your EKS cluster.<br />
-It's referred to as Kubecost S3 Exporter throughout the documentation.
+The data collection Pod is referred to as Kubecost S3 Exporter throughout the documentation.
 2. The following AWS resources:<br />
-IAM Role for Service Account for each cluster<br />
+IAM Role for Service Account and a parent IAM role (role chaining) for each cluster<br />
 AWS Glue Database<br />
 AWS Glue Table<br />
 AWS Glue Crawler (along with its IAM Role and IAM Policy)
@@ -37,11 +37,10 @@ It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00
 3. Terraform and Helm installed 
 4. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
 
-For each EKS cluster, have the following
+For each EKS cluster, have the following:
 
 1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).<br />
-In case your EKS cluster is in a different account than your S3 bucket, you must create the IAM OIDC Provider in the account where the S3 bucket is.<br />
-This is mandatory for cross-account authentication.
+The IAM OIDC Provider must be created in the EKS cluster's account and region.
 2. Kubecost (free tier is enough) deployed in the EKS cluster
 
 Please continue reading the specific sections “S3 Bucket Specific Notes”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
@@ -60,11 +59,14 @@ This bucket policy, along with the identity-based policies of all the identities
                 "Principal": "*",
                 "Action": "s3:*",
                 "Resource": [
-                    "arn:aws:s3:::kubecost-data-collection-bucket",
-                    "arn:aws:s3:::kubecost-data-collection-bucket/*"
+                    "arn:aws:s3:::udid-data-collection-kubecost-data",
+                    "arn:aws:s3:::udid-data-collection-kubecost-data/*"
                 ],
                 "Condition": {
-                    "StringNotLike": {
+                    "Bool": {
+                        "aws:SecureTransport": "false"
+                    },
+                    "StringNotEquals": {
                         "aws:PrincipalArn": [
                             "arn:aws:iam::333333333333:role/<your_management_role>",
                             "arn:aws:iam::333333333333:role/kubecost_glue_crawler_role",
@@ -72,9 +74,6 @@ This bucket policy, along with the identity-based policies of all the identities
                         ],
                         "aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"
                     }
-                },
-                "Bool": {
-                    "aws:SecureTransport": "false"
                 }
             }
         ]
@@ -95,10 +94,10 @@ If you use a different role, please change it in the bucket policy.<br />
 You must add this role to the bucket policy, for proper functionality of the QuickSight dataset that is created as part of this solution.
 * The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true` condition:<br />
 This condition identifies all the EKS clusters on which the Kubecost S3 Exporter pod will be deployed.<br />
-When Terraform creates the IRSA (IAM Role for Service Account) for each cluster, for the Kubecost S3 Exporter service account, it tags them the above tag.<br />
+When Terraform creates the IAM roles for the cluster to access the S3 bucket, it tags the parent IAM roles with with the above tag.<br />
 This tag is automatically being used in the IAM session when the Kubecost S3 Exporter pod authenticates.<br />
 The reason for using this tag is to easily allow all EKS clusters with the Kubecost S3 Exporter pod in the bucket policy, without reaching the bucket policy size limit.<br />
-The other alternative is to specify the federated principals that represent each cluster one-by-one.<br />
+The other alternative is to specify all the parent IAM roles that represent each cluster one-by-one.<br />
 With this approach, the maximum bucket policy size will be quickly reached, and that's why the tag is used.
 
 The resources used in this S3 bucket policy include:
@@ -107,7 +106,7 @@ The resources used in this S3 bucket policy include:
 * All objects in the bucket, using the `arn:aws:s3:::kubecost-data-collection-bucket/*` string.<br />
 The reason for using a wildcard here is that multiple principals (multiple EKS clusters) require access to different objects in the bucket.<br />
 Using specific objects for each principal will result in a longer bucket policy that'll eventually exceed the bucket policy size limit.<br />
-the identity policy (IRSA) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.<br >
+The identity policy (the parent IAM role) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.<br >
 Considering this, the access to the S3 bucket is more specific than what's specified in the "Resources" part of this bucket policy.
 
 ### Configure Athena Query Results Location
