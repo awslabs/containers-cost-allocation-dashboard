@@ -5,9 +5,9 @@ output "bucket_arn" {
   description = "The ARN of the S3 Bucket to which the Kubecost data will be uploaded"
 }
 
-output "irsa_aws_profile" {
-  value       = var.irsa_aws_profile
-  description = "The AWS profile to use for configuration and credentials to create the IRSA in the S3 bucket's account"
+output "irsa_parent_role_aws_profile" {
+  value       = var.irsa_parent_role_aws_profile
+  description = "The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account"
 }
 
 output "clusters_labels" {
