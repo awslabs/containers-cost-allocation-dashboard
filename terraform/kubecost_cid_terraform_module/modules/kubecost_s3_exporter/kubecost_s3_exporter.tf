@@ -4,10 +4,17 @@ module "common" {
   source = "../common"
 }
 
+data "aws_caller_identity" "irsa_parent_role_caller_identity" {
+  provider = aws.irsa_parent_role
+}
+
 locals {
 
   cluster_account_id = element(split(":", var.cluster_arn), 4)
   cluster_name = element(split("/", var.cluster_arn), 1)
+  cluster_oidc_provider_id = element(split("/", var.cluster_oidc_provider_arn), 3)
+  irsa_parent_role_partition = element(split(":", data.aws_caller_identity.irsa_parent_role_caller_identity.arn), 1)
+  irsa_parent_role_account_id = data.aws_caller_identity.irsa_parent_role_caller_identity.account_id
   helm_chart_location = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
@@ -21,7 +28,7 @@ locals {
       "serviceAccount" : {
         "name" : var.service_account
         "create" : var.create_service_account
-        "role" : aws_iam_role.kubecost_s3_exporter_service_account_role.arn
+        "role" : aws_iam_role.kubecost_s3_exporter_irsa_child_role.arn
       }
       "env" : [
         {
@@ -35,6 +42,10 @@ locals {
         {
           "name" : "CLUSTER_ARN",
           "value" : var.cluster_arn
+        },
+        {
+          "name" : "IRSA_PARENT_IAM_ROLE_ARN",
+          "value" : aws_iam_role.kubecost_s3_exporter_irsa_parent_role.arn
         },
         {
           "name" : "GRANULARITY",
@@ -54,9 +65,7 @@ locals {
 
 }
 
-resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
-
-  provider = aws.irsa
+resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
 
   name = "kubecost_s3_exporter_irsa_${element(split("/", var.cluster_oidc_provider_arn), 3)}"
   assume_role_policy = jsonencode(
@@ -82,6 +91,43 @@ resource "aws_iam_role" "kubecost_s3_exporter_service_account_role" {
 
   inline_policy {
     name = "kubecost_s3_exporter_irsa_${element(split("/", var.cluster_oidc_provider_arn), 3)}"
+    policy = jsonencode(
+      {
+        Statement = [
+          {
+            Action   = "sts:AssumeRole"
+            Effect   = "Allow"
+            Resource = "arn:${local.irsa_parent_role_partition}:iam::${local.irsa_parent_role_account_id}:role/kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
+          }
+        ]
+        Version = "2012-10-17"
+      }
+    )
+  }
+}
+
+resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
+
+  provider = aws.irsa_parent_role
+
+  name = "kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
+  assume_role_policy = jsonencode(
+    {
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Principal = {
+            AWS = aws_iam_role.kubecost_s3_exporter_irsa_child_role.arn
+          }
+          Action = "sts:AssumeRole"
+        }
+      ]
+    }
+  )
+
+  inline_policy {
+    name = "kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
     policy = jsonencode(
       {
         Statement = [
