@@ -26,14 +26,14 @@ variable "bucket_arn" {
   }
 }
 
-variable "irsa_aws_profile" {
+variable "irsa_parent_role_aws_profile" {
   type        = string
   default     = ""
-  description = "The AWS profile to use for configuration and credentials to create the IRSA in the S3 bucket's account"
+  description = "The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account"
 
   validation {
-    condition = var.irsa_aws_profile != ""
-    error_message = "The 'irsa_aws_profile' input is empty. It must contain an AWS Profile name"
+    condition = var.irsa_parent_role_aws_profile != ""
+    error_message = "The 'irsa_parent_role_aws_profile' input is empty. It must contain an AWS Profile name"
   }
 }
 
