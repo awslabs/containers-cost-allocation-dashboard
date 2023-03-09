@@ -7,42 +7,42 @@ output "labels" {
 }
 
 # Outputs to show the IRSA IAM Role ARN that was created for each cluster
-output "cluster1-us-east-1-111111111111_irsa_iam_role_arn" {
-  value       = module.cluster1-us-east-1-111111111111.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster1-us-east-1-111111111111" {
+  value       = module.cluster1-us-east-1-111111111111
+  description = "The outputs for 'cluster1-us-east-1-111111111111'"
 }
 
-output "cluster2-us-east-1-111111111111_irsa_iam_role_arn" {
-  value       = module.cluster2-us-east-1-111111111111.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster2-us-east-1-111111111111" {
+  value       = module.cluster2-us-east-1-111111111111
+  description = "The outputs for 'cluster2-us-east-1-111111111111'"
 }
 
-output "cluster1-us-east-2-111111111111_irsa_iam_role_arn" {
-  value       = module.cluster1-us-east-2-111111111111.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster1-us-east-2-111111111111" {
+  value       = module.cluster1-us-east-2-111111111111
+  description = "The outputs for 'cluster1-us-east-2-111111111111'"
 }
 
-output "cluster2-us-east-2-111111111111_irsa_iam_role_arn" {
-  value       = module.cluster2-us-east-2-111111111111.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster2-us-east-2-111111111111" {
+  value       = module.cluster2-us-east-2-111111111111
+  description = "The outputs for 'cluster2-us-east-2-111111111111'"
 }
 
-output "cluster1-us-east-1-222222222222_irsa_iam_role_arn" {
-  value       = module.cluster1-us-east-1-222222222222.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster1-us-east-1-222222222222" {
+  value       = module.cluster1-us-east-1-222222222222
+  description = "The outputs for 'cluster1-us-east-1-222222222222'"
 }
 
-output "cluster2-us-east-1-222222222222_irsa_iam_role_arn" {
-  value       = module.cluster2-us-east-1-222222222222.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster2-us-east-1-222222222222" {
+  value       = module.cluster2-us-east-1-222222222222
+  description = "The outputs for 'cluster2-us-east-1-222222222222'"
 }
 
-output "cluster1-us-east-2-222222222222_irsa_iam_role_arn" {
-  value       = module.cluster1-us-east-2-222222222222.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster1-us-east-2-222222222222" {
+  value       = module.cluster1-us-east-2-222222222222
+  description = "The outputs for 'cluster1-us-east-2-222222222222'"
 }
 
-output "cluster2-us-east-2-222222222222_irsa_iam_role_arn" {
-  value       = module.cluster2-us-east-2-222222222222.irsa_iam_role_arn
-  description = "The IRSA IAM Role ARN for this cluster"
+output "cluster2-us-east-2-222222222222" {
+  value       = module.cluster2-us-east-2-222222222222
+  description = "The outputs for 'cluster2-us-east-2-222222222222'"
 }
