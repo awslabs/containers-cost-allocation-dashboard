@@ -2,7 +2,7 @@
 
 output "irsa_child_iam_role_arn" {
   value       = aws_iam_role.kubecost_s3_exporter_irsa_child_role.arn
-  description = "The ARN of the IAM Role that was created as part of IRSA"
+  description = "The ARN of the child IAM Role that was created as part of IRSA role chaining"
 }
 
 output "irsa_parent_iam_role_arn" {
