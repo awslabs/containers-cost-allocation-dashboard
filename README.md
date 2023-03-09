@@ -92,7 +92,7 @@ You must add it to the bucket policy, so that the Glue Crawler will be able to c
 This principal is the IAM Role that will is automatically created for QuickSight.<br />
 If you use a different role, please change it in the bucket policy.<br />
 You must add this role to the bucket policy, for proper functionality of the QuickSight dataset that is created as part of this solution.
-* The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true` condition:<br />
+* The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"` condition:<br />
 This condition identifies all the EKS clusters on which the Kubecost S3 Exporter pod will be deployed.<br />
 When Terraform creates the IAM roles for the cluster to access the S3 bucket, it tags the parent IAM roles with with the above tag.<br />
 This tag is automatically being used in the IAM session when the Kubecost S3 Exporter pod authenticates.<br />
