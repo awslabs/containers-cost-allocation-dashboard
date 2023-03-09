@@ -21,7 +21,7 @@ variable "bucket_arn" {
   # The "(?!(xn--|.+-s3alias$))" part has been omitted because Terraform regex engine doesn't support negative lookahead (the "?!" part)
   # Therefore, it has been removed, and instead, "!startswith" and "!endswith" conditions have been added, to complement this missing functionality
   validation {
-    condition = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):s3:::[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.bucket_arn)) && !startswith(element(split(":::", var.bucket_arn), 1), "xn--") && !endswith(element(split(":::", var.bucket_arn), 1), "-s3alias")
+    condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):s3:::[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.bucket_arn)) && !startswith(element(split(":::", var.bucket_arn), 1), "xn--") && !endswith(element(split(":::", var.bucket_arn), 1), "-s3alias")
     error_message = "The 'bucket_arn' input contains an invalid ARN"
   }
 }
@@ -32,7 +32,7 @@ variable "irsa_parent_role_aws_profile" {
   description = "The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account"
 
   validation {
-    condition = var.irsa_parent_role_aws_profile != ""
+    condition     = var.irsa_parent_role_aws_profile != ""
     error_message = "The 'irsa_parent_role_aws_profile' input is empty. It must contain an AWS Profile name"
   }
 }
@@ -65,7 +65,7 @@ variable "clusters_labels" {
   # arn:aws:s3:us-east-1:111111111111:cluster/cluster1
   # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
   validation {
-    condition = length([for cluster_arn in var.clusters_labels.*.cluster_arn : cluster_arn if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_arn))]) == length(var.clusters_labels)
+    condition     = length([for cluster_arn in var.clusters_labels.*.cluster_arn : cluster_arn if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_arn))]) == length(var.clusters_labels)
     error_message = "At least one of the 'cluster_arn' keys in the 'clusters_labels' list, contains an invalid ARN value"
   }
 }
@@ -79,7 +79,7 @@ variable "aws_shared_config_files" {
   # The "aws_shared_config_files" has an empty list: []
   # The "aws_shared_config_files" has a single empty item: [""]
   validation {
-    condition = length(compact(var.aws_shared_config_files)) > 0
+    condition     = length(compact(var.aws_shared_config_files)) > 0
     error_message = "The 'aws_shared_config_files' input is empty. It must contain at least one AWS shared config file"
   }
 }
@@ -93,7 +93,7 @@ variable "aws_shared_credentials_files" {
   # The "aws_shared_credentials_files" has an empty list: []
   # The "aws_shared_credentials_files" has a single empty item: [""]
   validation {
-    condition = length(compact(var.aws_shared_credentials_files)) > 0
+    condition     = length(compact(var.aws_shared_credentials_files)) > 0
     error_message = "The 'aws_shared_credentials_files' input is empty. It must contain at least one AWS shared credentials file"
   }
 }
@@ -104,7 +104,7 @@ variable "granularity" {
   description = "The time granularity of the data that is returned from the Kubecost Allocation API"
 
   validation {
-    condition = contains(["hourly", "daily"], var.granularity)
+    condition     = contains(["hourly", "daily"], var.granularity)
     error_message = "The 'granularity' input includes an invalid value. It should be one of 'hourly' or 'daily'"
   }
 }
