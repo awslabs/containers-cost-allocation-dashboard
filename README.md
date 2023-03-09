@@ -2,7 +2,7 @@
 # EKS Insights Dashboard
 
 This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards) to create the EKS Insights Dashboard.<br />
-This dashboard is meant to provide the users with breakdown of their EKS clusters in-cluster costs, in a single-pane-of-glass with their other dashboards.
+This dashboard is meant to provide a breakdown of the EKS in-cluster costs in multi-cluster environment, in a single-pane-of-glass alongside the other CID dashboards.
 
 ## Architecture
 
@@ -10,25 +10,51 @@ The following is the solution's architecture:
 
 ![Screenshot of the solution's architecture](./screenshots/kubecost_cid_architecture.png)
 
-The solution deploys the following resources:
+### Solution's Components
 
-1. Data collection Pod (deployed using a CronJob controller) and Service Account in your EKS cluster.<br />
-The data collection Pod is referred to as Kubecost S3 Exporter throughout the documentation.
-2. The following AWS resources:<br />
-IAM Role for Service Account and a parent IAM role (role chaining) for each cluster<br />
-AWS Glue Database<br />
-AWS Glue Table<br />
-AWS Glue Crawler (along with its IAM Role and IAM Policy)
+The solution is composed of the following resources:
 
-High-level logic:
+* An S3 bucket that stores the Kubecost data (should be pre-created, see "Requirements" section)
+* A CronJob controller (that is used to create a data collection pod) and Service Account.<br />
+Both should be deployed on each EKS cluster, using a Terraform module (that invokes Helm) that is provided as part of this solution.<br />
+You can also deploy these resources directly using the Helm chart that is provided as part of this solution.<br />
+The data collection pod is referred to as Kubecost S3 Exporter throughout some parts of the documentation.
+* The following AWS resources (all are deployed using a Terraform module that is provided as part of this solution):
+  * IAM Role for Service Account (in the EKS cluster's account) and a parent IAM role (in the S3 bucket's account) for each cluster.<br />
+    This is to support cross-account authentication between the data collection pod and the S3 bucket, using IAM role chaining. 
+  * AWS Glue Database 
+  * AWS Glue Table
+  * AWS Glue Crawler (along with its IAM Role and IAM Policy)
 
-1. The CronJob runs daily and creates a Pod that collects cost allocation data from Kubecost. It runs the following API calls:<br />
+### High-Level Logic:
+
+1. The CronJob K8s controller runs daily and creates a pod that collects cost allocation data from Kubecost. It runs the following API calls:<br />
 The [Allocation API on-demand query (experimental)](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
 The [Assets API](https://docs.kubecost.com/apis/apis/assets-api) to retrieve the assets' data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
 2. Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
-3. The data is made available in Athena using AWS Glue. In addition, an AWS Glue Crawler runs daily, 1 hour after the CronJob started, to create or update partitions
+3. The data is made available in Athena using AWS Glue Database, AWS Glue Table and AWS Glue Crawler.<br />
+The AWS Glue Crawler runs daily (using a schedule that you define), to create or update partitions.
 4. QuickSight uses the Athena table as a data source to visualize the data
+
+### Cross-Account Authentication Logic:
+
+This solution uses IRSA with IAM role chaining, to support cross-account authentication.<br />
+For each EKS cluster, the Terraform module that's provided with this solution, will create:
+
+* A child IRSA IAM role in the EKS cluster's account and region
+* A parent IAM role in the S3 bucket's account
+
+The child IRSA IAM role will have a Trust Policy that trusts the IAM OIDC Provider ARN.<br />
+It's also specifically narrowed down using `Condition` element, to trust it only from the relevant K8s Service Account and Namespace.<br />
+The inline policy of the IRSA IAM role allows only the `sts:AssumeRole` action, only for the parent IAM role that was created for this cluster.<br />
+
+The parent IAM role will have a Trust Policy that only trusts the chile IAM role ARN.<br />
+The inline policy of the parent IAM role allows only the `s3:PutObject` action, only on the S3 bucket and specific prefix where the Kubecost files for this cluster are expected to be stored.
+
+In addition, an S3 bucket policy sample is provided as part of this documentation (see below "S3 Bucket Specific Notes" section).<br />
+The Terraform module that's provided with this solution does not create it, because it doesn't create the S3 bucket.<br />
+It's up to you to use it on your S3 bucket. 
 
 ## Requirements
 
@@ -41,7 +67,9 @@ For each EKS cluster, have the following:
 
 1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).<br />
 The IAM OIDC Provider must be created in the EKS cluster's account and region.
-2. Kubecost (free tier is enough) deployed in the EKS cluster
+2. Kubecost (free tier is enough) deployed in the EKS cluster.<br />
+The get the most accurate data from Kubecost, it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations).<br />
+To get network costs, you should follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs Daemonset](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
 
 Please continue reading the specific sections “S3 Bucket Specific Notes”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
 
@@ -49,7 +77,7 @@ Please continue reading the specific sections “S3 Bucket Specific Notes”, �
 
 You may create an S3 Bucket Policy on the bucket that you create to store the Kubecost data.<br />
 In this case, below is a recommended bucket policy to use.<br />
-This bucket policy, along with the identity-based policies of all the identities in this solution, provides minimum access:
+This bucket policy, along with the identity-based policies of all the identities in this solution, provide minimum access:
 
     {
         "Version": "2012-10-17",
@@ -93,10 +121,10 @@ This principal is the IAM Role that will is automatically created for QuickSight
 If you use a different role, please change it in the bucket policy.<br />
 You must add this role to the bucket policy, for proper functionality of the QuickSight dataset that is created as part of this solution.
 * The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"` condition:<br />
-This condition identifies all the EKS clusters on which the Kubecost S3 Exporter pod will be deployed.<br />
-When Terraform creates the IAM roles for the cluster to access the S3 bucket, it tags the parent IAM roles with with the above tag.<br />
+This condition identifies all the EKS clusters from which the Kubecost S3 Exporter pod will communicate with the bucket.<br />
+When Terraform creates the IAM roles for the pod to access the S3 bucket, it tags the parent IAM roles with the above tag.<br />
 This tag is automatically being used in the IAM session when the Kubecost S3 Exporter pod authenticates.<br />
-The reason for using this tag is to easily allow all EKS clusters with the Kubecost S3 Exporter pod in the bucket policy, without reaching the bucket policy size limit.<br />
+The reason for using this tag is to easily allow all EKS clusters running the Kubecost S3 Exporter pod, in the bucket policy, without reaching the bucket policy size limit.<br />
 The other alternative is to specify all the parent IAM roles that represent each cluster one-by-one.<br />
 With this approach, the maximum bucket policy size will be quickly reached, and that's why the tag is used.
 
