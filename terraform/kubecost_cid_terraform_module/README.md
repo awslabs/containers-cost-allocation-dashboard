@@ -6,7 +6,7 @@ It's suitable to deploy the resources in multi-account, multi-region, multi-clus
 It's used to deploy the following:
 
 1. The AWS resources that support the solution
-2. The Kubecost S3 Exporter pod on each cluster, by invoking Helm
+2. The Kubecost S3 Exporter Pod on each cluster, by invoking Helm
 
 This guide is composed of the following sections:
 
@@ -25,10 +25,10 @@ Provides information on the process to clean up resources.
 
 This Terraform module requires the following:
 
-* Manage your AWS credentials using [shared configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).<br /> 
+* Manage your AWS credentials using [shared configuration and credentials files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).<br /> 
 This is required because this Terraform module is meant to create or access resources in different AWS accounts that may require different sets of credentials.
 * In your kubeconfig file, each EKS cluster should reference the AWS profile from the shared configuration file.<br />
-This is so that Helm (invoked by Terraform) can tell which AWS credentials to use when communicating with the cluster.
+This is so that Helm (invoked by Terraform or manually) can tell which AWS credentials to use when communicating with the cluster.
 
 ## Structure
 
@@ -81,7 +81,7 @@ It contains module-specific inputs, outputs, and resources.
 The `kubecost_s3_exporter` module in the `kubecost_s3_exporter` directory contains the Terraform IaC required to deploy:
 
 * The K8s resources (the CronJob used to create the Kubecost S3 Exporter pod, and a service account) on each EKS cluster
-* The IRSA (IAM Role for Service Account) in the S3 bucket's account, for each EKS cluster
+* For each EKS cluster, the IRSA (IAM Role for Service Account) in the EKS cluster's account, and a parent IAM role (role chaining) in the S3 bucket's account 
 
 It contains module-specific inputs, outputs, and resources.
 
@@ -118,21 +118,20 @@ This is to not repeat these inputs twice in the `main.tf` file.
 
 The below table lists the required and optional common inputs:
 
-| Name                                                                              | Description                                                                                            | Type                                                                                                 | Default                                     | Required |
-|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|---------------------------------------------|:--------:|
-| <a name="input_bucket_arn"></a> bucket\_arn                                       | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                   | `string`                                                                                             | `""`                                        |   yes    |
-| <a name="input_irsa_aws_profile"></a> irsa\_aws\_profile                          | The AWS profile to use for configuration and credentials to create the IRSA in the S3 bucket's account | `string`                                                                                             | `""`                                        |   yes    |
-| <a name="input_clusters_labels"></a> clusters\_labels                             | A list of objects containing clusters and their K8s labels that you wish to include in the dataset     | <pre>list(object({<br>    cluster_arn = string<br>    labels = optional(list(string))<br>  }))</pre> | `[]`                                        |    no    |
-| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files           | Paths to the AWS shared config files                                                                   | `list(string)`                                                                                       | <pre>[<br>  "~/.aws/config"<br>]</pre>      |    no    |
-| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files | Paths to the AWS shared credentials files                                                              | `list(string)`                                                                                       | <pre>[<br>  "~/.aws/credentials"<br>]</pre> |    no    |
-| <a name="input_granularity"></a> granularity                                      | The time granularity of the data that is returned from the Kubecost Allocation API                     | `string`                                                                                             | `"hourly"`                                  |    no    |
+| Name                                                                              | Description                                                                                                            | Type                                                                                                 | Default                                     | Required |
+|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|---------------------------------------------|:--------:|
+| <a name="input_bucket_arn"></a> bucket\_arn                                       | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                                   | `string`                                                                                             | `""`                                        |   yes    |
+| <a name="irsa_parent_role_aws_profile"></a> irsa\_aws\_profile                    | The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account | `string`                                                                                             | `""`                                        |   yes    |
+| <a name="input_clusters_labels"></a> clusters\_labels                             | A list of objects containing clusters and their K8s labels that you wish to include in the dataset                     | <pre>list(object({<br>    cluster_arn = string<br>    labels = optional(list(string))<br>  }))</pre> | `[]`                                        |    no    |
+| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files           | Paths to the AWS shared config files                                                                                   | `list(string)`                                                                                       | <pre>[<br>  "~/.aws/config"<br>]</pre>      |    no    |
+| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files | Paths to the AWS shared credentials files                                                                              | `list(string)`                                                                                       | <pre>[<br>  "~/.aws/credentials"<br>]</pre> |    no    |
+| <a name="input_granularity"></a> granularity                                      | The time granularity of the data that is returned from the Kubecost Allocation API                                     | `string`                                                                                             | `"hourly"`                                  |    no    |
 
 **_!!! Important Note !!!_**
 
-The `irsa_aws_profile` input is meant for Terraform to create the IRSA (IAM Role for Service Account) of each cluster.<br />
-These roles must be created in the account where the S3 bucket is.<br />
-This is also the same account where you create the IAM OIDC Provider for each EKS cluster in the "Requirements" part of the main README.md.<br />
-Please provide an AWS profile that can be used to create the IRSA in the S3 bucket's account. 
+The `irsa_aws_profile` input is meant for Terraform to create the parent IAM role that the IRSA role assumes, per cluster.<br />
+These parent roles must be created in the account where the S3 bucket is.<br />
+Please provide an AWS profile that can be used to create the parent IAM role in the S3 bucket's account. 
 
 The below table lists the required inputs of the `clusters_labels` input:
 
@@ -236,7 +235,7 @@ Then, provide the module-specific required inputs, as listed in the above table.
     
       cluster_arn = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
       cluster_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
-      cluster_oidc_provider_arn = "arn:aws:iam::333333333333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/1"
+      cluster_oidc_provider_arn = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/1"
       aws_region = "us-east-1"
       aws_profile = "cluster1_profile"
       kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
@@ -278,27 +277,28 @@ The `main.tf` file already has a `labels` output, to show the list of distinct l
 
 No need to make any changes to it.
 
-#### Adding IRSA IAM Role Output for each Cluster
+#### Adding Cluster Outputs for each Cluster
 
-This Terraform module creates an IRSA IAM Role for each cluster, as part of the `kubecost-s3-exporter` module.<br />
-It creates it with a name that includes the IAM OIDC Provider ID.<br />
+This Terraform module creates an IRSA IAM Role and parent IAM Role for each cluster, as part of the `kubecost-s3-exporter` module.<br />
+It creates them with a name that includes the IAM OIDC Provider ID.<br />
 This is done to keep the IAM Role name within the length limit, but it causes difficulties in correlating it to a cluster.<br>
-You can add an output to the `output.tf` file for each cluster, to show the mapping of the cluster name and the IAM Role ARN.
+You can add an output to the `output.tf` file for each cluster, to show the mapping of the cluster name and the IAM Roles (IRSA and parent) ARNs.
 
-The `main.tf` file already has a sample output to get you started:
+The `outputs.tf` file already has a sample output to get you started:
 
     output "cluster1_irsa_iam_role_arn" {
-      value = module.cluster1.irsa_iam_role_arn
+      value       = module.cluster1
+      description = "The outputs for 'cluster1'"
     }
 
 Change the output name from `cluster1_irsa_iam_role_arn` to a name that uniquely represents your cluster.<br />
 Then, change the value to reference to the module instance of your cluster (`module.<module_instance_name>.irsa_iam_role_arn`).
-More examples cab be found in the `examples/deploy/outputs.tf` file.
+More examples can be found in the `examples/deploy/outputs.tf` file.
 
-It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Role ARN.<br />
+It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Roles ARNs.<br />
 Make sure you use a unique cluster name in the output name.
 
-When deploying, Terraform will output a line showing the output name and the IAM Role ARN.
+When deploying, Terraform will output a line showing the output name and the IAM Roles ARNs.
 
 ### Step 4: Deploy
 
@@ -320,7 +320,7 @@ To continue adding additional clusters after the initial deployment, the only re
 1. Create an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html) in the S3 bucket's account.
 2. Create additional instances of the `kubecost_s3_exporter` module in the `main.tf` file, and provide inputs
 3. If you need to add labels for this cluster, follow the "Maintenance -> Adding/Removing Labels to/from the Dataset" section
-4. Optionally, add outputs for the IRSA (IAM Role for Service Account) of each cluster
+4. Optionally, add cluster output for the IRSA (IAM Role for Service Account) and parent IAM role, for each cluster
 
 Then, from the `deploy` directory, run `terraform init` and `terraform apply`
 
@@ -368,7 +368,7 @@ To remove the Kubecost  a specific cluster, perform the following:
 1. From the `deploy` directory, run `terraform destroy --target=module.<module_instance>`.<br />
 Replace `<module_instance>` with the name of the module instance you created in `main.tf`, for the cluster you wish Kubecost S3 Exporter to be removed from
 2. Remove the module instance of the cluster from `main.tf`
-3. If you added IAM Role IRSA output for this module instance, remove the output
+3. If you added cluster output (for the IRSA and parent IAM roles) for this module instance, remove the output
 4. From the `deploy` directory, run `terraform init`
 
 ### Complete Cleanup
