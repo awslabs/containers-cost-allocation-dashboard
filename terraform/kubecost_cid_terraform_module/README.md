@@ -190,7 +190,7 @@ Provide the module-specific required inputs, as listed in the above table. Examp
     
       aws_region = "us-east-1"
       aws_profile = "pipeline_profile"
-      glue_crawler_schedule = "cron(0 1 * * ? *)"
+      glue_crawler_schedule = "0 1 * * ? *"
     }
 
 #### Create an Instance of the `kubecost_s3_exporter` Module and Provide Module-Specific Inputs
