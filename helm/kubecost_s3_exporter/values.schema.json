@@ -1,0 +1,220 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "required": [
+    "namespace",
+    "image",
+    "imagePullPolicy",
+    "cronJob",
+    "serviceAccount",
+    "env"
+  ],
+  "properties": {
+    "env": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "description": "List of environment variables to pass to the container",
+      "required": [
+        "name"
+      ],
+      "items": {
+        "type": "object",
+        "description": "The name of the environment variable",
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "S3_BUCKET_NAME",
+              "KUBECOST_API_ENDPOINT",
+              "CLUSTER_ARN",
+              "IRSA_PARENT_IAM_ROLE_ARN",
+              "GRANULARITY",
+              "LABELS",
+              "PYTHONUNBUFFERED"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "The value of the environment variable"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "S3_BUCKET_NAME"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "pattern": "^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+                }
+              },
+              "not": {
+                "properties": {
+                  "value":{
+                    "pattern": "^xn--|.+-s3alias$"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "KUBECOST_API_ENDPOINT"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "default": "http://kubecost-cost-analyzer.kubecost:9090",
+                  "pattern": "^https?://.+"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "CLUSTER_ARN"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "IRSA_PARENT_IAM_ROLE_ARN"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "GRANULARITY"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "default": "hourly",
+                  "enum": [
+                    "hourly",
+                    "daily"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "PYTHONUNBUFFERED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "default": "1",
+                  "const": "1"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "namespace": {
+      "type": "string",
+      "default": "kubecost-s3-exporter",
+      "description": "The namespace in which the Kubecost S3 Exporter pod and service account will be created",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,252}$"
+    },
+    "image": {
+      "type": "string",
+      "description": "The 'kubecost_s3_exporter_container_image' input is empty. It must contain a Docker container image string"
+    },
+    "imagePullPolicy": {
+      "type": "string",
+      "description": "The image pull policy that'll be used by the Kubecost S3 Exporter pod",
+      "enum": [
+        "Always",
+        "IfNotPresent",
+        "Never"
+      ]
+    },
+    "serviceAccount": {
+      "type": "object",
+      "description": "The service account that'll be created for the Kubecost S3 Exporter",
+      "required": [
+        "create",
+        "name",
+        "role"
+      ],
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "description": "Dictates whether to create the service account as part of the Helm Chart deployment",
+          "default": true
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the service account for the Kubecost S3 Exporter pod",
+          "pattern": "^[a-z0-9][a-z0-9-]{1,252}$"
+        },
+        "role": {
+          "type": "string",
+          "description": "The IRSA IAM role to be annotated in the service account",
+          "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$"
+        }
+      }
+    },
+    "cronJob": {
+      "type": "object",
+      "description": "The CronJob controller used to deploy the Kubecsot S3 Exporter pod",
+      "required": [
+        "name",
+        "schedule"
+      ],
+      "properties": {
+        "name":{
+          "type": "string",
+          "description": "The name of the CronJob controller",
+          "pattern": "^[a-z0-9][a-z0-9-]{1,252}$"
+        },
+        "schedule": {
+          "type": "string",
+          "description": "The CronJob schedule expression",
+          "pattern": "(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\\d+(ns|us|µs|ms|s|m|h))+)|((((\\d+,)+\\d+|(\\d+([/\\-])\\d+)|\\d+|\\*) ?){5,7})"
+        }
+      }
+    }
+  }
+}
