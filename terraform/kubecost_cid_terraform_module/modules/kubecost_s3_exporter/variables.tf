@@ -107,8 +107,8 @@ variable "kubecost_s3_exporter_cronjob_schedule" {
   description = "The schedule of the Kubecost S3 Exporter CronJob"
 
   validation {
-    condition     = var.kubecost_s3_exporter_cronjob_schedule != ""
-    error_message = "The 'kubecost_s3_exporter_cronjob_schedule' input is empty. It must contain a Cron expression"
+    condition     = can(regex("(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\\d+(ns|us|µs|ms|s|m|h))+)|((((\\d+,)+\\d+|(\\d+(\\/|-)\\d+)|\\d+|\\*) ?){5,7})", var.kubecost_s3_exporter_cronjob_schedule))
+    error_message = "The 'kubecost_s3_exporter_cronjob_schedule' input contains an invalid Cron expression"
   }
 }
 
