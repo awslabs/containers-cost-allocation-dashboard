@@ -267,7 +267,7 @@ Below are explanations on how to use it.
 During the deployment, you may add labels to the dataset for each cluster.<br />
 When doing so, Terraform calculates the distinct labels from all clusters labels.<br />
 This is done so that Terraform can create a column in the Glue Table, for each distinct label.<br />
-You'll need to know the list of distinct labels, so that you can make sure they're added to the QuickSight data (a manual operation).<br />
+This output is included, so that you can make sure the labels were added to the QuickSight dataset.
 
 The `main.tf` file already has a `labels` output, to show the list of distinct labels:
 
