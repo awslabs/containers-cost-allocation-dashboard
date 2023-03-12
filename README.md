@@ -273,7 +273,7 @@ Below are example output labels that Terraform should show after apply:<br />
 Please follow the below steps add those labels to the dashboard YAML:<br />
 
 Open the `cid/eks_insights_<version>.yaml`, and modify it as follows:<br />
-Look or the following lines:<br />
+Look or the following lines:
 
             - Name: properties.providerid
               Type: STRING
@@ -285,7 +285,7 @@ Between these lines, add the following line for each label:
             - Name: properties.labels.<label_name>
               Type: STRING
 
-For example, for the above output labels, the YAML should look like the below after adding the lines:
+For example, for the above output labels, this part of the YAML should look like the below after adding the lines:
 
             - Name: properties.providerid
               Type: STRING
@@ -297,6 +297,24 @@ For example, for the above output labels, the YAML should look like the below af
               Type: STRING
             - Name: account_id
               Type: STRING
+
+
+Then, look for the following lines:
+
+              - properties.providerid
+              - account_id
+
+Between these lines, add the following line for each label:
+
+    properties.labels.<label_name>
+
+For example, for the above output labels, this part of the YAML should look like the below after adding the lines:
+
+              - properties.providerid
+              - properties.labels.app
+              - properties.labels.chart
+              - properties.labels.component
+              - account_id
 
 Save the file and continue to the next step.
 
