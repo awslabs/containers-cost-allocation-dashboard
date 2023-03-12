@@ -394,3 +394,15 @@ resource "aws_glue_crawler" "kubecost_glue_crawler" {
     }
   )
 }
+
+resource "local_file" "cid_yaml" {
+
+  filename             = "../../../cid/eks_insights_dashboard.yaml"
+  directory_permission = "0400"
+  file_permission      = "0400"
+  content = templatefile("../../../cid/eks_insights_dashboard.yaml.tpl", {
+    labels                = local.distinct_labels
+    athena_datasource_arn = "$${athena_datasource_arn}"
+    athena_database_name  = "$${athena_database_name}"
+  })
+}
