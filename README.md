@@ -258,69 +258,7 @@ Once you're done, continue to step 3 below.
 
 ### Step 3: Dashboard Deployment
 
-#### Adding Labels
-
-If as part of the Terraform deployment, you added labels in the `clusters_labels` input, those labels need to be added to the dashboard YAML .<br />
-If you didn't add labels in the `clusters_labels` input, you can skip this part.
-
-To easily get the list of distinct labels that were added, copy them from the Terraform outputs.<br />
-Below are example output labels that Terraform should show after apply:<br />
-
-    Outputs:
-    
-    labels = "app, chart, component"
-
-Please follow the below steps add those labels to the dashboard YAML:<br />
-
-Open the `cid/eks_insights_<version>.yaml`, and modify it as follows:<br />
-Look or the following lines:
-
-            - Name: properties.providerid
-              Type: STRING
-            - Name: account_id
-              Type: STRING
-
-Between these lines, add the following line for each label:
-
-            - Name: properties.labels.<label_name>
-              Type: STRING
-
-For example, for the above output labels, this part of the YAML should look like the below after adding the lines:
-
-            - Name: properties.providerid
-              Type: STRING
-            - Name: properties.labels.app
-              Type: STRING
-            - Name: properties.labels.chart
-              Type: STRING
-            - Name: properties.labels.component
-              Type: STRING
-            - Name: account_id
-              Type: STRING
-
-
-Then, look for the following lines:
-
-              - properties.providerid
-              - account_id
-
-Between these lines, add the following line for each label:
-
-    properties.labels.<label_name>
-
-For example, for the above output labels, this part of the YAML should look like the below after adding the lines:
-
-              - properties.providerid
-              - properties.labels.app
-              - properties.labels.chart
-              - properties.labels.component
-              - account_id
-
-Save the file and continue to the next step.
-
-#### Deploy the Dashboard from the CID YAML File
-
-From the `cid` folder, run `cid-cmd deploy --resources eks_insights_<version>.yaml`.<br />
+From the `cid` folder, run `cid-cmd deploy --resources eks_insights_dashboard.yaml`.<br />
 The output should be similar to the below:
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.3 Beta
@@ -374,12 +312,12 @@ After choosing, wait for the dataset to be created, and then the additional outp
 
     ? [athena-database] Select AWS Athena database to use: kubecost_db
     Dataset "eks_insights" created
-    Latest template: arn:aws:quicksight:us-east-1:<account_id>:template/eks_insights/version/1
+    Latest template: arn:aws:quicksight:<region_code>:<account_id>:template/eks_insights/version/1
     Deploying dashboard eks_insights
     
     #######
     ####### Congratulations!
-    ####### EKS Insights is available at: https://us-east-1.quicksight.aws.amazon.com/sn/dashboards/eks_insights
+    ####### EKS Insights is available at: https://<region_code>.quicksight.aws.amazon.com/sn/dashboards/eks_insights
     #######
     
     ? [share-with-account] Share this dashboard with everyone in the QuickSight account?: (Use arrow keys)
