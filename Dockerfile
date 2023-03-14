@@ -2,6 +2,8 @@
 
 FROM --platform=$TARGETPLATFORM python:3.11.2-slim-bullseye AS build
 
+RUN apt-get -y install openssl=1.1.1n-0+deb11u4 libssl1.1=1.1.1n-0+deb11u4 libgnutls30=3.7.1-5+deb11u3
+
 RUN useradd -u 10001 worker -m
 USER worker
 WORKDIR /home/worker
