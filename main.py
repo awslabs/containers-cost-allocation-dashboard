@@ -68,10 +68,8 @@ def cluster_arn_input_validation(cluster_arn, input_name):
     # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
 
     regex = r"^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d:\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$"
-    try:
-        assert re.match(regex, cluster_arn), f"The '{input_name}' input contains an invalid ARN: {cluster_arn}"
-    except AssertionError as assertion_error:
-        logger.error(assertion_error)
+    if not re.match(regex, cluster_arn):
+        logger.error(f"The '{input_name}' input contains an invalid ARN: {cluster_arn}")
         sys.exit(1)
 
 
@@ -101,10 +99,8 @@ def iam_role_arn_input_validation(iam_role_arn, input_name):
     # arn:aaa:iam::111111111111:role/role1
 
     regex = r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$"
-    try:
-        assert re.match(regex, iam_role_arn), f"The '{input_name}' input contains an invalid ARN: {iam_role_arn}"
-    except AssertionError as assertion_error:
-        logger.error(assertion_error)
+    if not re.match(regex, iam_role_arn):
+        logger.error(f"The '{input_name}' input contains an invalid ARN: {iam_role_arn}")
         sys.exit(1)
 
 
