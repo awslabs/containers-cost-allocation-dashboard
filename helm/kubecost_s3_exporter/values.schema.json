@@ -163,6 +163,7 @@
     },
     "imagePullPolicy": {
       "type": "string",
+      "default": "Always",
       "description": "The image pull policy that'll be used by the Kubecost S3 Exporter pod",
       "enum": [
         "Always",
@@ -181,11 +182,12 @@
       "properties": {
         "create": {
           "type": "boolean",
-          "description": "Dictates whether to create the service account as part of the Helm Chart deployment",
-          "default": true
+          "default": true,
+          "description": "Dictates whether to create the service account as part of the Helm Chart deployment"
         },
         "name": {
           "type": "string",
+          "default": "kubecost-s3-exporter",
           "description": "The name of the service account for the Kubecost S3 Exporter pod",
           "pattern": "^[a-z0-9][a-z0-9-]{1,252}$"
         },
@@ -211,6 +213,7 @@
         },
         "schedule": {
           "type": "string",
+          "default": "0 0 * * *",
           "description": "The CronJob schedule expression",
           "pattern": "(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\\d+(ns|us|µs|ms|s|m|h))+)|((((\\d+,)+\\d+|(\\d+([/\\-])\\d+)|\\d+|\\*) ?){5,7})"
         }
