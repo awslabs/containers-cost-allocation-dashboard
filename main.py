@@ -224,7 +224,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
         logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
                     f"in {granularity.lower()} granularity...")
         params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step}
-        r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params)
+        r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params, timeout=10)
         if not list(filter(None, r.json()["data"])):
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
@@ -254,7 +254,7 @@ def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, accumulate=Fa
     try:
         logger.info(f"Querying Kubecost Assets API for data between {start} and {end}")
         params = {"window": window, "accumulate": accumulate, "filterCategories": "Compute", "filterTypes": "Node"}
-        r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params)
+        r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params, timeout=10)
         if not list(filter(None, r.json()["data"])):
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
