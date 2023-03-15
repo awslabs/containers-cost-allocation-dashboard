@@ -33,4 +33,4 @@ spec:
                 {{- range .Values.env }}
                 - name: "{{ .name }}"
                   value: "{{ .value }}"
-                {{- end }} 
+                {{- end }}
