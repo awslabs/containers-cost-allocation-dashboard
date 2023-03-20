@@ -38,6 +38,7 @@ except KeyError:
 # Optional environment variables
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost:9090")
 GRANULARITY = os.environ.get("GRANULARITY", "hourly")
+AGGREGATION = os.environ.get("AGGREGATION", "container")
 LABELS = os.environ.get("LABELS")
 
 
@@ -164,7 +165,7 @@ def define_csv_columns(labels):
         "externalCost",
         "totalCost",
         "totalEfficiency",
-        "rawAllocationOnly",
+        "properties.provider",
         "properties.cluster",
         "properties.eksClusterName",
         "properties.container",
@@ -207,6 +208,8 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
         "daily": "1d"
     }
 
+    aggregate_values = ["container", "pod", "namespace", "controller", "controllerKind", "node", "cluster"]
+
     # Calculate window and step, and validating the granularity input
     window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
     try:
@@ -215,11 +218,19 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
         logger.error("Granularity must be one of 'hourly' or 'daily'")
         sys.exit(1)
 
+    # Input validation for the aggregate input
+    if aggregate not in aggregate_values:
+        logger.error("Aggregation must be one of 'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
+        sys.exit(1)
+
     # Executing Kubecost Allocation API call (On-demand query)
     try:
         logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
                     f"in {granularity.lower()} granularity...")
-        params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step}
+        if aggregate == "container":
+            params = {"window": window, "accumulate": accumulate, "step": step}
+        else:
+            params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step}
         r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params, timeout=10)
         if not list(filter(None, r.json()["data"])):
             logger.error("API response appears to be empty.\n"
@@ -302,6 +313,7 @@ def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
                                 asset_id_key.split("/")[-2] == allocation["properties"]["providerID"]][0]
 
                     # Updating matching asset data from the Assets API, on the allocation properties
+                    allocation["properties"]["provider"] = assets_data[0][asset_id]["properties"]["provider"]
                     allocation["properties"]["node_instance_type"] = assets_data[0][asset_id]["nodeType"]
                     allocation["properties"]["node_availability_zone"] = assets_data[0][asset_id]["labels"][
                         "label_topology_kubernetes_io_zone"]
@@ -433,7 +445,8 @@ def main():
 
     # Executing Kubecost Allocation API call
     kubecost_allocation_data = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
-                                                               three_days_ago_midnight_plus_one_day, GRANULARITY, "pod")
+                                                               three_days_ago_midnight_plus_one_day, GRANULARITY,
+                                                               AGGREGATION)
 
     kubecost_assets_data = execute_kubecost_assets_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
                                                        three_days_ago_midnight_plus_one_day)
