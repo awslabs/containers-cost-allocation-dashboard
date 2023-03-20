@@ -285,10 +285,6 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       type = "double"
     }
     columns {
-      name = "rawallocationonly"
-      type = "double"
-    }
-    columns {
       name = "properties.cluster"
       type = "string"
     }
