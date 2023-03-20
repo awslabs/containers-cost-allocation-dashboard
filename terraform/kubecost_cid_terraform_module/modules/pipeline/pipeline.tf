@@ -285,6 +285,10 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       type = "double"
     }
     columns {
+      name = "properties.provider"
+      type = "string"
+    }
+    columns {
       name = "properties.cluster"
       type = "string"
     }
