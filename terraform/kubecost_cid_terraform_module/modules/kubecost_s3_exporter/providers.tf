@@ -5,6 +5,9 @@ provider "aws" {
   shared_config_files      = module.common.aws_shared_config_files
   shared_credentials_files = module.common.aws_shared_credentials_files
   profile                  = var.aws_profile
+  default_tags {
+    tags = module.common.aws_common_tags
+  }
 }
 
 provider "aws" {
@@ -12,6 +15,9 @@ provider "aws" {
   shared_config_files      = module.common.aws_shared_config_files
   shared_credentials_files = module.common.aws_shared_credentials_files
   profile                  = module.common.irsa_parent_role_aws_profile
+  default_tags {
+    tags = module.common.aws_common_tags
+  }
 }
 
 provider "helm" {
