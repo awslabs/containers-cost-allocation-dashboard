@@ -11,8 +11,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 7,
-      "maxItems": 7,
+      "minItems": 8,
+      "maxItems": 8,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -29,6 +29,7 @@
               "CLUSTER_ARN",
               "IRSA_PARENT_IAM_ROLE_ARN",
               "GRANULARITY",
+              "AGGREGATION",
               "LABELS",
               "PYTHONUNBUFFERED"
             ]
@@ -126,6 +127,31 @@
                   "enum": [
                     "hourly",
                     "daily"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "AGGREGATION"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "default": "container",
+                  "enum": [
+                    "container",
+                    "pod",
+                    "namespace",
+                    "controller",
+                    "controllerKind",
+                    "node",
+                    "cluster"
                   ]
                 }
               }
