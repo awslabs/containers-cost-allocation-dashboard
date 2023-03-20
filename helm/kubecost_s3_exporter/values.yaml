@@ -29,6 +29,8 @@ env:
     value: ""
   - name: "GRANULARITY"
     value: "hourly"
+  - name: "AGGREGATION"
+    value: "container"
   - name: "LABELS"
     value: "" # Comma-separated list of labels. Example: "app, chart"
   - name: "PYTHONUNBUFFERED"
