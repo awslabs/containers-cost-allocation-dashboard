@@ -94,8 +94,8 @@ datasets:
               Type: DECIMAL
             - Name: totalefficiency
               Type: DECIMAL
-            - Name: rawallocationonly
-              Type: DECIMAL
+            - Name: properties.provider
+              Type: STRING
             - Name: properties.cluster
               Type: STRING
             - Name: properties.eksclustername
@@ -192,7 +192,7 @@ datasets:
               - externalcost
               - totalcost
               - totalefficiency
-              - rawallocationonly
+              - properties.provider
               - properties.cluster
               - properties.eksclustername
               - properties.container
