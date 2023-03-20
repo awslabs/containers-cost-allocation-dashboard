@@ -123,6 +123,17 @@ variable "kubecost_api_endpoint" {
   }
 }
 
+variable "aggregation" {
+  type        = string
+  default     = "container"
+  description = "The aggregation to use for returning the Kubecost Allocation API results"
+
+  validation {
+    condition     = contains(["container", "pod", "namespace", "controller", "controllerKind", "node", "cluster"], var.aggregation)
+    error_message = "The 'aggregation' input includes an invalid value. It should be one of 'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'"
+  }
+}
+
 variable "k8s_config_path" {
   type        = string
   default     = "~/.kube/config"
