@@ -25,6 +25,11 @@ output "aws_shared_credentials_files" {
   description = "Paths to the AWS shared credentials files"
 }
 
+output "aws_common_tags" {
+  value       = var.aws_common_tags
+  description = "Common AWS tags to be used on all AWS resources created by Terraform"
+}
+
 output "granularity" {
   value       = var.granularity
   description = "The time granularity of the data that is returned from the Kubecost Allocation API"
