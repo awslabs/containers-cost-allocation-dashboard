@@ -52,6 +52,10 @@ locals {
           "value" : module.common.granularity
         },
         {
+          "name" : "AGGREGATION",
+          "value" : var.aggregation
+        },
+        {
           "name" : "LABELS",
           "value" : try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_arn, var.cluster_arn)), "labels", [])), "")
         },
