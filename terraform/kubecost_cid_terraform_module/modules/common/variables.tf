@@ -98,6 +98,12 @@ variable "aws_shared_credentials_files" {
   }
 }
 
+variable "aws_common_tags" {
+  type        = map(any)
+  default     = {}
+  description = "Common AWS tags to be used on all AWS resources created by Terraform"
+}
+
 variable "granularity" {
   type        = string
   default     = "hourly"
