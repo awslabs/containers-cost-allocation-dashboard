@@ -289,7 +289,15 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       type = "string"
     }
     columns {
+      name = "properties.region"
+      type = "string"
+    }
+    columns {
       name = "properties.cluster"
+      type = "string"
+    }
+    columns {
+      name = "properties.clusterid"
       type = "string"
     }
     columns {
