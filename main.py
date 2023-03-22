@@ -16,7 +16,7 @@ from boto3 import exceptions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
-# Environment variables to identify the S3 bucket, cluster ARN, Kubecost API endpoint, granularity and labels
+# Environment variables to identify the S3 bucket, cluster ID, Kubecost API endpoint, granularity and labels
 
 # Mandatory environment variables, and input validations to make sure they're not empty
 try:
@@ -25,9 +25,9 @@ except KeyError:
     logger.error("The 'S3_BUCKET_NAME' input is a required, but it's missing")
     sys.exit(1)
 try:
-    CLUSTER_ARN = os.environ["CLUSTER_ARN"]
+    CLUSTER_ID = os.environ["CLUSTER_ID"]
 except KeyError:
-    logger.error("The 'CLUSTER_ARN' input is a required, but it's missing")
+    logger.error("The 'CLUSTER_ID' input is a required, but it's missing")
     sys.exit(1)
 try:
     IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
@@ -42,10 +42,11 @@ AGGREGATION = os.environ.get("AGGREGATION", "container")
 LABELS = os.environ.get("LABELS")
 
 
-def cluster_arn_input_validation(cluster_arn, input_name):
-    """This function is used to validate an EKS cluster ARN input.
+def cluster_id_input_validation(cluster_id, input_name):
+    """This function is used to validate the cluster ID input.
+    Currently it supports validating only EKS cluster ARN.
 
-    :param cluster_arn: The EKS cluster ARN
+    :param cluster_id: The cluster ID
     :param input_name: The input name
     :return:
     """
@@ -69,8 +70,8 @@ def cluster_arn_input_validation(cluster_arn, input_name):
     # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
 
     regex = r"^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d:\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$"
-    if not re.match(regex, cluster_arn):
-        logger.error(f"The '{input_name}' input contains an invalid ARN: {cluster_arn}")
+    if not re.match(regex, cluster_id):
+        logger.error(f"The '{input_name}' input contains an invalid EKS cluster ARN: {cluster_id}")
         sys.exit(1)
 
 
@@ -166,7 +167,9 @@ def define_csv_columns(labels):
         "totalCost",
         "totalEfficiency",
         "properties.provider",
+        "properties.region",
         "properties.cluster",
+        "properties.clusterid",
         "properties.eksClusterName",
         "properties.container",
         "properties.namespace",
@@ -274,11 +277,13 @@ def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, accumulate=Fa
         sys.exit(1)
 
 
-def kubecost_allocation_data_add_eks_cluster_name(allocation_data, cluster_arn):
-    """Adds the real EKS cluster name from the CLUSTER_ARN input, to each allocation.
+def kubecost_allocation_data_add_cluster_id_and_name_from_input(allocation_data, cluster_id):
+    """Adds the cluster unique ID and name from the CLUSTER_ID input, to each allocation.
+    The cluster ID is needed in case we'd like to identify the unique cluster ID in the dataset.
+    The cluster name is needed because the Kubecost's representation of the cluster name might not be the real name.
 
     :param allocation_data: the allocation "data" list from Kubecost Allocation API On-demand query HTTP response
-    :param cluster_arn: the EKS cluster ARN
+    :param cluster_id: the cluster unique ID (for example, EKS cluster ARN)
     :return: Kubecost allocation data with the real EKS cluster name
     """
 
@@ -286,7 +291,8 @@ def kubecost_allocation_data_add_eks_cluster_name(allocation_data, cluster_arn):
         for allocation in time_set.values():
             if "properties" in allocation.keys():
                 if "cluster" in allocation["properties"].keys():
-                    allocation["properties"]["eksClusterName"] = cluster_arn.split("/")[-1]
+                    allocation["properties"]["eksClusterName"] = cluster_id.split("/")[-1]
+                    allocation["properties"]["clusterid"] = cluster_id
 
     return allocation_data
 
@@ -313,19 +319,51 @@ def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
                                 asset_id_key.split("/")[-2] == allocation["properties"]["providerID"]][0]
 
                     # Updating matching asset data from the Assets API, on the allocation properties
-                    allocation["properties"]["provider"] = assets_data[0][asset_id]["properties"]["provider"]
-                    allocation["properties"]["node_instance_type"] = assets_data[0][asset_id]["nodeType"]
-                    allocation["properties"]["node_availability_zone"] = assets_data[0][asset_id]["labels"][
-                        "label_topology_kubernetes_io_zone"]
-                    allocation["properties"]["node_capacity_type"] = assets_data[0][asset_id]["labels"][
-                        "label_eks_amazonaws_com_capacityType"]
-                    allocation["properties"]["node_architecture"] = assets_data[0][asset_id]["labels"][
-                        "label_kubernetes_io_arch"]
-                    allocation["properties"]["node_os"] = assets_data[0][asset_id]["labels"]["label_kubernetes_io_os"]
-                    allocation["properties"]["node_nodegroup"] = assets_data[0][asset_id]["labels"][
-                        "label_eks_amazonaws_com_nodegroup"]
-                    allocation["properties"]["node_nodegroup_image"] = assets_data[0][asset_id]["labels"][
-                        "label_eks_amazonaws_com_nodegroup_image"]
+                    # If a certain asset data isn't found, the field is added to the allocation data as an empty string
+                    # This is to keep the dataset with all required fields
+                    try:
+                        allocation["properties"]["provider"] = assets_data[0][asset_id]["properties"]["provider"]
+                    except KeyError:
+                        allocation["properties"]["provider"] = ""
+                    try:
+                        allocation["properties"]["region"] = assets_data[0][asset_id]["labels"][
+                            "label_topology_kubernetes_io_region"]
+                    except KeyError:
+                        allocation["properties"]["region"] = ""
+                    try:
+                        allocation["properties"]["node_instance_type"] = assets_data[0][asset_id]["nodeType"]
+                    except KeyError:
+                        allocation["properties"]["node_instance_type"] = ""
+                    try:
+                        allocation["properties"]["node_availability_zone"] = assets_data[0][asset_id]["labels"][
+                            "label_topology_kubernetes_io_zone"]
+                    except KeyError:
+                        allocation["properties"]["node_availability_zone"] = ""
+                    try:
+                        allocation["properties"]["node_capacity_type"] = assets_data[0][asset_id]["labels"][
+                            "label_eks_amazonaws_com_capacityType"]
+                    except KeyError:
+                        allocation["properties"]["node_capacity_type"] = ""
+                    try:
+                        allocation["properties"]["node_architecture"] = assets_data[0][asset_id]["labels"][
+                            "label_kubernetes_io_arch"]
+                    except KeyError:
+                        allocation["properties"]["node_architecture"] = ""
+                    try:
+                        allocation["properties"]["node_os"] = assets_data[0][asset_id]["labels"][
+                            "label_kubernetes_io_os"]
+                    except KeyError:
+                        allocation["properties"]["node_os"] = ""
+                    try:
+                        allocation["properties"]["node_nodegroup"] = assets_data[0][asset_id]["labels"][
+                            "label_eks_amazonaws_com_nodegroup"]
+                    except KeyError:
+                        allocation["properties"]["node_nodegroup"] = ""
+                    try:
+                        allocation["properties"]["node_nodegroup_image"] = assets_data[0][asset_id]["labels"][
+                            "label_eks_amazonaws_com_nodegroup_image"]
+                    except KeyError:
+                        allocation["properties"]["node_nodegroup_image"] = ""
 
     return allocation_data
 
@@ -387,20 +425,20 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name):
     df.to_parquet("output.snappy.parquet", engine="pyarrow")
 
 
-def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_arn, date, month, year):
+def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year):
     """Compresses and uploads the Kubecost Allocation Parquet to an S3 bucket.
 
     :param s3_bucket_name: the S3 bucket name to use
-    :param cluster_arn: the K8s cluster ARN to use for the S3 bucket prefix and Parquet file name
+    :param cluster_id: the cluster ID to use for the S3 bucket prefix and Parquet file name
     :param date: the date to use in the Parquet file name
     :param month: the month to use as part of the S3 bucket prefix
     :param year: the year to use as part of the S3 bucket prefix
     :return:
     """
 
-    cluster_name = cluster_arn.split("/")[-1]
-    cluster_account_id = cluster_arn.split(":")[4]
-    cluster_region_code = cluster_arn.split(":")[3]
+    cluster_name = cluster_id.split("/")[-1]
+    cluster_account_id = cluster_id.split(":")[4]
+    cluster_region_code = cluster_id.split(":")[3]
 
     # Compressing and uploading the Parquet file to the S3 bucket
     s3_file_name = f"{date}_{cluster_name}"
@@ -427,8 +465,8 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_arn, date, 
 
 def main():
 
-    # Input validations for the EKS cluster ARN, IRSA parent IAM Role ARN, and Kubecost API endpoint
-    cluster_arn_input_validation(CLUSTER_ARN, "CLUSTER_ARN")
+    # Input validations for the cluster ID, IRSA parent IAM Role ARN, and Kubecost API endpoint
+    cluster_id_input_validation(CLUSTER_ID, "CLUSTER_ID")
     iam_role_arn_input_validation(IRSA_PARENT_IAM_ROLE_ARN, "IRSA_PARENT_IAM_ROLE_ARN")
     kubecost_api_endpoint_input_validation(KUBECOST_API_ENDPOINT)
 
@@ -451,9 +489,9 @@ def main():
     kubecost_assets_data = execute_kubecost_assets_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
                                                        three_days_ago_midnight_plus_one_day)
 
-    # Adding the real EKS cluster name from the cluster ARN
-    kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_eks_cluster_name(
-        kubecost_allocation_data, CLUSTER_ARN)
+    # Adding the real cluster ID and name from the cluster ID input
+    kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_cluster_id_and_name_from_input(
+        kubecost_allocation_data, CLUSTER_ID)
 
     # Adding assets data from the Kubecost Assets API
     kubecost_allocation_data_with_assets_data = kubecost_allocation_data_add_assets_data(
@@ -466,7 +504,7 @@ def main():
     # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
     kubecost_csv_allocation_data_to_parquet("output.csv")
-    upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ARN, three_days_ago_date, three_days_ago_month,
+    upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
                                              three_days_ago_year)
 
 
