@@ -277,13 +277,13 @@ The output should be similar to the below:
     
     
     ? [dashboard-id] Please select dashboard to install: (Use arrow keys)
-     » [cudos] CUDOS Dashboard
+       [cudos] CUDOS Dashboard
        [cost_intelligence_dashboard] Cost Intelligence Dashboard
        [kpi_dashboard] KPI Dashboard
        [ta-organizational-view] Trusted Advisor Organizational View
        [trends-dashboard] Trends Dashboard
        [compute-optimizer-dashboard] Compute Optimizer Dashboard
-       [eks_insights] EKS Insights
+     » [eks_insights] EKS Insights
 
 From the list, choose `[eks_insights] EKS Insights`.<br />
 After choosing, wait for dashboards discovery to be completed, and then the additional output should be similar to the below:
@@ -302,8 +302,8 @@ After choosing, wait for dashboards discovery to be completed, and then the addi
     Detected views:
     
     ? [athena-database] Select AWS Athena database to use: (Use arrow keys)
-     » <cur_db>
-       kubecost_db
+       <cur_db>
+     » kubecost_db
        spectrumdb
 
 From the list, choose the Athena database that was created by the Terraform template.<br />
