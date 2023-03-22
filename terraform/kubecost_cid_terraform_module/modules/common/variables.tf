@@ -41,7 +41,7 @@ variable "clusters_labels" {
 
   type = list(object({
     cluster_id = string
-    labels      = optional(list(string))
+    labels     = optional(list(string))
   }))
 
   default = []
