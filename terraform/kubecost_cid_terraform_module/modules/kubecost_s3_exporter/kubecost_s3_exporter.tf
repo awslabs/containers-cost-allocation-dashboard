@@ -40,7 +40,7 @@ locals {
           "value" : var.kubecost_api_endpoint
         },
         {
-          "name" : "CLUSTER_ARN",
+          "name" : "CLUSTER_ID",
           "value" : var.cluster_arn
         },
         {
@@ -57,7 +57,7 @@ locals {
         },
         {
           "name" : "LABELS",
-          "value" : try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_arn, var.cluster_arn)), "labels", [])), "")
+          "value" : try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_id, var.cluster_arn)), "labels", [])), "")
         },
         {
           "name" : "PYTHONUNBUFFERED",
