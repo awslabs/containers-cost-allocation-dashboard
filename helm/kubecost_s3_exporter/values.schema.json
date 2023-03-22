@@ -26,7 +26,7 @@
             "enum": [
               "S3_BUCKET_NAME",
               "KUBECOST_API_ENDPOINT",
-              "CLUSTER_ARN",
+              "CLUSTER_ID",
               "IRSA_PARENT_IAM_ROLE_ARN",
               "GRANULARITY",
               "AGGREGATION",
@@ -84,7 +84,7 @@
             "if": {
               "properties": {
                 "name": {
-                  "const": "CLUSTER_ARN"
+                  "const": "CLUSTER_ID"
                 }
               }
             },
