@@ -96,7 +96,11 @@ datasets:
               Type: DECIMAL
             - Name: properties.provider
               Type: STRING
+            - Name: properties.region
+              Type: STRING
             - Name: properties.cluster
+              Type: STRING
+            - Name: properties.clusterid
               Type: STRING
             - Name: properties.eksclustername
               Type: STRING
@@ -142,14 +146,10 @@ datasets:
           DataTransforms:
           - CreateColumnsOperation:
               Columns:
-              - ColumnName: cpu_and_ram_cost
-                ColumnId: 1654107b-be44-4cce-93c6-b06325923888
-                Expression: '{cpucost} + {ramcost}'
-          - CreateColumnsOperation:
-              Columns:
-              - ColumnName: pvgbytes
-                ColumnId: 6535a53c-7d1a-422c-bafe-98b54050ba76
-                Expression: sum({pvbytes}/1024/1024/1024)
+              - ColumnName: region_code
+                ColumnId: 44b43fa2-9916-4d2a-94d1-a829f131077b
+                Expression: "ifelse(\n    isNotNull({properties.region}), {properties.region},\n\
+                  \    region\n)"
           - ProjectOperation:
               ProjectedColumns:
               - name
@@ -189,7 +189,9 @@ datasets:
               - totalcost
               - totalefficiency
               - properties.provider
+              - properties.region
               - properties.cluster
+              - properties.clusterid
               - properties.eksclustername
               - properties.container
               - properties.namespace
@@ -209,8 +211,7 @@ datasets:
               - region
               - year
               - month
-              - cpu_and_ram_cost
-              - pvgbytes
+              - region_code
           Source:
             PhysicalTableId: 06f7b96e-4cd6-4d7f-83a8-e8b9302da3f4
       ImportMode: SPICE
