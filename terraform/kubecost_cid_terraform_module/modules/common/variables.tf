@@ -40,7 +40,7 @@ variable "irsa_parent_role_aws_profile" {
 variable "clusters_labels" {
 
   type = list(object({
-    cluster_arn = string
+    cluster_id = string
     labels      = optional(list(string))
   }))
 
@@ -65,8 +65,8 @@ variable "clusters_labels" {
   # arn:aws:s3:us-east-1:111111111111:cluster/cluster1
   # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
   validation {
-    condition     = length([for cluster_arn in var.clusters_labels.*.cluster_arn : cluster_arn if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_arn))]) == length(var.clusters_labels)
-    error_message = "At least one of the 'cluster_arn' keys in the 'clusters_labels' list, contains an invalid ARN value"
+    condition     = length([for cluster_id in var.clusters_labels.*.cluster_id : cluster_id if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_id))]) == length(var.clusters_labels)
+    error_message = "At least one of the 'cluster_id' keys in the 'clusters_labels' list, contains an invalid value"
   }
 }
 
