@@ -23,7 +23,7 @@ env:
     value: "kubecost-data"
   - name: "KUBECOST_API_ENDPOINT"
     value: "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
-  - name: "CLUSTER_ARN"
+  - name: "CLUSTER_ID"
     value: "<cluster_arn>" # Change to your EKS cluster ARN
   - name: "IRSA_PARENT_IAM_ROLE_ARN"
     value: ""
