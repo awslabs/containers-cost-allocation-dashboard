@@ -44,7 +44,7 @@ LABELS = os.environ.get("LABELS")
 
 def cluster_id_input_validation(cluster_id, input_name):
     """This function is used to validate the cluster ID input.
-    Currently it supports validating only EKS cluster ARN.
+    Currently, it supports validating only EKS cluster ARN.
 
     :param cluster_id: The cluster ID
     :param input_name: The input name
