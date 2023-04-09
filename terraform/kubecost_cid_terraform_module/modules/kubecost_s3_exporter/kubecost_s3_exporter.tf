@@ -56,6 +56,26 @@ locals {
           "value" : var.aggregation
         },
         {
+          "name" : "KUBECOST_ALLOCATION_API_PAGINATE",
+          "value" : var.kubecost_allocation_api_paginate
+        },
+        {
+          "name" : "KUBECOST_ALLOCATION_API_RESOLUTION",
+          "value" : var.kubecost_allocation_api_resolution
+        },
+        {
+          "name" : "CONNECTION_TIMEOUT",
+          "value" : var.connection_timeout
+        },
+        {
+          "name" : "KUBECOST_ALLOCATION_API_READ_TIMEOUT",
+          "value" : var.kubecost_allocation_api_read_timeout
+        },
+        {
+          "name" : "KUBECOST_ASSETS_API_READ_TIMEOUT",
+          "value" : var.kubecost_assets_api_read_timeout
+        },
+        {
           "name" : "LABELS",
           "value" : try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_id, var.cluster_arn)), "labels", [])), "")
         },
