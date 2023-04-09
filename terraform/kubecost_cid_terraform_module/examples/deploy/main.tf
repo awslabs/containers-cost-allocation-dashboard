@@ -32,8 +32,8 @@ module "cluster1-us-east-1-111111111111" {
   aws_profile                          = "profile1"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_api_endpoint                = "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
-  connection_timeout                   = 5
-  read_timeout                         = 30
+  kubecost_allocation_api_read_timeout = 30
+  kubecost_assets_api_read_timeout     = 10
 }
 
 module "cluster2-us-east-1-111111111111" {
