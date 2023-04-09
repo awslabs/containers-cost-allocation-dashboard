@@ -29,8 +29,8 @@ The data collection pod is referred to as Kubecost S3 Exporter throughout some p
 ### High-Level Logic
 
 1. The CronJob K8s controller runs daily and creates a pod that collects cost allocation data from Kubecost. It runs the following API calls:<br />
-The [Allocation API on-demand query (experimental)](https://docs.kubecost.com/apis/apis/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
-The [Assets API](https://docs.kubecost.com/apis/apis/assets-api) to retrieve the assets' data.<br />
+The [Allocation On-Demand API (experimental)](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
+The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
 2. Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
 3. The data is made available in Athena using AWS Glue Database, AWS Glue Table and AWS Glue Crawler.<br />
@@ -56,6 +56,16 @@ In addition, an S3 bucket policy sample is provided as part of this documentatio
 The Terraform module that's provided with this solution does not create it, because it doesn't create the S3 bucket.<br />
 It's up to you to use it on your S3 bucket. 
 
+### Kubecost APIs Used by this Solution
+
+The Kubecost APIs that are being used are:
+
+* The [Allocation On-Demand API (experimental)](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) to retrieve the cost allocation data
+* The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data - specifically for the nodes
+
+For clarifications on issues that may be encountered when querying the Allocation On-Demand API (such as slow response time or memory issues):<br />
+Please see the "Clarifications on the Allocation On-Demand API" part on the Appendix. 
+
 ## Requirements
 
 1. An S3 bucket, which will be used to store the Kubecost data
@@ -67,9 +77,10 @@ For each EKS cluster, have the following:
 
 1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).<br />
 The IAM OIDC Provider must be created in the EKS cluster's account and region.
-2. Kubecost (free tier is enough) deployed in the EKS cluster.<br />
-The get the most accurate data from Kubecost, it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations).<br />
-To get network costs, you should follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs Daemonset](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
+2. Kubecost deployed in the EKS cluster.<br />
+Currently, only the free tier and the EKS-optimized bundle of Kubecost are supported.<br />
+The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations).<br />
+To get network costs, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs Daemonset](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
 
 Please continue reading the specific sections “S3 Bucket Specific Notes”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
 
@@ -424,6 +435,56 @@ Then, run the following command to get the logs:
 
     kubectl logs <pod> -c kubecost-s3-exporter -n <namespace> --context <context>
 
+## Troubleshooting
+
+This section includes some common issues and possible solutions.
+
+### The Data Collection Pod is in Status of `Completed`, But There's No Data in the S3 Bucket
+
+The data collection container collects data between 72 hours ago 00:00:00.000 and 48 hours ago 00:00:00.000.<br />
+Your Kubecost server still have missing data in this timeframe.<br />
+Please check the data collection container logs, and if you see the below message, it means you still don't have enough data:
+
+    <timestamp> ERROR kubecost-s3-exporter: API response appears to be empty.
+    This script collects data between 72 hours ago and 48 hours ago.
+    Make sure that you have data at least within this timeframe.
+
+In this case, please wait for Kubecost to collect data for 72 hours ago, and then check again.
+
+### The Data Pod Container is in Status of `Error`
+
+This could be for various reasons.<br />
+Below are a couple of scenarios caught by the data collection container, and their logs you should expect to see.
+
+#### A Connection Establishment Timeout
+
+In case of a connection establishment timeout, the container logs will show the following log:
+
+    <timestamp> ERROR kubecost-s3-exporter: Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). Consider increasing the connection timeout value.
+
+In this case, please check the following:
+
+1. That you specified the correct Kubecost API endpoint in the `kubecost_api_endpoint` input.
+This should be the Kubecost cost-analyzer service.<br />
+Usually, you should be able to specify `http://<service_name>.<namespace_name>:[port]`, and this DNS name will be resolved.
+The default service name for Kubecost cost-analyzer service is `kubecost-cost-analyzer`, and the default namespace it's created in is `kubecost`.<br />
+The default port the Kubecost cost-analyzer service listens on is TCP 9090.<br />
+Unless you changed the namespace, service name or port, you should be good with the default value of the `kubecost_api_endpoint` input.<br />
+If you changed any of the above, make sure you change the `kubecost_api_endpoint` input value accordingly.
+2. If the `kubecost_api_endpoint` input has the correct value, try increasing the `connection_timeout` input value
+3. If you still get the same error, check network connectivity between the data collection pod and the Kubecost cost-analyzer service
+
+#### An HTTP Server Response Timeout
+
+In case of HTTP server response timeout, the container logs will show one of the following logs (depends on the API being queried):
+
+    <timestamp> ERROR kubecost-s3-exporter: Timed out waiting for Kubecost Allocation On-Demand API to send an HTTP response in the given time ({read_timeout}s). Consider increasing the read timeout value.
+
+    <timestamp> ERROR kubecost-s3-exporter: Timed out waiting for Kubecost Assets API to send an HTTP response in the given time ({read_timeout}s). Consider increasing the read timeout value.
+
+If this is for the Allocation On-Demand API call, please follow the recommendations in the "Clarifications on the Allocation On-Demand API" part on the Appendix.<br />
+If this is for the Assets API call, please try increasing the `kubecost_assets_api_read_timeout` input value.
+
 ## Cleanup
 
 ### QuickSight Cleanup
@@ -447,3 +508,82 @@ For clusters on which the K8s resources were deployed using "Deployment Option 2
 ### Remove Namespaces
 
 For each cluster, remove the namespace by running `kubectl delete ns <namespace> --context <cluster_context>` per cluster.
+
+## Appendix
+
+### Clarifications on the Allocation On-Demand API
+
+The [Allocation API On-Demand API](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) is considered experimental, as mentioned in the referenced link.<br />
+The reason this solution uses this API and not the [standard Allocation API endpoint](https://docs.kubecost.com/apis/apis-overview/allocation#allocation-api), is to fetch specific time range in hourly granularity.<br />
+This solution relies on Kubecost's ability to integrate with the Cost and Usage Report (CUR).<br />
+The CUR is being updated [**up to** 3 times a day](https://docs.aws.amazon.com/cur/latest/userguide/what-is-cur.html). The data recency in the update might be back a few hours from the update time.<br />
+Since Kubecost shows updated cost data up to almost now, it means there could be a gap between Kubecost's data and CUR's data for up to 48 hours.<br />
+Till Kubecost reconciles the data from CUR with its data, it'll show on-demand costs.
+
+This solution, intends to show accurate container costs that reflect not only on-demand, but also RIs, Savings Plans and Spot.<br />
+This means that for this to work, the daily data collection must always collect data from 48 hours ago.<br />
+To be more precise, it must collect data from between 72 hours ago 00:00:00.000 to 48 hours ago 00:00:00.000.<br />
+This solution also intends to show up to hourly granularity of the costs.<br />
+This means that the data collection must provide an option to retrieve the data from Kubecost in hourly granularity.<br />
+Lastly, this solution intends to show container-level cost data, which means the amount of data fetched can be large (as opposed to using higher-level aggregations).
+
+The Kubecost standard Allocation API endpoint doesn't have an input to specify the time granularity.<br />
+Instead, it uses time granularity based on the `window` input.<br />
+For example, a `window` of `24h` will return data in hourly granularity, and a `window` of `3d` will return data in daily granularity.<br />
+We don't use this kind of window, and instead, we use a time range window (as mentioned above).<br />
+With this type of window, Kubecost can't automatically detect the granularity, so it returns an accumulated cost for the whole time range.<br />
+Alternatively, we could specify `72h` window (to get hourly granularity) and get the specific time range at parsing level.<br />
+However, Kubecost standard Allocation API endpoint has a limitation where it returns data in hourly granularity only for `window` of up to `48h`.
+
+As opposed to the standard Allocation API endpoint, the Allocation On-Demand API endpoint has a `step` input.<br />
+This gives us the flexibility to specify a hourly granularity (with `step` set to `1h`), even for a time-range window.<br />
+However, this comes with a performance tradeoff, as it computes everything on-demand.<br />
+This is as opposed to the standard Allocation API endpoint which uses precomputed sets with predefined step sizes.<br />
+This can cause long HTTP response times (for the API calls we make), as well as serious Prometheus performance issues, including OOM errors.
+
+Due to our requirement for CUR data parity and hourly granularity, we chose the Allocation On-Demand API.<br />
+To avoid the possible issues that may be caused by using this API, we provide the following means as part of this solution:
+
+* Ability to set the API call's read timeout, using the `kubecost_allocation_api_read_timeout` Terraform input (`KUBECOST_ALLOCATION_API_READ_TIMEOUT` Helm input).<br />
+The read timeout defines the time to wait for the server to return an HTTP response, and provides ability to set high read timeout.<br />
+This is useful in cases of large clusters where Kubecost Allocation On-Demand API will take time to compute the data before returning a response.<br />
+The default read timeout is 60 seconds, and can be changed on per cluster basis. 
+* Ability to paginate using the `kubecost_allocation_api_paginate` Terraform input (`KUBECOST_ALLOCATION_API_PAGINATE` Helm input).<br />
+Kubecost doesn't provide a native pagination functionality on this API.<br />
+In some cases, returning large volumes of data may cause OOM errors.<br />
+So, setting the read timeout to a large value to allow for a long processing time solves one issue, but causes another issue.<br />
+To avoid possible OOM errors, this solution implements pagination by querying 1-hour time ranges within the 24-hour range it queries.<br />
+This means that with pagination enabled, the data collection will perform 24 API calls and will concatenate them to a single data set.<br />
+This means a potentially longer time to finish the retrieving all data (due to multiple request-response transactions over the network).<br />
+However, in this expense, we reduce the risk for OOM errors because we retrieve smaller set of data on every API call.<br />
+Pagination is disabled by default, and can be enabled on per cluster basis.
+* Ability to define query resolution using the `kubecost_allocation_api_resolution` Terraform input (`KUBECOST_ALLOCATION_API_RESOLUTION` Helm input).<br />
+This provides the ability to make tradeoffs between accuracy and performance.<br />
+The default value is `1m`, and it can be changed on per cluster basis.<br />
+For more information on this functionality from Kubecost's documentation, see [Theoretical error bounds](https://docs.kubecost.com/apis/apis-overview/allocation#theoretical-error-bounds) in the Allocation On-Demand API documentation.
+* Ability to choose higher-level response aggregation, using the `aggregation` Terraform input (`AGGREGATION` Helm input).<br />
+Although we intend to collect container-level cost data to provide the most granular data set, we provide an option to choose the aggregation.<br />
+This can potentially reduce the amount of data that needs to be returned by Kubecost, which means less time for Kubecost to process it.<br />
+This can reduce the risk for OOM errors, and also reduce the time it takes for the API to respond (hence, you could reduce the `kubecost_allocation_api_read_timeout`).<br />
+The default value is `container`, and it can be changed on per cluster basis, to different higher level aggregation options (such ash pod, namespace).<br />
+Using different aggregation option on different cluster will NOT cause issues on the data set, so feel free to use different options on different clusters.<br />
+Please note that using aggregation higher than `container` will prevent using container right-sizing features of this solution for the respective clusters.
+* Ability to specify daily time granularity using the `granularity` Terraform input (`GRANULARITY` Helm input).<br />
+Although we intend to provide hourly granularity for accurate data, we provide an option to choose the time granularity.<br />
+This can dramatically reduce the amount of data that needs to be returned by Kubecost, which means less time for Kubecost to process it.<br />
+This can reduce the risk for OOM errors, and also reduce the time it takes for the API to respond (hence, you could reduce the `kubecost_allocation_api_read_timeout`).<br />
+The default value is `hourly`, and it can be changed globally, only on the `common` Terraform module.<br />
+Please DO NOT change it manually on an individual cluster basis on Helm.<br />
+Please note that changing the time granularity to `daily` will reduce the ability to investigate costs for short-term containers.
+
+We recommend approaching the problems outlined above, as follows:
+
+1. Run the data collection container for the first time, with the default settings, on a dev cluster.<br />
+If the Allocation On-Demand API fails to return an HTTP response in the given time, you'll see an error as in the "An HTTP Server Response Timeout" section.<br />
+In this case, increase the `kubecost_allocation_api_read_timeout` incrementally, till you receive a response.
+2. Based on the time it takes the Allocation On-Demand API to return (can be seen in the data collection container logs), adjust the read timeout on larger clusters.<br />
+3. If you observe a too high memory usage on the Kubecost pod or Prometheus, or OOM errors on them, enable pagination for the cluster
+4. If the above doesn't help, change the `kubecost_allocation_api_resolution` input to more than `1m` (do it incrementally till you see improvement)
+5. If the above doesn't help, use higher level aggregation using the `aggreagation` input (for example, "pod" or "namespace") for the cluster
+6. If the above doesn't help, move to daily granularity as a last resort (this will affect all clusters).<br />
+Do so by changing the default value of the `granularity` input in the `common` module to `daily`
