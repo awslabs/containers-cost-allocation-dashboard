@@ -118,15 +118,15 @@ This is to not repeat these inputs twice in the `main.tf` file.
 
 The below table lists the required and optional common inputs:
 
-| Name                                                                              | Description                                                                                                            | Type                                                                                                | Default                                     | Required |
-|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|---------------------------------------------|:--------:|
-| <a name="input_bucket_arn"></a> bucket\_arn                                       | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                                   | `string`                                                                                            | `""`                                        |   yes    |
-| <a name="irsa_parent_role_aws_profile"></a> irsa\_aws\_profile                    | The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account | `string`                                                                                            | `""`                                        |   yes    |
-| <a name="input_clusters_labels"></a> clusters\_labels                             | A list of objects containing clusters and their K8s labels that you wish to include in the dataset                     | <pre>list(object({<br>    cluster_id = string<br>    labels = optional(list(string))<br>  }))</pre> | `[]`                                        |    no    |
-| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files           | Paths to the AWS shared config files                                                                                   | `list(string)`                                                                                      | <pre>[<br>  "~/.aws/config"<br>]</pre>      |    no    |
-| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files | Paths to the AWS shared credentials files                                                                              | `list(string)`                                                                                      | <pre>[<br>  "~/.aws/credentials"<br>]</pre> |    no    |
-| <a name="input_aws_common_tags"></a> aws\_common\_tags                            | Common AWS tags to be used on all AWS resources created by Terraform                                                   | `map(any)`                                                                                          | `{}`                                        |    no    |
-| <a name="input_granularity"></a> granularity                                      | The time granularity of the data that is returned from the Kubecost Allocation API                                     | `string`                                                                                            | `"hourly"`                                  |    no    |
+| Name                                                                              | Description                                                                                                            | Type                                                                                                | Default                                     | Possible Values                              | Required |
+|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|---------------------------------------------|----------------------------------------------|----------|
+| <a name="input_bucket_arn"></a> bucket\_arn                                       | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                                   | `string`                                                                                            | `""`                                        | An S3 Bucket ARN                             |   yes    |
+| <a name="irsa_parent_role_aws_profile"></a> irsa\_aws\_profile                    | The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account | `string`                                                                                            | `""`                                        | An AWS Profile name                          |   yes    |
+| <a name="input_clusters_labels"></a> clusters\_labels                             | A list of objects containing clusters and their K8s labels that you wish to include in the dataset                     | <pre>list(object({<br>    cluster_id = string<br>    labels = optional(list(string))<br>  }))</pre> | `[]`                                        |                                              |    no    |
+| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files           | Paths to the AWS shared config files                                                                                   | `list(string)`                                                                                      | <pre>[<br>  "~/.aws/config"<br>]</pre>      | A list of paths to the AWS config file       |    no    |
+| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files | Paths to the AWS shared credentials files                                                                              | `list(string)`                                                                                      | <pre>[<br>  "~/.aws/credentials"<br>]</pre> | A list of paths to the AWS credentials file  |    no    |
+| <a name="input_aws_common_tags"></a> aws\_common\_tags                            | Common AWS tags to be used on all AWS resources created by Terraform                                                   | `map(any)`                                                                                          | `{}`                                        | A map of tag keys and their values           |    no    |
+| <a name="input_granularity"></a> granularity                                      | The time granularity of the data that is returned from the Kubecost Allocation API                                     | `string`                                                                                            | `"hourly"`                                  | One of "hourly" or "daily", case-insensitive |    no    |
 
 **_!!! Important Note !!!_**
 
@@ -136,10 +136,10 @@ Please provide an AWS profile that can be used to create the parent IAM role in 
 
 The below table lists the required inputs of the `clusters_labels` input:
 
-| Name                                        | Description                                                                   | Type           | Default | Required |
-|---------------------------------------------|-------------------------------------------------------------------------------|----------------|---------|:--------:|
-| <a name="input_cluster_id"></a> cluster\_id | The unique ID of the cluster that its labels you'd like to add to the dataset | `string`       | n/a     |   yes    |
-| <a name="input_labels"></a> labels          | A list of labels to include in the dataset                                    | `list(string)` | n/a     |   yes    |
+| Name                                        | Description                                                                   | Type           | Default | Possible Values              | Required |
+|---------------------------------------------|-------------------------------------------------------------------------------|----------------|---------|------------------------------|----------|
+| <a name="input_cluster_id"></a> cluster\_id | The unique ID of the cluster that its labels you'd like to add to the dataset | `string`       | n/a     | An EKS Cluster ARN           |   yes    |
+| <a name="input_labels"></a> labels          | A list of labels to include in the dataset                                    | `list(string)` | n/a     | A list of labels, as strings |   yes    |
 
 To provide the inputs, open the `modules/common/variables.tf` file, and perform the following:
 
@@ -169,11 +169,11 @@ You'll provide the module-specific inputs in these instances.
 
 The below table lists the required inputs for the `pipeline` module (there are no optional inputs):
 
-| Name                                                               | Description                                                                                                              | Type     | Default | Required |
-|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------|---------|:--------:|
-| <a name="input_aws_region"></a> aws\_region                        | The AWS region code to use for the pipeline resources                                                                    | `string` | n/a     |   yes    |
-| <a name="input_aws_profile"></a> aws\_profile                      | The AWS profile to use for configuration and credentials to create the pipeline resources                                | `string` | n/a     |   yes    |
-| <a name="input_glue_crawler_schedule"></a> glue\_crawler\_schedule | The schedule for the Glue Crawler, in Cron format. Make sure to set it after the last Kubecost S3 Exporter Cron schedule | `string` | n/a     |   yes    |
+| Name                                                               | Description                                                                                                              | Type     | Default | Possible Values                               | Required |
+|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------|---------|-----------------------------------------------|----------|
+| <a name="input_aws_region"></a> aws\_region                        | The AWS region code to use for the pipeline resources                                                                    | `string` | n/a     | One of the AWS Regions                        | yes      |
+| <a name="input_aws_profile"></a> aws\_profile                      | The AWS profile to use for configuration and credentials to create the pipeline resources                                | `string` | n/a     | An AWS Profile name                           | yes      |
+| <a name="input_glue_crawler_schedule"></a> glue\_crawler\_schedule | The schedule for the Glue Crawler, in Cron format. Make sure to set it after the last Kubecost S3 Exporter Cron schedule | `string` | n/a     | A Cron expression. For example, `0 1 * * ? *` | yes      |
 
 In the `main.tf` file in the `deploy` directory, you'll find a pre-created `pipeline` module instance:
 
@@ -187,10 +187,10 @@ In the `main.tf` file in the `deploy` directory, you'll find a pre-created `pipe
 Provide the module-specific required inputs, as listed in the above table. Example:
 
     module "pipeline" {
-      source   = "../modules/pipeline"
+      source = "../modules/pipeline"
     
-      aws_region = "us-east-1"
-      aws_profile = "pipeline_profile"
+      aws_region            = "us-east-1"
+      aws_profile           = "pipeline_profile"
       glue_crawler_schedule = "0 1 * * ? *"
     }
 
@@ -198,24 +198,29 @@ Provide the module-specific required inputs, as listed in the above table. Examp
 
 The below table lists the required and optional inputs for the `kubecost_s3_exporter` module:
 
-| Name                                                                                                                         | Description                                                                                                            | Type     | Default                                         | Required |
-|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|----------|-------------------------------------------------|:--------:|
-| <a name="input_cluster_arn"></a> cluster\_arn                                                                                | The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed                                             | `string` | n/a                                             |   yes    |
-| <a name="input_cluster_context"></a> cluster\_context                                                                        | The EKS cluster context name from the kubeconfig file                                                                  | `string` | n/a                                             |   yes    |
-| <a name="input_cluster_oidc_provider_arn"></a> cluster\_oidc\_provider\_arn                                                  | The IAM OIDC Provider ARN for the EKS cluster                                                                          | `string` | n/a                                             |   yes    |
-| <a name="input_aws_region"></a> aws\_region                                                                                  | The region where the EKS cluster resides                                                                               | `string` | n/a                                             |   yes    |
-| <a name="input_aws_profile"></a> aws\_profile                                                                                | The AWS profile to use for configuration and credentials to access the EKS cluster                                     | `string` | n/a                                             |   yes    |
-| <a name="input_kubecost_s3_exporter_container_image"></a> kubecost\_s3\_exporter\_container\_image                           | The Kubecost S3 Exporter container image                                                                               | `string` | n/a                                             |   yes    |
-| <a name="input_kubecost_s3_exporter_container_image_pull_policy"></a> kubecost\_s3\_exporter\_container\_image\_pull\_policy | The image pull policy that'll be used by the Kubecost S3 Exporter pod                                                  | `string` | `"Always"`                                      |    no    |
-| <a name="input_kubecost_s3_exporter_cronjob_schedule"></a> kubecost\_s3\_exporter\_cronjob\_schedule                         | The schedule of the Kubecost S3 Exporter CronJob                                                                       | `string` | `"0 0 * * *"`                                   |    no    |
-| <a name="input_kubecost_api_endpoint"></a> kubecost\_api\_endpoint                                                           | The Kubecost API endpoint in format of 'http://<name\_or\_ip>:<port>'                                                  | `string` | `"http://kubecost-cost-analyzer.kubecost:9090"` |    no    |
-| <a name="input_aggregation"></a> aggregation                                                                                 | The aggregation to use for returning the Kubecost Allocation API results                                               | `string` | `"container"`                                   |    no    |
-| <a name="input_k8s_config_path"></a> k8s\_config\_path                                                                       | The K8s config file to be used by Helm                                                                                 | `string` | `"~/.kube/config"`                              |    no    |
-| <a name="input_namespace"></a> namespace                                                                                     | The namespace in which the Kubecost S3 Exporter pod and service account will be created                                | `string` | `"kubecost-s3-exporter"`                        |    no    |
-| <a name="input_create_namespace"></a> create\_namespace                                                                      | Dictates whether to create the namespace as part of the Helm Chart deployment                                          | `bool`   | `true`                                          |    no    |
-| <a name="input_service_account"></a> service\_account                                                                        | The service account for the Kubecost S3 Exporter pod                                                                   | `string` | `"kubecost-s3-exporter"`                        |    no    |
-| <a name="input_create_service_account"></a> create\_service\_account                                                         | Dictates whether to create the service account as part of the Helm Chart deployment                                    | `bool`   | `true`                                          |    no    |
-| <a name="input_invoke_helm"></a> invoke\_helm                                                                                | Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account) | `bool`   | `true`                                          |    no    |
+| Name                                                                                                                         | Description                                                                                                            | Type     | Default                                         | Possible Values                                                                                               | Required |
+|------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|----------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
+| <a name="input_cluster_arn"></a> cluster\_arn                                                                                | The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed                                             | `string` | n/a                                             | An EKS Cluster ARN                                                                                            | yes      |
+| <a name="input_cluster_context"></a> cluster\_context                                                                        | The EKS cluster context name from the kubeconfig file                                                                  | `string` | n/a                                             | A K8s context name                                                                                            | yes      |
+| <a name="input_cluster_oidc_provider_arn"></a> cluster\_oidc\_provider\_arn                                                  | The IAM OIDC Provider ARN for the EKS cluster                                                                          | `string` | n/a                                             | An IAM OIDC Provider ARN                                                                                      | yes      |
+| <a name="input_aws_region"></a> aws\_region                                                                                  | The region where the EKS cluster resides                                                                               | `string` | n/a                                             | One of the AWS Regions                                                                                        | yes      |
+| <a name="input_aws_profile"></a> aws\_profile                                                                                | The AWS profile to use for configuration and credentials to access the EKS cluster                                     | `string` | n/a                                             | An AWS Profile name                                                                                           | yes      |
+| <a name="input_kubecost_s3_exporter_container_image"></a> kubecost\_s3\_exporter\_container\_image                           | The Kubecost S3 Exporter container image                                                                               | `string` | n/a                                             | A Docker container image (`<registry_url>/<repo>:<tag>`)                                                      | yes      |
+| <a name="input_kubecost_s3_exporter_container_image_pull_policy"></a> kubecost\_s3\_exporter\_container\_image\_pull\_policy | The image pull policy that'll be used by the Kubecost S3 Exporter pod                                                  | `string` | `"Always"`                                      | One of "Always", "IfNotPresent" or "Never"                                                                    | no       |
+| <a name="input_kubecost_s3_exporter_cronjob_schedule"></a> kubecost\_s3\_exporter\_cronjob\_schedule                         | The schedule of the Kubecost S3 Exporter CronJob                                                                       | `string` | `"0 0 * * *"`                                   | A Cron expression. For example, `0 0 * * *`                                                                   | no       |
+| <a name="input_kubecost_api_endpoint"></a> kubecost\_api\_endpoint                                                           | The Kubecost API endpoint in format of 'http://<name\_or\_ip>:<port>'                                                  | `string` | `"http://kubecost-cost-analyzer.kubecost:9090"` | A URI in the format of http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]                            | no       |
+| <a name="input_aggregation"></a> aggregation                                                                                 | The aggregation to use for returning the Kubecost Allocation API results                                               | `string` | `"container"`                                   | One of "container", "pod", "namespace", "controller", "controllerKind", "node", or "cluster" (case-sensitive) | no       |
+| <a name="input_kubecost_allocation_api_paginate"></a> kubecost_allocation_api_paginate                                       | Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)                                           | `string` | `"No"`                                          | One of "Yes", "No", "Y" or "N" (case-insensitive)                                                             | no       |
+| <a name="input_kubecost_allocation_api_resolution"></a> kubecost_allocation_api_resolution                                   | The Kubecost Allocation On-demand API resolution, to control accuracy vs performance                                   | `string` | `"1m"`                                          | A resolution in the format of 'Nm', where N >= 1. For example, 1m, 2m, 5m, 10m                                | no       |
+| <a name="input_connection_timeout"></a> connection_timeout                                                                   | The time (in seconds) to wait for TCP connection establishment                                                         | `number` | `10`                                            | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
+| <a name="input_kubecost_allocation_api_read_timeout"></a> kubecost_allocation_api_read_timeout                               | The time (in seconds) to wait for the Kubecost Allocation On-Demand API to send an HTTP response                       | `number` | `60`                                            | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
+| <a name="input_kubecost_assets_api_read_timeout"></a> kubecost_assets_api_read_timeout                                       | The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response                                     | `number` | `30`                                            | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
+| <a name="input_k8s_config_path"></a> k8s\_config\_path                                                                       | The K8s config file to be used by Helm                                                                                 | `string` | `"~/.kube/config"`                              | The path to the K8s config file                                                                               | no       |
+| <a name="input_namespace"></a> namespace                                                                                     | The namespace in which the Kubecost S3 Exporter pod and service account will be created                                | `string` | `"kubecost-s3-exporter"`                        | A valid namespace name                                                                                        | no       |
+| <a name="input_create_namespace"></a> create\_namespace                                                                      | Dictates whether to create the namespace as part of the Helm Chart deployment                                          | `bool`   | `true`                                          | `true` or `false`                                                                                             | no       |
+| <a name="input_service_account"></a> service\_account                                                                        | The service account for the Kubecost S3 Exporter pod                                                                   | `string` | `"kubecost-s3-exporter"`                        | A valid service account name                                                                                  | no       |
+| <a name="input_create_service_account"></a> create\_service\_account                                                         | Dictates whether to create the service account as part of the Helm Chart deployment                                    | `bool`   | `true`                                          | `true` or `false`                                                                                             | no       |
+| <a name="input_invoke_helm"></a> invoke\_helm                                                                                | Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account) | `bool`   | `true`                                          | `true` or `false`                                                                                             | no       |
 
 In the `main.tf` file in the `deploy` directory, you'll find a pre-created `kubecost-s3-exporter` module instance:
 
@@ -233,13 +238,13 @@ Change the name of the module instance from "cluster1" to a name that uniquely r
 Then, provide the module-specific required inputs, as listed in the above table. Example (more examples can be found in the `examples/deploy/main.tf` file):
 
     module "cluster1" {
-      source   = "../modules/kubecost_s3_exporter"
+      source = "../modules/kubecost_s3_exporter"
     
-      cluster_arn = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
-      cluster_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
-      cluster_oidc_provider_arn = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/1"
-      aws_region = "us-east-1"
-      aws_profile = "cluster1_profile"
+      cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
+      cluster_context                      = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
+      cluster_oidc_provider_arn            = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/1"
+      aws_region                           = "us-east-1"
+      aws_profile                          = "cluster1_profile"
       kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
     }
 
@@ -274,7 +279,8 @@ This output is included, so that you can make sure the labels were added to the 
 The `main.tf` file already has a `labels` output, to show the list of distinct labels:
 
     output "labels" {
-      value = module.pipeline.labels
+      value       = module.pipeline.labels
+      description = "A list of the distinct lab of all clusters, that'll be added to the dataset"
     }
 
 No need to make any changes to it.
@@ -288,13 +294,13 @@ You can add an output to the `output.tf` file for each cluster, to show the mapp
 
 The `outputs.tf` file already has a sample output to get you started:
 
-    output "cluster1_irsa_iam_role_arn" {
+    output "cluster1" {
       value       = module.cluster1
       description = "The outputs for 'cluster1'"
     }
 
-Change the output name from `cluster1_irsa_iam_role_arn` to a name that uniquely represents your cluster.<br />
-Then, change the value to reference to the module instance of your cluster (`module.<module_instance_name>.irsa_iam_role_arn`).
+Change the output name from `cluster1` to a name that uniquely represents your cluster.<br />
+Then, change the value to reference to the module instance of your cluster (`module.<module_instance_name>`).
 More examples can be found in the `examples/deploy/outputs.tf` file.
 
 It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Roles ARNs.<br />
