@@ -11,8 +11,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 8,
-      "maxItems": 8,
+      "minItems": 13,
+      "maxItems": 13,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -30,12 +30,16 @@
               "IRSA_PARENT_IAM_ROLE_ARN",
               "GRANULARITY",
               "AGGREGATION",
+              "KUBECOST_ALLOCATION_API_PAGINATE",
+              "KUBECOST_ALLOCATION_API_RESOLUTION",
+              "CONNECTION_TIMEOUT",
+              "KUBECOST_ALLOCATION_API_READ_TIMEOUT",
+              "KUBECOST_ASSETS_API_READ_TIMEOUT",
               "LABELS",
               "PYTHONUNBUFFERED"
             ]
           },
           "value": {
-            "type": "string",
             "description": "The value of the environment variable"
           }
         },
@@ -44,6 +48,7 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "The name of the S3 Bucket to which the Kubecost data will be uploaded",
                   "const": "S3_BUCKET_NAME"
                 }
               }
@@ -51,12 +56,14 @@
             "then": {
               "properties": {
                 "value": {
+                  "type": "string",
                   "pattern": "^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
                 }
               },
               "not": {
                 "properties": {
                   "value":{
+                    "type": "string",
                     "pattern": "^xn--|.+-s3alias$"
                   }
                 }
@@ -67,6 +74,7 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "The Kubecost API endpoint in format of 'http://<name_or_ip>:<port>'",
                   "const": "KUBECOST_API_ENDPOINT"
                 }
               }
@@ -74,6 +82,7 @@
             "then": {
               "properties": {
                 "value": {
+                  "type": "string",
                   "default": "http://kubecost-cost-analyzer.kubecost:9090",
                   "pattern": "^https?://.+"
                 }
@@ -84,6 +93,7 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "The ID of the cluster in which the Kubecost S3 Exporter pod will be deployed",
                   "const": "CLUSTER_ID"
                 }
               }
@@ -91,6 +101,7 @@
             "then": {
               "properties": {
                 "value": {
+                  "type": "string",
                   "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$"
                 }
               }
@@ -100,6 +111,7 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "The ARN of the parent IAM role for this cluster, that is part of the IAM role chaining",
                   "const": "IRSA_PARENT_IAM_ROLE_ARN"
                 }
               }
@@ -107,6 +119,7 @@
             "then": {
               "properties": {
                 "value": {
+                  "type": "string",
                   "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$"
                 }
               }
@@ -116,6 +129,7 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "The time granularity of the data that is returned from the Kubecost Allocation API",
                   "const": "GRANULARITY"
                 }
               }
@@ -123,11 +137,9 @@
             "then": {
               "properties": {
                 "value": {
+                  "type": "string",
                   "default": "hourly",
-                  "enum": [
-                    "hourly",
-                    "daily"
-                  ]
+                  "pattern": "^(?i)(hourly|daily)$"
                 }
               }
             }
@@ -136,6 +148,7 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "The aggregation to use for returning the Kubecost Allocation API results",
                   "const": "AGGREGATION"
                 }
               }
@@ -143,6 +156,7 @@
             "then": {
               "properties": {
                 "value": {
+                  "type": "string",
                   "default": "container",
                   "enum": [
                     "container",
@@ -161,6 +175,101 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)",
+                  "const": "KUBECOST_ALLOCATION_API_PAGINATE"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "default": "No",
+                  "pattern": "^(?i)(Yes|No|Y|N)$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "The Kubecost Allocation On-demand API resolution, to control accuracy vs performance",
+                  "const": "KUBECOST_ALLOCATION_API_RESOLUTION"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "default": "1m",
+                  "pattern": "^[1-9][0-9]?m.*$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "The time (in seconds) to wait for TCP connection establishment",
+                  "const": "CONNECTION_TIMEOUT"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "default": 10,
+                  "exclusiveMinimum": 0
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "The time (in seconds) to wait for the Kubecost Allocation On-Demand API to send an HTTP response",
+                  "const": "KUBECOST_ALLOCATION_API_READ_TIMEOUT"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "default": 60,
+                  "exclusiveMinimum": 0
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response",
+                  "const": "KUBECOST_ASSETS_API_READ_TIMEOUT"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "default": 30,
+                  "exclusiveMinimum": 0
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
                   "const": "PYTHONUNBUFFERED"
                 }
               }
@@ -168,6 +277,7 @@
             "then": {
               "properties": {
                 "value": {
+                  "type": "string",
                   "default": "1",
                   "const": "1"
                 }
