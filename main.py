@@ -13,12 +13,10 @@ import boto3
 import botocore.exceptions
 from boto3 import exceptions
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger("kubecost-s3-exporter")
 
-# Environment variables to identify the S3 bucket, cluster ID, Kubecost API endpoint, granularity and labels
-
-# Mandatory environment variables, and input validations to make sure they're not empty
+# Mandatory environment variables,  to make sure they're not empty
 try:
     S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 except KeyError:
@@ -35,10 +33,57 @@ except KeyError:
     logger.error("The 'IRSA_PARENT_IAM_ROLE_ARN' input is a required, but it's missing")
     sys.exit(1)
 
-# Optional environment variables
+# Optional environment variables, and input validations
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost:9090")
-GRANULARITY = os.environ.get("GRANULARITY", "hourly")
+
+GRANULARITY = os.environ.get("GRANULARITY", "hourly").lower()
+if GRANULARITY not in ["hourly", "daily"]:
+    logger.error("Granularity must be one of 'hourly' or 'daily' (case-insensitive)")
+    sys.exit(1)
+
 AGGREGATION = os.environ.get("AGGREGATION", "container")
+if AGGREGATION not in ["container", "pod", "namespace", "controller", "controllerKind", "node", "cluster"]:
+    logger.error("Aggregation must be one of 'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
+    sys.exit(1)
+
+KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "No").lower()
+if KUBECOST_ALLOCATION_API_PAGINATE not in ["yes", "no", "y", "n"]:
+    logger.error("The 'KUBECOST_ALLOCATION_API_PAGINATE' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)")
+    sys.exit(1)
+
+KUBECOST_ALLOCATION_API_RESOLUTION = os.environ.get("KUBECOST_ALLOCATION_API_RESOLUTION", "1m")
+if not re.match(r"^[1-9][0-9]?m.*$", KUBECOST_ALLOCATION_API_RESOLUTION):
+    logger.error("The 'KUBECOST_ALLOCATION_API_RESOLUTION' input must be in format of 'Nm', where N >= 1.\n"
+                 "For example, 1m, 2m, 5m, 10m.")
+    sys.exit(1)
+
+try:
+    CONNECTION_TIMEOUT = float(os.environ.get("CONNECTION_TIMEOUT", 10))
+    if CONNECTION_TIMEOUT <= 0:
+        logger.error("The connection timeout must be a non-zero positive integer")
+        sys.exit(1)
+except ValueError:
+    logger.error("The connection timeout must be a float")
+    sys.exit(1)
+
+try:
+    KUBECOST_ALLOCATION_API_READ_TIMEOUT = float(os.environ.get("KUBECOST_ALLOCATION_API_READ_TIMEOUT", 60))
+    if KUBECOST_ALLOCATION_API_READ_TIMEOUT <= 0:
+        logger.error("The read timeout must be a non-zero positive float")
+        sys.exit(1)
+except ValueError:
+    logger.error("The read timeout must be a float")
+    sys.exit(1)
+
+try:
+    KUBECOST_ASSETS_API_READ_TIMEOUT = float(os.environ.get("KUBECOST_ASSETS_API_READ_TIMEOUT", 30))
+    if KUBECOST_ASSETS_API_READ_TIMEOUT <= 0:
+        logger.error("The read timeout must be a non-zero positive float")
+        sys.exit(1)
+except ValueError:
+    logger.error("The read timeout must be a float")
+    sys.exit(1)
+
 LABELS = os.environ.get("LABELS")
 
 
@@ -194,86 +239,139 @@ def define_csv_columns(labels):
         return columns
 
 
-def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granularity, aggregate, accumulate=False):
+def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granularity, aggregate, connection_timeout,
+                                    read_timeout, paginate, resolution, accumulate=False):
+
     """Executes Kubecost Allocation API On-demand query.
 
-    :param kubecost_api_endpoint: the Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
-    :param start: the start time for calculating Kubecost Allocation API window
-    :param end: the end time for calculating Kubecost Allocation API window
-    :param granularity: the user input time granularity, to use for calculating the step (daily or hourly)
-    :param aggregate: the K8s object used for aggregation, as per Kubecost Allocation API On-demand query documentation
-    :param accumulate: dictates whether to return data for the entire window, or divide to time sets
-    :return: the Kubecost Allocation API On-demand query "data" list from the HTTP response
+    :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
+    :param start: The start time for calculating Kubecost Allocation API window
+    :param end: The end time for calculating Kubecost Allocation API window
+    :param granularity: The user input time granularity, to use for calculating the step (daily or hourly)
+    :param aggregate: The K8s object used for aggregation, as per Kubecost Allocation API On-demand query documentation
+    :param connection_timeout: The timeout (in seconds) to wait for TCP connection establishment
+    :param read_timeout: The timeout (in seconds) to wait for the server to send an HTTP response
+    :param paginate: Dictates whether to paginate using 1-hour time ranges (relevant for "1h" step)
+    :param resolution: The Kubecost Allocation On-demand API resolution, to control accuracy vs performance
+    :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
+    :return: The Kubecost Allocation API On-demand query "data" list from the HTTP response
     """
 
-    granularity_map = {
-        "hourly": "1h",
-        "daily": "1d"
-    }
-
-    aggregate_values = ["container", "pod", "namespace", "controller", "controllerKind", "node", "cluster"]
-
-    # Calculate window and step, and validating the granularity input
-    window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
-    try:
-        step = granularity_map[granularity.lower()]
-    except KeyError:
-        logger.error("Granularity must be one of 'hourly' or 'daily'")
-        sys.exit(1)
-
-    # Input validation for the aggregate input
-    if aggregate not in aggregate_values:
-        logger.error("Aggregation must be one of 'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
-        sys.exit(1)
+    # Setting the step
+    step = "1h" if granularity == "hourly" else "1d"
 
     # Executing Kubecost Allocation API call (On-demand query)
     try:
-        logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
-                    f"in {granularity.lower()} granularity...")
-        if aggregate == "container":
-            params = {"window": window, "accumulate": accumulate, "step": step}
+
+        # If the step is defined as "1h", the API call is for each hour in the 24-hour timeframe
+        # This is to prevent OOM in the Kubecost/Prometheus containers, and to avoid using high read-timeout value
+        if step == "1h" and paginate in ["yes", "y"]:
+
+            data = []
+            for n in range(1, 25):
+
+                start_h = start + datetime.timedelta(hours=n - 1)
+                end_h = start + datetime.timedelta(hours=n)
+
+                # Calculating the window and defining the API call requests parameters
+                window = f'{start_h.strftime("%Y-%m-%dT%H:%M:%SZ")},{end_h.strftime("%Y-%m-%dT%H:%M:%SZ")}'
+                if aggregate == "container":
+                    params = {"window": window, "accumulate": accumulate, "step": step, "resolution": resolution}
+                else:
+                    params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step,
+                              "resolution": resolution}
+
+                # Executing the API call
+                logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start_h} and {end_h} "
+                            f"in {granularity.lower()} granularity...")
+                r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params,
+                                 timeout=(connection_timeout, read_timeout))
+
+                # Adding the hourly allocation data to the list that'll eventually contain a full 24-hour data
+                if list(filter(None, r.json()["data"])):
+                    data.append(r.json()["data"][0])
+
+            if data:
+                return data
+            else:
+                logger.error("API response appears to be empty.\n"
+                             "This script collects data between 72 hours ago and 48 hours ago.\n"
+                             "Make sure that you have data at least within this timeframe.")
+                sys.exit()
+
+        # If the step is "1d", or "1h" without pagination, the API call is executed once to collect the entire timeframe
         else:
-            params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step}
-        r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params, timeout=10)
-        if not list(filter(None, r.json()["data"])):
-            logger.error("API response appears to be empty.\n"
-                         "This script collects data between 72 hours ago and 48 hours ago.\n"
-                         "Make sure that you have data at least within this timeframe.")
-            sys.exit()
 
-        return r.json()["data"]
-    except requests.exceptions.ConnectionError as error:
-        logger.error(f"Error connecting to Kubecost Allocation API: {error}")
+            # Calculating the window and defining the API call requests parameters
+            window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
+            if aggregate == "container":
+                params = {"window": window, "accumulate": accumulate, "step": step, "resolution": resolution}
+            else:
+                params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step,
+                          "resolution": resolution}
+
+            # Executing the API call
+            logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
+                        f"in {granularity.lower()} granularity...")
+            r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params,
+                             timeout=(connection_timeout, read_timeout))
+
+            if list(filter(None, r.json()["data"])):
+                return r.json()["data"]
+            else:
+                logger.error("API response appears to be empty.\n"
+                             "This script collects data between 72 hours ago and 48 hours ago.\n"
+                             "Make sure that you have data at least within this timeframe.")
+                sys.exit()
+
+    except requests.exceptions.ConnectionError:
+        logger.error(f"Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). "
+                     f"Consider increasing the connection timeout value.")
+        sys.exit(1)
+    except requests.exceptions.ReadTimeout:
+        logger.error(f"Timed out waiting for Kubecost Allocation On-Demand API "
+                     f"to send an HTTP response in the given time ({read_timeout}s). "
+                     f"Consider increasing the read timeout value.")
         sys.exit(1)
 
 
-def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, accumulate=False):
+def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, connection_timeout, read_timeout, accumulate=False):
     """Executes Kubecost Allocation API On-demand query.
 
-    :param kubecost_api_endpoint: the Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
-    :param start: the start time for calculating Kubecost Allocation API window
-    :param end: the end time for calculating Kubecost Allocation API window
-    :param accumulate: dictates whether to return data for the entire window, or divide to time sets
-    :return: the Kubecost Assets API On-demand query "data" list from the HTTP response
+    :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
+    :param start: The start time for calculating Kubecost Allocation API window
+    :param end: The end time for calculating Kubecost Allocation API window
+    :param connection_timeout: The timeout (in seconds) to wait for TCP connection establishment
+    :param read_timeout: The timeout (in seconds) to wait for the server to send an HTTP response
+    :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
+    :return: The Kubecost Assets API On-demand query "data" list from the HTTP response
     """
 
-    # Calculate window and step
+    # Calculating the window
     window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
 
-    # Executing Kubecost Allocation API call (On-demand query)
+    # Executing Kubecost Assets API call
     try:
         logger.info(f"Querying Kubecost Assets API for data between {start} and {end}")
         params = {"window": window, "accumulate": accumulate, "filterCategories": "Compute", "filterTypes": "Node"}
-        r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params, timeout=10)
-        if not list(filter(None, r.json()["data"])):
+        r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params,
+                         timeout=(connection_timeout, read_timeout))
+        if list(filter(None, r.json()["data"])):
+            return r.json()["data"]
+        else:
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
                          "Make sure that you have data at least within this timeframe.")
             sys.exit()
 
-        return r.json()["data"]
-    except requests.exceptions.ConnectionError as error:
-        logger.error(f"Error connecting to Kubecost Assets API: {error}")
+    except requests.exceptions.ConnectionError:
+        logger.error(f"Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). "
+                     f"Consider increasing the connection timeout value.")
+        sys.exit(1)
+    except requests.exceptions.ReadTimeout:
+        logger.error(f"Timed out waiting for Kubecost Assets API "
+                     f"to send an HTTP response in the given time ({read_timeout}s). "
+                     f"Consider increasing the read timeout value.")
         sys.exit(1)
 
 
@@ -444,7 +542,7 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
     s3_file_name = f"{date}_{cluster_name}"
     os.rename("output.snappy.parquet", f"{s3_file_name}.snappy.parquet")
     try:
-        sts = boto3.client('sts')
+        sts = boto3.client("sts")
         sts_response = sts.assume_role(RoleArn=IRSA_PARENT_IAM_ROLE_ARN,
                                        RoleSessionName="kubecost-s3-exporter")
         s3 = boto3.resource("s3", aws_access_key_id=sts_response["Credentials"]["AccessKeyId"],
@@ -484,10 +582,14 @@ def main():
     # Executing Kubecost Allocation API call
     kubecost_allocation_data = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
                                                                three_days_ago_midnight_plus_one_day, GRANULARITY,
-                                                               AGGREGATION)
+                                                               AGGREGATION, CONNECTION_TIMEOUT,
+                                                               KUBECOST_ALLOCATION_API_READ_TIMEOUT,
+                                                               KUBECOST_ALLOCATION_API_PAGINATE,
+                                                               KUBECOST_ALLOCATION_API_RESOLUTION)
 
     kubecost_assets_data = execute_kubecost_assets_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
-                                                       three_days_ago_midnight_plus_one_day)
+                                                       three_days_ago_midnight_plus_one_day, CONNECTION_TIMEOUT,
+                                                       KUBECOST_ASSETS_API_READ_TIMEOUT)
 
     # Adding the real cluster ID and name from the cluster ID input
     kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_cluster_id_and_name_from_input(
