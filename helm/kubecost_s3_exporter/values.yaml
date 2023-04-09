@@ -31,6 +31,16 @@ env:
     value: "hourly"
   - name: "AGGREGATION"
     value: "container"
+  - name: "KUBECOST_ALLOCATION_API_PAGINATE"
+    value: "No"
+  - name: "KUBECOST_ALLOCATION_API_RESOLUTION"
+    value: "1m"
+  - name: "CONNECTION_TIMEOUT"
+    value: 10
+  - name: "KUBECOST_ALLOCATION_API_READ_TIMEOUT"
+    value: 30
+  - name: "KUBECOST_ASSETS_API_READ_TIMEOUT"
+    value: 60
   - name: "LABELS"
     value: "" # Comma-separated list of labels. Example: "app, chart"
   - name: "PYTHONUNBUFFERED"
