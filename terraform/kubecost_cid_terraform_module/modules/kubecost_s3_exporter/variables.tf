@@ -134,6 +134,61 @@ variable "aggregation" {
   }
 }
 
+variable "kubecost_allocation_api_paginate" {
+  type        = string
+  default     = "No"
+  description = "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)"
+
+  validation {
+    condition     = can(regex("^(?i)(Yes|No|Y|N)$", var.kubecost_allocation_api_paginate))
+    error_message = "The 'kubecost_allocation_api_paginate' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)"
+  }
+}
+
+variable "kubecost_allocation_api_resolution" {
+  type        = string
+  default     = "1m"
+  description = "The Kubecost Allocation On-demand API resolution, to control accuracy vs performance"
+
+  validation {
+    condition     = can(regex("^[1-9][0-9]?m.*$", var.kubecost_allocation_api_resolution))
+    error_message = "The 'kubecost_allocation_api_resolution' input must be in format of 'Nm', where N >= 1.\nFor example, 1m, 2m, 5m, 10m."
+  }
+}
+
+variable "connection_timeout" {
+  type        = number
+  default     = 10
+  description = "The time (in seconds) to wait for TCP connection establishment"
+
+  validation {
+    condition     = var.connection_timeout > 0
+    error_message = "The connection timeout must be a non-zero positive integer"
+  }
+}
+
+variable "kubecost_allocation_api_read_timeout" {
+  type        = number
+  default     = 60
+  description = "The time (in seconds) to wait for Kubecost Allocation On-Demand API to send an HTTP response"
+
+  validation {
+    condition     = var.kubecost_allocation_api_read_timeout > 0
+    error_message = "The read timeout must be a non-zero positive float"
+  }
+}
+
+variable "kubecost_assets_api_read_timeout" {
+  type        = number
+  default     = 30
+  description = "The time (in seconds) to wait for Kubecost Assets API to send an HTTP response"
+
+  validation {
+    condition     = var.kubecost_assets_api_read_timeout > 0
+    error_message = "The read timeout must be a non-zero positive float"
+  }
+}
+
 variable "k8s_config_path" {
   type        = string
   default     = "~/.kube/config"
