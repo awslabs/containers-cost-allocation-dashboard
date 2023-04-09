@@ -110,7 +110,7 @@ variable "granularity" {
   description = "The time granularity of the data that is returned from the Kubecost Allocation API"
 
   validation {
-    condition     = contains(["hourly", "daily"], var.granularity)
+    condition     = can(regex("^(?i)(hourly|daily)$", var.granularity))
     error_message = "The 'granularity' input includes an invalid value. It should be one of 'hourly' or 'daily'"
   }
 }
