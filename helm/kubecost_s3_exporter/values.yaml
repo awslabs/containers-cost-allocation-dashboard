@@ -38,9 +38,11 @@ env:
   - name: "CONNECTION_TIMEOUT"
     value: 10
   - name: "KUBECOST_ALLOCATION_API_READ_TIMEOUT"
-    value: 30
-  - name: "KUBECOST_ASSETS_API_READ_TIMEOUT"
     value: 60
+  - name: "KUBECOST_ASSETS_API_READ_TIMEOUT"
+    value: 30
+  - name: "TLS_VERIFY"
+    value: "Yes"
   - name: "LABELS"
     value: "" # Comma-separated list of labels. Example: "app, chart"
   - name: "PYTHONUNBUFFERED"
