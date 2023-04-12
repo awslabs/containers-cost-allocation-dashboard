@@ -251,7 +251,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                                     connection_timeout, read_timeout, paginate, resolution, accumulate=False):
     """Executes Kubecost Allocation On-Demand API.
 
-    :param tls_verify: Dictates whether TLS verification is done for HTTPS connections
+    :param tls_verify: Dictates whether TLS certificate verification is done for HTTPS connections
     :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
     :param start: The start time for calculating Kubecost Allocation API window
     :param end: The end time for calculating Kubecost Allocation API window
@@ -364,7 +364,7 @@ def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, c
                                 accumulate=False):
     """Executes Kubecost Assets API.
 
-    :param tls_verify: Dictates whether TLS verification is done for HTTPS connections
+    :param tls_verify: Dictates whether TLS certificate verification is done for HTTPS connections
     :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
     :param start: The start time for calculating Kubecost Allocation API window
     :param end: The end time for calculating Kubecost Allocation API window
