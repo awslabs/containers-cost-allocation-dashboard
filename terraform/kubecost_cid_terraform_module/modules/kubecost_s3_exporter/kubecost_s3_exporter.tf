@@ -76,6 +76,10 @@ locals {
           "value" : var.kubecost_assets_api_read_timeout
         },
         {
+          "name" : "TLS_VERIFY",
+          "value" : var.tls_verify
+        },
+        {
           "name" : "LABELS",
           "value" : try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_id, var.cluster_arn)), "labels", [])), "")
         },
