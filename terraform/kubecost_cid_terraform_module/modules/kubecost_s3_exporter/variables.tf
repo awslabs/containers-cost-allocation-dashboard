@@ -118,7 +118,7 @@ variable "kubecost_api_endpoint" {
   description = "The Kubecost API endpoint in format of 'http://<name_or_ip>:<port>'"
 
   validation {
-    condition     = (startswith(var.kubecost_api_endpoint, "http://") || startswith(var.kubecost_api_endpoint, "http://")) && length(compact(split("://", var.kubecost_api_endpoint))) > 1
+    condition     = can(regex("^https?://.+$", var.kubecost_api_endpoint))
     error_message = "The Kubecost API endpoint is invalid. It must be in the format of 'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'"
   }
 }
@@ -186,6 +186,17 @@ variable "kubecost_assets_api_read_timeout" {
   validation {
     condition     = var.kubecost_assets_api_read_timeout > 0
     error_message = "The read timeout must be a non-zero positive float"
+  }
+}
+
+variable "tls_verify" {
+  type        = string
+  default     = "Yes"
+  description = "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)"
+
+  validation {
+    condition     = can(regex("^(?i)(Yes|No|Y|N)$", var.tls_verify))
+    error_message = "The 'tls_verify' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)"
   }
 }
 
