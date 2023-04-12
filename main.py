@@ -84,6 +84,16 @@ except ValueError:
     logger.error("The read timeout must be a float")
     sys.exit(1)
 
+TLS_VERIFY = os.environ.get("TLS_VERIFY", "Yes").lower()
+if TLS_VERIFY in ["yes", "y"]:
+    TLS_VERIFY = True
+elif TLS_VERIFY in ["no", "n"]:
+    TLS_VERIFY = False
+else:
+    logger.error("The 'TLS_VERIFY' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)")
+    sys.exit(1)
+
+REQUESTS_CA_BUNDLE = os.environ.get("REQUESTS_CA_BUNDLE")
 LABELS = os.environ.get("LABELS")
 
 
@@ -158,11 +168,9 @@ def kubecost_api_endpoint_input_validation(kubecost_api_endpoint):
     :return:
     """
 
-    if not kubecost_api_endpoint.startswith(("http://", "https://")):
-        logger.error("The 'KUBECOST_API_ENDPOINT' input must start with 'http://' or 'https://'")
-        sys.exit(1)
-    elif not kubecost_api_endpoint.split("://")[1]:
-        logger.error("The 'KUBECOST_API_ENDPOINT' must be in the format of 'http://<name_or_ip>:[port]'")
+    regex = r"^https?://.+$"
+    if not re.match(regex, kubecost_api_endpoint):
+        logger.error("The Kubecost API endpoint is invalid. It must be in the format of 'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'")
         sys.exit(1)
 
 
@@ -239,11 +247,11 @@ def define_csv_columns(labels):
         return columns
 
 
-def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granularity, aggregate, connection_timeout,
-                                    read_timeout, paginate, resolution, accumulate=False):
+def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, end, granularity, aggregate,
+                                    connection_timeout, read_timeout, paginate, resolution, accumulate=False):
+    """Executes Kubecost Allocation On-Demand API.
 
-    """Executes Kubecost Allocation API On-demand query.
-
+    :param tls_verify: Dictates whether TLS verification is done for HTTPS connections
     :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
     :param start: The start time for calculating Kubecost Allocation API window
     :param end: The end time for calculating Kubecost Allocation API window
@@ -285,7 +293,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
                 logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start_h} and {end_h} "
                             f"in {granularity.lower()} granularity...")
                 r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params,
-                                 timeout=(connection_timeout, read_timeout))
+                                 timeout=(connection_timeout, read_timeout), verify=tls_verify)
 
                 # Adding the hourly allocation data to the list that'll eventually contain a full 24-hour data
                 if list(filter(None, r.json()["data"])):
@@ -314,7 +322,7 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
             logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
                         f"in {granularity.lower()} granularity...")
             r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params,
-                             timeout=(connection_timeout, read_timeout))
+                             timeout=(connection_timeout, read_timeout), verify=tls_verify)
 
             if list(filter(None, r.json()["data"])):
                 return r.json()["data"]
@@ -324,20 +332,39 @@ def execute_kubecost_allocation_api(kubecost_api_endpoint, start, end, granulari
                              "Make sure that you have data at least within this timeframe.")
                 sys.exit()
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectTimeout:
         logger.error(f"Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). "
-                     f"Consider increasing the connection timeout value.")
+                     "Consider increasing the connection timeout value.")
+        sys.exit(1)
+    except requests.exceptions.JSONDecodeError as error:
+        logger.error(f"Original error: '{error}'. "
+                     "Check if you're using incorrect protocol in the URL "
+                     "(for example, you're using 'http://...' when the API server is using HTTPS).")
+        sys.exit()
+    except requests.exceptions.SSLError as error:
+        logger.error(error.args[0].reason)
+        sys.exit(1)
+    except OSError as error:
+        logger.error(error)
+        sys.exit(1)
+    except requests.exceptions.ConnectionError as error:
+        error_title = error.args[0].reason.args[0].split(": ")[1]
+        error_reason = error.args[0].reason.args[0].split(": ")[-1].split("] ")[-1]
+        logger.error(f"{error_title}: {error_reason}. Check that the service is listening, "
+                     "and that you're using the correct port in your URL.")
         sys.exit(1)
     except requests.exceptions.ReadTimeout:
-        logger.error(f"Timed out waiting for Kubecost Allocation On-Demand API "
+        logger.error("Timed out waiting for Kubecost Allocation On-Demand API "
                      f"to send an HTTP response in the given time ({read_timeout}s). "
-                     f"Consider increasing the read timeout value.")
+                     "Consider increasing the read timeout value.")
         sys.exit(1)
 
 
-def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, connection_timeout, read_timeout, accumulate=False):
-    """Executes Kubecost Allocation API On-demand query.
+def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, connection_timeout, read_timeout,
+                                accumulate=False):
+    """Executes Kubecost Assets API.
 
+    :param tls_verify: Dictates whether TLS verification is done for HTTPS connections
     :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
     :param start: The start time for calculating Kubecost Allocation API window
     :param end: The end time for calculating Kubecost Allocation API window
@@ -355,7 +382,7 @@ def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, connection_ti
         logger.info(f"Querying Kubecost Assets API for data between {start} and {end}")
         params = {"window": window, "accumulate": accumulate, "filterCategories": "Compute", "filterTypes": "Node"}
         r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params,
-                         timeout=(connection_timeout, read_timeout))
+                         timeout=(connection_timeout, read_timeout), verify=tls_verify)
         if list(filter(None, r.json()["data"])):
             return r.json()["data"]
         else:
@@ -364,9 +391,21 @@ def execute_kubecost_assets_api(kubecost_api_endpoint, start, end, connection_ti
                          "Make sure that you have data at least within this timeframe.")
             sys.exit()
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectTimeout:
         logger.error(f"Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). "
-                     f"Consider increasing the connection timeout value.")
+                     "Consider increasing the connection timeout value.")
+        sys.exit(1)
+    except requests.exceptions.SSLError as error:
+        logger.error(error.args[0].reason)
+        sys.exit(1)
+    except OSError as error:
+        logger.error(error)
+        sys.exit(1)
+    except requests.exceptions.ConnectionError as error:
+        error_title = error.args[0].reason.args[0].split(": ")[1]
+        error_reason = error.args[0].reason.args[0].split(": ")[-1].split("] ")[-1]
+        logger.error(f"{error_title}: {error_reason}. Check that the service is listening, "
+                     "and that you're using the correct port in your URL.")
         sys.exit(1)
     except requests.exceptions.ReadTimeout:
         logger.error(f"Timed out waiting for Kubecost Assets API "
@@ -534,6 +573,13 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
     :return:
     """
 
+    # Removing the "REQUESTS_CA_BUNDLE" environment variable, if exists for the Kubecost API calls
+    # This is so that Boto3 will use the default CA bundle to make the TLS connection to AWS API
+    try:
+        del os.environ["REQUESTS_CA_BUNDLE"]
+    except KeyError:
+        pass
+
     cluster_name = cluster_id.split("/")[-1]
     cluster_account_id = cluster_id.split(":")[4]
     cluster_region_code = cluster_id.split(":")[3]
@@ -580,14 +626,15 @@ def main():
     three_days_ago_month = three_days_ago_midnight.strftime("%m")
 
     # Executing Kubecost Allocation API call
-    kubecost_allocation_data = execute_kubecost_allocation_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
+    kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT,
+                                                               three_days_ago_midnight,
                                                                three_days_ago_midnight_plus_one_day, GRANULARITY,
                                                                AGGREGATION, CONNECTION_TIMEOUT,
                                                                KUBECOST_ALLOCATION_API_READ_TIMEOUT,
                                                                KUBECOST_ALLOCATION_API_PAGINATE,
                                                                KUBECOST_ALLOCATION_API_RESOLUTION)
 
-    kubecost_assets_data = execute_kubecost_assets_api(KUBECOST_API_ENDPOINT, three_days_ago_midnight,
+    kubecost_assets_data = execute_kubecost_assets_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, three_days_ago_midnight,
                                                        three_days_ago_midnight_plus_one_day, CONNECTION_TIMEOUT,
                                                        KUBECOST_ASSETS_API_READ_TIMEOUT)
 
