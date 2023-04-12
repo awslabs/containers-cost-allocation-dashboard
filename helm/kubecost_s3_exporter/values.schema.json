@@ -271,7 +271,7 @@
             "if": {
               "properties": {
                 "name": {
-                  "description": "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)",
+                  "description": "Dictates whether TLS verification is done for HTTPS connections",
                   "const": "TLS_VERIFY"
                 }
               }
