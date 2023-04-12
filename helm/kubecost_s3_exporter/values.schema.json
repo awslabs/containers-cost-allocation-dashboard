@@ -11,8 +11,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 13,
-      "maxItems": 13,
+      "minItems": 14,
+      "maxItems": 14,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -35,6 +35,7 @@
               "CONNECTION_TIMEOUT",
               "KUBECOST_ALLOCATION_API_READ_TIMEOUT",
               "KUBECOST_ASSETS_API_READ_TIMEOUT",
+              "TLS_VERIFY",
               "LABELS",
               "PYTHONUNBUFFERED"
             ]
@@ -84,7 +85,7 @@
                 "value": {
                   "type": "string",
                   "default": "http://kubecost-cost-analyzer.kubecost:9090",
-                  "pattern": "^https?://.+"
+                  "pattern": "^https?://.+$"
                 }
               }
             }
@@ -262,6 +263,25 @@
                   "type": "number",
                   "default": 30,
                   "exclusiveMinimum": 0
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)",
+                  "const": "TLS_VERIFY"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "default": "Yes",
+                  "pattern": "^(?i)(Yes|No|Y|N)$"
                 }
               }
             }
