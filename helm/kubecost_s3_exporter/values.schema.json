@@ -271,7 +271,7 @@
             "if": {
               "properties": {
                 "name": {
-                  "description": "Dictates whether TLS verification is done for HTTPS connections",
+                  "description": "Dictates whether TLS certificate verification is done for HTTPS connections",
                   "const": "TLS_VERIFY"
                 }
               }
