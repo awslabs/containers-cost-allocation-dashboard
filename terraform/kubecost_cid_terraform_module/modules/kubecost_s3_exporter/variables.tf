@@ -192,7 +192,7 @@ variable "kubecost_assets_api_read_timeout" {
 variable "tls_verify" {
   type        = string
   default     = "Yes"
-  description = "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)"
+  description = "Dictates whether TLS certificate verification is done for HTTPS connections"
 
   validation {
     condition     = can(regex("^(?i)(Yes|No|Y|N)$", var.tls_verify))
