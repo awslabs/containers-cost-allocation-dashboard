@@ -271,7 +271,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
     # Executing Kubecost Allocation API call (On-demand query)
     try:
 
-        # If the step is defined as "1h", the API call is for each hour in the 24-hour timeframe
+        # If the step is "1h" and pagination is true, the API call is executed for each hour in the 24-hour timeframe
         # This is to prevent OOM in the Kubecost/Prometheus containers, and to avoid using high read-timeout value
         if step == "1h" and paginate in ["yes", "y"]:
 
