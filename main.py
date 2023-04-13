@@ -549,7 +549,7 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
     df.to_csv("output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\", columns=csv_columns)
 
 
-def kubecost_csv_allocation_data_to_parquet(csv_file_name):
+def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
     :param csv_file_name: the name of the CSV file
@@ -557,8 +557,67 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name):
     """
 
     df = pd.read_csv(csv_file_name, encoding='utf8', sep=",", quotechar="'", escapechar="\\")
+
+    # Static definitions of data types, to not have them mistakenly set as incorrect data type
+    df["name"] = df["name"].astype("object")
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
+    df["minutes"] = df["minutes"].astype("float64")
+    df["cpuCores"] = df["cpuCores"].astype("float64")
+    df["cpuCoreRequestAverage"] = df["cpuCoreRequestAverage"].astype("float64")
+    df["cpuCoreUsageAverage"] = df["cpuCoreUsageAverage"].astype("float64")
+    df["cpuCoreHours"] = df["cpuCoreHours"].astype("float64")
+    df["cpuCost"] = df["cpuCost"].astype("float64")
+    df["cpuCostAdjustment"] = df["cpuCostAdjustment"].astype("float64")
+    df["cpuEfficiency"] = df["cpuEfficiency"].astype("float64")
+    df["gpuCount"] = df["gpuCount"].astype("float64")
+    df["gpuHours"] = df["gpuHours"].astype("float64")
+    df["gpuCost"] = df["gpuCost"].astype("float64")
+    df["gpuCostAdjustment"] = df["gpuCostAdjustment"].astype("float64")
+    df["networkTransferBytes"] = df["networkTransferBytes"].astype("float64")
+    df["networkReceiveBytes"] = df["networkReceiveBytes"].astype("float64")
+    df["networkCost"] = df["networkCost"].astype("float64")
+    df["networkCostAdjustment"] = df["networkCostAdjustment"].astype("float64")
+    df["loadBalancerCost"] = df["loadBalancerCost"].astype("float64")
+    df["loadBalancerCostAdjustment"] = df["loadBalancerCostAdjustment"].astype("float64")
+    df["pvBytes"] = df["pvBytes"].astype("float64")
+    df["pvByteHours"] = df["pvByteHours"].astype("float64")
+    df["pvCost"] = df["pvCost"].astype("float64")
+    df["pvCostAdjustment"] = df["pvCostAdjustment"].astype("float64")
+    df["ramBytes"] = df["ramBytes"].astype("float64")
+    df["ramByteRequestAverage"] = df["ramByteRequestAverage"].astype("float64")
+    df["ramByteUsageAverage"] = df["ramByteUsageAverage"].astype("float64")
+    df["ramByteHours"] = df["ramByteHours"].astype("float64")
+    df["ramCost"] = df["ramCost"].astype("float64")
+    df["ramCostAdjustment"] = df["ramCostAdjustment"].astype("float64")
+    df["ramEfficiency"] = df["ramEfficiency"].astype("float64")
+    df["sharedCost"] = df["sharedCost"].astype("float64")
+    df["externalCost"] = df["externalCost"].astype("float64")
+    df["totalCost"] = df["totalCost"].astype("float64")
+    df["totalEfficiency"] = df["totalEfficiency"].astype("float64")
+    df["properties.provider"] = df["properties.provider"].astype("object")
+    df["properties.region"] = df["properties.region"].astype("object")
+    df["properties.cluster"] = df["properties.cluster"].astype("object")
+    df["properties.clusterid"] = df["properties.clusterid"].astype("object")
+    df["properties.eksClusterName"] = df["properties.eksClusterName"].astype("object")
+    df["properties.container"] = df["properties.container"].astype("object")
+    df["properties.namespace"] = df["properties.namespace"].astype("object")
+    df["properties.node"] = df["properties.node"].astype("object")
+    df["properties.node_instance_type"] = df["properties.node_instance_type"].astype("object")
+    df["properties.node_availability_zone"] = df["properties.node_availability_zone"].astype("object")
+    df["properties.node_capacity_type"] = df["properties.node_capacity_type"].astype("object")
+    df["properties.node_architecture"] = df["properties.node_architecture"].astype("object")
+    df["properties.node_os"] = df["properties.node_os"].astype("object")
+    df["properties.node_nodegroup"] = df["properties.node_nodegroup"].astype("object")
+    df["properties.node_nodegroup_image"] = df["properties.node_nodegroup_image"].astype("object")
+    df["properties.controller"] = df["properties.controller"].astype("object")
+    df["properties.controllerKind"] = df["properties.controllerKind"].astype("object")
+    df["properties.providerID"] = df["properties.providerID"].astype("object")
+    if labels:
+        labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
+        for labels_column in labels_columns:
+            df[labels_column] = df[labels_column].astype("object")
+
     df.to_parquet("output.snappy.parquet", engine="pyarrow")
 
 
@@ -652,7 +711,7 @@ def main():
 
     # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
-    kubecost_csv_allocation_data_to_parquet("output.csv")
+    kubecost_csv_allocation_data_to_parquet("output.csv", LABELS)
     upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
                                              three_days_ago_year)
 
