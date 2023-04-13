@@ -552,6 +552,7 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
 def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
+    :param labels: Comma-separated string of K8s labels
     :param csv_file_name: the name of the CSV file
     :return:
     """
