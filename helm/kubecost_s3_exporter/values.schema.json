@@ -11,8 +11,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 14,
-      "maxItems": 14,
+      "minItems": 16,
+      "maxItems": 16,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -36,6 +36,8 @@
               "KUBECOST_ALLOCATION_API_READ_TIMEOUT",
               "KUBECOST_ASSETS_API_READ_TIMEOUT",
               "TLS_VERIFY",
+              "KUBECOST_CA_CERTIFICATE_SECRET_NAME",
+              "KUBECOST_CA_CERTIFICATE_SECRET_REGION",
               "LABELS",
               "PYTHONUNBUFFERED"
             ]
@@ -282,6 +284,42 @@
                   "type": "string",
                   "default": "Yes",
                   "pattern": "^(?i)(Yes|No|Y|N)$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "The AWS Secrets Manager secret name, for the CA certificate used for verifying Kubecost's server certificate when using HTTPS",
+                  "const": "KUBECOST_CA_CERTIFICATE_SECRET_NAME"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "pattern": "^$|^[a-z[A-Z0-9/_+=.@-]{1,512}$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "The AWS Secrets Manager secret region, for the CA certificate used for verifying Kubecost's server certificate when using HTTPS",
+                  "const": "KUBECOST_CA_CERTIFICATE_SECRET_REGION"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "pattern": "^$|^(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\\d$"
                 }
               }
             }
