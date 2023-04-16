@@ -7,42 +7,42 @@ output "labels" {
 }
 
 # Clusters outputs
-output "cluster1-us-east-1-111111111111" {
-  value       = module.cluster1-us-east-1-111111111111
-  description = "The outputs for 'cluster1-us-east-1-111111111111'"
+output "us-east-1-111111111111-cluster1" {
+  value       = module.us-east-1-111111111111-cluster1
+  description = "The outputs for 'us-east-1-111111111111-cluster1'"
 }
 
-output "cluster2-us-east-1-111111111111" {
-  value       = module.cluster2-us-east-1-111111111111
-  description = "The outputs for 'cluster2-us-east-1-111111111111'"
+output "us-east-1-111111111111-cluster2" {
+  value       = module.us-east-1-111111111111-cluster2
+  description = "The outputs for 'us-east-1-111111111111-cluster2'"
 }
 
-output "cluster1-us-east-2-111111111111" {
-  value       = module.cluster1-us-east-2-111111111111
-  description = "The outputs for 'cluster1-us-east-2-111111111111'"
+output "us-east-2-111111111111-cluster1" {
+  value       = module.us-east-2-111111111111-cluster1
+  description = "The outputs for 'us-east-2-111111111111-cluster1'"
 }
 
-output "cluster2-us-east-2-111111111111" {
-  value       = module.cluster2-us-east-2-111111111111
-  description = "The outputs for 'cluster2-us-east-2-111111111111'"
+output "us-east-2-111111111111-cluster2" {
+  value       = module.us-east-2-111111111111-cluster2
+  description = "The outputs for 'us-east-2-111111111111-cluster2'"
 }
 
-output "cluster1-us-east-1-222222222222" {
-  value       = module.cluster1-us-east-1-222222222222
-  description = "The outputs for 'cluster1-us-east-1-222222222222'"
+output "us-east-1-222222222222-cluster1" {
+  value       = module.us-east-1-222222222222-cluster1
+  description = "The outputs for 'us-east-1-222222222222-cluster1'"
 }
 
-output "cluster2-us-east-1-222222222222" {
-  value       = module.cluster2-us-east-1-222222222222
-  description = "The outputs for 'cluster2-us-east-1-222222222222'"
+output "us-east-1-222222222222-cluster2" {
+  value       = module.us-east-1-222222222222-cluster2
+  description = "The outputs for 'us-east-1-222222222222-cluster2'"
 }
 
-output "cluster1-us-east-2-222222222222" {
-  value       = module.cluster1-us-east-2-222222222222
-  description = "The outputs for 'cluster1-us-east-2-222222222222'"
+output "us-east-2-222222222222-cluster1" {
+  value       = module.us-east-2-222222222222-cluster1
+  description = "The outputs for 'us-east-2-222222222222-cluster1'"
 }
 
-output "cluster2-us-east-2-222222222222" {
-  value       = module.cluster2-us-east-2-222222222222
-  description = "The outputs for 'cluster2-us-east-2-222222222222'"
+output "us-east-2-222222222222-cluster2" {
+  value       = module.us-east-2-222222222222-cluster2
+  description = "The outputs for 'us-east-2-222222222222-cluster2'"
 }
