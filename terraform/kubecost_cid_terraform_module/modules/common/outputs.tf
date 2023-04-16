@@ -5,14 +5,14 @@ output "bucket_arn" {
   description = "The ARN of the S3 Bucket to which the Kubecost data will be uploaded"
 }
 
-output "irsa_parent_role_aws_profile" {
-  value       = var.irsa_parent_role_aws_profile
-  description = "The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account"
-}
-
 output "clusters_labels" {
   value       = var.clusters_labels
   description = "A map of clusters and their K8s labels that you wish to include in the dataset"
+}
+
+output "kubecost_ca_certificates_list" {
+  value       = var.kubecost_ca_certificates_list
+  description = "A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager"
 }
 
 output "aws_shared_config_files" {
