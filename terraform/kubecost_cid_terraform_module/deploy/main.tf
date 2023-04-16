@@ -4,19 +4,23 @@
 module "pipeline" {
   source = "../modules/pipeline"
 
-  aws_profile           = ""
-  aws_region            = ""
   glue_crawler_schedule = ""
 }
 
 # Module instances for the kubecost_s3_exporter module, to create IRSA and deploy the Kubecost S3 Exporter pod
 module "cluster1" {
+
+  # This is an example, to help you get started
+
   source = "../modules/kubecost_s3_exporter"
 
-  aws_profile                          = ""
-  aws_region                           = ""
+  providers = {
+    aws.pipeline = aws
+    aws.eks      = aws.us-east-1-111111111111-cluster1
+    helm         = helm.us-east-1-111111111111-cluster1
+  }
+
   cluster_arn                          = ""
-  cluster_context                      = ""
   cluster_oidc_provider_arn            = ""
   kubecost_s3_exporter_container_image = ""
 }
