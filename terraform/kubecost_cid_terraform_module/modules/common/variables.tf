@@ -26,17 +26,6 @@ variable "bucket_arn" {
   }
 }
 
-variable "irsa_parent_role_aws_profile" {
-  type        = string
-  default     = ""
-  description = "The AWS profile to use for configuration and credentials to create the IRSA parent IAM Role in the S3 bucket's account"
-
-  validation {
-    condition     = var.irsa_parent_role_aws_profile != ""
-    error_message = "The 'irsa_parent_role_aws_profile' input is empty. It must contain an AWS Profile name"
-  }
-}
-
 variable "clusters_labels" {
 
   type = list(object({
@@ -67,6 +56,22 @@ variable "clusters_labels" {
   validation {
     condition     = length([for cluster_id in var.clusters_labels.*.cluster_id : cluster_id if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_id))]) == length(var.clusters_labels)
     error_message = "At least one of the 'cluster_id' keys in the 'clusters_labels' list, contains an invalid value"
+  }
+}
+
+variable "kubecost_ca_certificates_list" {
+  type = list(object({
+    cert_path                      = string
+    cert_secret_name               = string
+    cert_secret_allowed_principals = optional(list(string))
+  }))
+
+  default     = []
+  description = "A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager"
+
+  validation {
+    condition     = length([for cert_secret_name in var.kubecost_ca_certificates_list.*.cert_secret_name : cert_secret_name if can(regex("^[a-z[A-Z0-9/_+=.@-]{1,512}$", cert_secret_name))]) == length(var.kubecost_ca_certificates_list)
+    error_message = "At least one of the 'cert_secret_name' keys in the 'kubecost_ca_certificates_list' list, contains an invalid secret name"
   }
 }
 
