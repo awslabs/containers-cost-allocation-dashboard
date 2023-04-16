@@ -26,16 +26,6 @@ variable "cluster_arn" {
   }
 }
 
-variable "cluster_context" {
-  type        = string
-  description = "The EKS cluster context name from the kubeconfig file"
-
-  validation {
-    condition     = var.cluster_context != ""
-    error_message = "The 'cluster_context' input is empty. It must contain a K8s cluster context"
-  }
-}
-
 variable "cluster_oidc_provider_arn" {
   type        = string
   description = "The IAM OIDC Provider ARN for the EKS cluster"
@@ -57,26 +47,6 @@ variable "cluster_oidc_provider_arn" {
   validation {
     condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:oidc-provider\\/oidc\\.eks\\.(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d\\.amazonaws\\.com\\/id\\/[A-F0-9]*$", var.cluster_oidc_provider_arn))
     error_message = "The 'cluster_oidc_provider_arn' input contains an invalid ARN"
-  }
-}
-
-variable "aws_region" {
-  type        = string
-  description = "The region where the EKS cluster resides"
-
-  validation {
-    condition     = can(regex("(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\\d", var.aws_region))
-    error_message = "The 'aws_region' contains an invalid region-code"
-  }
-}
-
-variable "aws_profile" {
-  type        = string
-  description = "The AWS profile to use for configuration and credentials to access the EKS cluster"
-
-  validation {
-    condition     = var.aws_profile != ""
-    error_message = "The 'aws_profile' input is empty. It must contain an AWS Profile name"
   }
 }
 
@@ -170,7 +140,7 @@ variable "connection_timeout" {
 variable "kubecost_allocation_api_read_timeout" {
   type        = number
   default     = 60
-  description = "The time (in seconds) to wait for Kubecost Allocation On-Demand API to send an HTTP response"
+  description = "The time (in seconds) to wait for the Kubecost Allocation On-Demand API to send an HTTP response"
 
   validation {
     condition     = var.kubecost_allocation_api_read_timeout > 0
@@ -181,7 +151,7 @@ variable "kubecost_allocation_api_read_timeout" {
 variable "kubecost_assets_api_read_timeout" {
   type        = number
   default     = 30
-  description = "The time (in seconds) to wait for Kubecost Assets API to send an HTTP response"
+  description = "The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response"
 
   validation {
     condition     = var.kubecost_assets_api_read_timeout > 0
@@ -197,6 +167,17 @@ variable "tls_verify" {
   validation {
     condition     = can(regex("^(?i)(Yes|No|Y|N)$", var.tls_verify))
     error_message = "The 'tls_verify' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)"
+  }
+}
+
+variable "kubecost_ca_certificate_secret_name" {
+  type        = string
+  default     = ""
+  description = "The AWS Secrets Manager secret name, for the CA certificate used for verifying Kubecost's server certificate when using HTTPS"
+
+  validation {
+    condition     = can(regex("^$|^[a-z[A-Z0-9/_+=.@-]{1,512}$", var.kubecost_ca_certificate_secret_name))
+    error_message = "The 'kubecost_ca_certificate_secret_name' input contains an invalid secret name"
   }
 }
 
