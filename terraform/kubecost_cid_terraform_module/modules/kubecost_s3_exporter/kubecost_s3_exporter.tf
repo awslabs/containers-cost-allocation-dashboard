@@ -4,18 +4,43 @@ module "common" {
   source = "../common"
 }
 
-data "aws_caller_identity" "irsa_parent_role_caller_identity" {
-  provider = aws.irsa_parent_role
+terraform {
+  required_providers {
+    aws = {
+      source                = "hashicorp/aws"
+      version               = "= 4.63.0"
+      configuration_aliases = [aws.pipeline, aws.eks]
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "= 2.9.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "= 2.4.0"
+    }
+  }
+}
+
+data "aws_caller_identity" "pipeline_caller_identity" {
+  provider = aws.pipeline
+}
+
+data "aws_secretsmanager_secret" "kubecost_secret" {
+  provider = aws.pipeline
+  count    = length(var.kubecost_ca_certificate_secret_name) > 0 ? 1 : 0
+
+  name = var.kubecost_ca_certificate_secret_name
 }
 
 locals {
-
-  cluster_account_id          = element(split(":", var.cluster_arn), 4)
-  cluster_name                = element(split("/", var.cluster_arn), 1)
-  cluster_oidc_provider_id    = element(split("/", var.cluster_oidc_provider_arn), 3)
-  irsa_parent_role_partition  = element(split(":", data.aws_caller_identity.irsa_parent_role_caller_identity.arn), 1)
-  irsa_parent_role_account_id = data.aws_caller_identity.irsa_parent_role_caller_identity.account_id
-  helm_chart_location         = "../../../helm/kubecost_s3_exporter"
+  cluster_region           = element(split(":", var.cluster_arn), 3)
+  cluster_account_id       = element(split(":", var.cluster_arn), 4)
+  cluster_name             = element(split("/", var.cluster_arn), 1)
+  cluster_oidc_provider_id = element(split("/", var.cluster_oidc_provider_arn), 3)
+  pipeline_partition       = element(split(":", data.aws_caller_identity.pipeline_caller_identity.arn), 1)
+  pipeline_account_id      = data.aws_caller_identity.pipeline_caller_identity.account_id
+  helm_chart_location      = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
       "namespace" : var.namespace
@@ -80,6 +105,14 @@ locals {
           "value" : var.tls_verify
         },
         {
+          "name" : "KUBECOST_CA_CERTIFICATE_SECRET_NAME",
+          "value" : var.kubecost_ca_certificate_secret_name
+        },
+        {
+          "name" : "KUBECOST_CA_CERTIFICATE_SECRET_REGION",
+          "value" : length(var.kubecost_ca_certificate_secret_name) > 0 ? element(split(":", data.aws_secretsmanager_secret.kubecost_secret[0].arn), 3) : ""
+        },
+        {
           "name" : "LABELS",
           "value" : try(join(", ", lookup(element(module.common.clusters_labels, index(module.common.clusters_labels.*.cluster_id, var.cluster_arn)), "labels", [])), "")
         },
@@ -90,10 +123,10 @@ locals {
       ]
     }
   )
-
 }
 
 resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
+  provider = aws.eks
 
   name = "kubecost_s3_exporter_irsa_${element(split("/", var.cluster_oidc_provider_arn), 3)}"
   assume_role_policy = jsonencode(
@@ -125,7 +158,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
           {
             Action   = "sts:AssumeRole"
             Effect   = "Allow"
-            Resource = "arn:${local.irsa_parent_role_partition}:iam::${local.irsa_parent_role_account_id}:role/kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
+            Resource = "arn:${local.pipeline_partition}:iam::${local.pipeline_account_id}:role/kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
           }
         ]
         Version = "2012-10-17"
@@ -135,8 +168,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
 }
 
 resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
-
-  provider = aws.irsa_parent_role
+  provider = aws.pipeline
 
   name = "kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
   assume_role_policy = jsonencode(
@@ -155,14 +187,14 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
   )
 
   inline_policy {
-    name = "kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
+    name = "kubecost_s3_exporter_parent_put_object"
     policy = jsonencode(
       {
         Statement = [
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${module.common.bucket_arn}/account_id=${local.cluster_account_id}/region=${var.aws_region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+            Resource = "${module.common.bucket_arn}/account_id=${local.cluster_account_id}/region=${local.cluster_region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -170,10 +202,32 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
     )
   }
 
-  tags = {
-    irsa-kubecost-s3-exporter = "true"
+  # The below inline policy is conditionally created
+  # If the "kubecost_ca_certificate_secret_name" variable contains a value, the below inline policy is added
+  # Else, it won't be added
+  dynamic "inline_policy" {
+    for_each = length(var.kubecost_ca_certificate_secret_name) > 0 ? [1] : []
+    content {
+      name = "kubecost_s3_exporter_parent_get_secret_value"
+      policy = jsonencode(
+        {
+          Statement = [
+            {
+              Action   = "secretsmanager:GetSecretValue"
+              Effect   = "Allow"
+              Resource = data.aws_secretsmanager_secret.kubecost_secret[0].arn
+            }
+          ]
+          Version = "2012-10-17"
+        }
+      )
+    }
   }
 
+  tags = {
+    irsa-kubecost-s3-exporter    = "true"
+    irsa-kubecost-s3-exporter-sm = length(var.kubecost_ca_certificate_secret_name) > 0 ? "true" : "false"
+  }
 }
 
 # The below 2 resources are conditionally created
@@ -185,7 +239,6 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
 # The local file name will be "<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml", so it'll be unique
 
 resource "helm_release" "kubecost_s3_exporter_helm_release" {
-
   count = var.invoke_helm ? 1 : 0
 
   name             = "kubecost-s3-exporter"
@@ -196,10 +249,9 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
 }
 
 resource "local_file" "kubecost_s3_exporter_helm_values_yaml" {
-
   count = var.invoke_helm ? 0 : 1
 
-  filename             = "${local.helm_chart_location}/clusters_values/${local.cluster_account_id}_${var.aws_region}_${local.cluster_name}_values.yaml"
+  filename             = "${local.helm_chart_location}/clusters_values/${local.cluster_account_id}_${local.cluster_region}_${local.cluster_name}_values.yaml"
   directory_permission = "0400"
   file_permission      = "0400"
   content              = <<-EOT
