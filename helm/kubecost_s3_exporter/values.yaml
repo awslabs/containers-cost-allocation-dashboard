@@ -43,6 +43,10 @@ env:
     value: 30
   - name: "TLS_VERIFY"
     value: "Yes"
+  - name: "KUBECOST_CA_CERTIFICATE_SECRET_NAME"
+    value: ""
+  - name: "KUBECOST_CA_CERTIFICATE_SECRET_REGION"
+    value: ""
   - name: "LABELS"
     value: "" # Comma-separated list of labels. Example: "app, chart"
   - name: "PYTHONUNBUFFERED"
