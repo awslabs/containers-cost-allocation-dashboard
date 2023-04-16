@@ -26,6 +26,7 @@ spec:
               imagePullPolicy: {{ .Values.imagePullPolicy }}
               securityContext:
                 allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
                 capabilities:
                   drop:
                     - ALL
@@ -34,3 +35,10 @@ spec:
                 - name: "{{ .name }}"
                   value: "{{ .value }}"
                 {{- end }}
+              volumeMounts:
+                - mountPath: /tmp
+                  name: kubecost
+          volumes:
+          - name: kubecost
+            emptyDir:
+              sizeLimit: 50Mi
