@@ -16,25 +16,42 @@ from boto3 import exceptions
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("kubecost-s3-exporter")
 
-# Mandatory environment variables,  to make sure they're not empty
+# Mandatory environment variables, and input validations
 try:
     S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
+    if not re.match(r"(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", S3_BUCKET_NAME):
+        logger.error(f"The 'S3_BUCKET_NAME' input contains an invalid S3 Bucket name: {S3_BUCKET_NAME}")
+        sys.exit(1)
+    if re.match(r".*\d{12}.*|.*(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d.*", S3_BUCKET_NAME):
+        logger.warning("The S3 Bucket name includes an AWS account ID or a region-code. "
+                       "This could lead to bucket sniping. "
+                       "It's advised to use an S3 Bucket name that doesn't include an AWS account ID or a region-code")
 except KeyError:
     logger.error("The 'S3_BUCKET_NAME' input is a required, but it's missing")
     sys.exit(1)
 try:
     CLUSTER_ID = os.environ["CLUSTER_ID"]
+    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d:\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", CLUSTER_ID):
+        logger.error(f"The 'CLUSTER_ID' input contains an invalid EKS cluster ARN: {CLUSTER_ID}")
+        sys.exit(1)
 except KeyError:
     logger.error("The 'CLUSTER_ID' input is a required, but it's missing")
     sys.exit(1)
 try:
     IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
+    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$", IRSA_PARENT_IAM_ROLE_ARN):
+        logger.error(f"The 'IRSA_PARENT_IAM_ROLE_ARN' input contains an invalid ARN: {IRSA_PARENT_IAM_ROLE_ARN}")
+        sys.exit(1)
+
 except KeyError:
     logger.error("The 'IRSA_PARENT_IAM_ROLE_ARN' input is a required, but it's missing")
     sys.exit(1)
 
 # Optional environment variables, and input validations
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost:9090")
+if not re.match(r"^https?://.+$", KUBECOST_API_ENDPOINT):
+    logger.error("The Kubecost API endpoint is invalid. It must be in the format of 'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'")
+    sys.exit(1)
 
 GRANULARITY = os.environ.get("GRANULARITY", "hourly").lower()
 if GRANULARITY not in ["hourly", "daily"]:
@@ -93,85 +110,19 @@ else:
     logger.error("The 'TLS_VERIFY' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)")
     sys.exit(1)
 
-REQUESTS_CA_BUNDLE = os.environ.get("REQUESTS_CA_BUNDLE")
+KUBECOST_CA_CERTIFICATE_SECRET_NAME = os.environ.get("KUBECOST_CA_CERTIFICATE_SECRET_NAME")
+if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
+    if not re.match(r"^[a-z[A-Z0-9/_+=.@-]{1,512}$", KUBECOST_CA_CERTIFICATE_SECRET_NAME):
+        logger.error(f"The 'KUBECOST_CA_CERTIFICATE_SECRET_NAME' input contains an invalid secret name: {KUBECOST_CA_CERTIFICATE_SECRET_NAME}")
+        sys.exit(1)
+
+KUBECOST_CA_CERTIFICATE_SECRET_REGION = os.environ.get("KUBECOST_CA_CERTIFICATE_SECRET_REGION")
+if KUBECOST_CA_CERTIFICATE_SECRET_REGION:
+    if not re.match(r"^(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d$", KUBECOST_CA_CERTIFICATE_SECRET_REGION):
+        logger.error(f"The 'KUBECOST_CA_CERTIFICATE_SECRET_REGION' input contains an invalid region code: {KUBECOST_CA_CERTIFICATE_SECRET_REGION}")
+        sys.exit(1)
+
 LABELS = os.environ.get("LABELS")
-
-
-def cluster_id_input_validation(cluster_id, input_name):
-    """This function is used to validate the cluster ID input.
-    Currently, it supports validating only EKS cluster ARN.
-
-    :param cluster_id: The cluster ID
-    :param input_name: The input name
-    :return:
-    """
-
-    # The below validation validates an EKS cluster ARN input.
-    # It'll return the specified error if the input fails the validation.
-    # Here are a few examples of an EKS cluster ARN input that'll fail validation:
-    # The EKS cluster ARN input is empty ("")
-    # The EKS cluster ARN input has some unstructured string (e.g. "test")
-    # The EKS cluster ARN input has less than 6 ARN fields ("arn:aws:eks")
-    # The EKS cluster ARN input has 6 ARN fields, but is missing the "/" before the resource ID. Example:
-    # "arn:aws:eks:us-east-1:111111111111:cluster"
-    # The EKS cluster name part of the ARN doesn't match the EKS cluster name rules
-    # The EKS cluster ARN input has missing ARN fields or has incorrect value in some ARN fields. A few examples:
-    # arn:aws:eks:us-east-1:111111111111:cluster/
-    # arn:aws:eks:us-east-1:123:cluster/cluster1
-    # arn:aws:eks:us-east-1::cluster/cluster1
-    # arn:aws:eks:aaa:111111111111:cluster/cluster1
-    # arn:aws:eks::111111111111:cluster/cluster1
-    # arn:aws:s3:us-east-1:111111111111:cluster/cluster1
-    # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
-
-    regex = r"^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d:\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$"
-    if not re.match(regex, cluster_id):
-        logger.error(f"The '{input_name}' input contains an invalid EKS cluster ARN: {cluster_id}")
-        sys.exit(1)
-
-
-def iam_role_arn_input_validation(iam_role_arn, input_name):
-    """This function is used to validate an IAN Role ARN input.
-
-    :param iam_role_arn: The IAM Role ARN
-    :param input_name: The input name
-    :return:
-    """
-
-    # The below validation validates an IAM Role input.
-    # It'll return the specified error if the input fails the validation.
-    # Here are a few examples of an IAM Role input that'll fail validation:
-    # The IAM Role input is empty ("")
-    # The IAM Role input has some unstructured string (e.g. "test")
-    # The IAM Role input has less than 6 ARN fields ("arn:aws:eks")
-    # The IAM Role input has 6 ARN fields, but is missing the "/" before the resource ID. Example:
-    # "arn:aws:iam::111111111111:role"
-    # The IAM Role name part of the ARN doesn't match the IAM Role name rules
-    # The IAM Role input has missing ARN fields or has incorrect value in some ARN fields. A few examples:
-    # arn:aws:iam::111111111111:role/
-    # arn:aws:iam::123:role/role1
-    # arn:aws:iam:::role/role1
-    # arn:aws:iam:us-east-1:111111111111:role/role1
-    # arn:aws:s3::111111111111:role/role1
-    # arn:aaa:iam::111111111111:role/role1
-
-    regex = r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$"
-    if not re.match(regex, iam_role_arn):
-        logger.error(f"The '{input_name}' input contains an invalid ARN: {iam_role_arn}")
-        sys.exit(1)
-
-
-def kubecost_api_endpoint_input_validation(kubecost_api_endpoint):
-    """This function is used to validate the Kubecost API endpoint input (KUBECOST_API_ENDPOINT).
-
-    :param kubecost_api_endpoint: The Kubecost API endpoint input
-    :return:
-    """
-
-    regex = r"^https?://.+$"
-    if not re.match(regex, kubecost_api_endpoint):
-        logger.error("The Kubecost API endpoint is invalid. It must be in the format of 'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'")
-        sys.exit(1)
 
 
 def define_csv_columns(labels):
@@ -245,6 +196,64 @@ def define_csv_columns(labels):
         return columns + labels_columns
     else:
         return columns
+
+
+def iam_assume_role(iam_role_arn, iam_role_session_name):
+    """Assumes an IAM Role.
+
+    :param iam_role_arn: The ARN of the IAM Role to be assumed.
+    :param iam_role_session_name: The IAM session name.
+    :return: The Assume Role API call response
+    """
+
+    try:
+        sts = boto3.client("sts")
+        response = sts.assume_role(RoleArn=iam_role_arn, RoleSessionName=iam_role_session_name)
+
+        return response
+    except botocore.exceptions.ClientError as error:
+        logger.error(error)
+        sys.exit(1)
+
+
+def secrets_manager_get_secret_value(secret_name, assume_role_response, region_code):
+    """Retrieves secret's value from Secret Manager.
+
+    :param secret_name: The AWS Secrets Manager Secret name
+    :param assume_role_response: The response of the sts:AssumeRole API call that was made prior to this API call
+    :param region_code: The region-code to be used when making the secretsmanager:GetSecretValue API call
+    :return: The secret string from the API call's response
+    """
+
+    try:
+        client = boto3.client("secretsmanager", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+                              aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
+                              aws_session_token=assume_role_response["Credentials"]["SessionToken"],
+                              region_name=region_code)
+        logger.info(f"Retrieving secret {secret_name} from AWS Secrets Manager...")
+
+        response = client.get_secret_value(SecretId=secret_name)
+        secret_value = response["SecretString"]
+
+        return secret_value
+    except botocore.exceptions.ClientError as error:
+        logger.error(error)
+        sys.exit(1)
+
+
+def create_ca_cert_file_and_env(ca_cert_string):
+    """Creates a CA certificate file from the content of a CA certificate.
+    Then, sets the file name as the "REQUESTS_CA_BUNDLE" environment variable for Python requests module to use.
+
+    :param ca_cert_string: The CA certificate string (not file)
+    :return:
+    """
+
+    cat_cert_file = open("/tmp/ca.cert.pem", "a")
+    cat_cert_file.write(ca_cert_string)
+    cat_cert_file.close()
+
+    os.environ["REQUESTS_CA_BUNDLE"] = "/tmp/ca.cert.pem"
 
 
 def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, end, granularity, aggregate,
@@ -339,7 +348,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
     except requests.exceptions.JSONDecodeError as error:
         logger.error(f"Original error: '{error}'. "
                      "Check if you're using incorrect protocol in the URL "
-                     "(for example, you're using 'http://...' when the API server is using HTTPS).")
+                     "(for example, you're using 'http://..' when the API server is using HTTPS).")
         sys.exit()
     except requests.exceptions.SSLError as error:
         logger.error(error.args[0].reason)
@@ -546,7 +555,7 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
     df = pd.concat(all_dfs)
 
     # Transforming the DataFrame to a CSV and creating the CSV file locally
-    df.to_csv("output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\", columns=csv_columns)
+    df.to_csv("/tmp/output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\", columns=csv_columns)
 
 
 def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels):
@@ -619,12 +628,13 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels):
         for labels_column in labels_columns:
             df[labels_column] = df[labels_column].astype("object")
 
-    df.to_parquet("output.snappy.parquet", engine="pyarrow")
+    df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
 
 
-def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year):
+def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year, assume_role_response):
     """Compresses and uploads the Kubecost Allocation Parquet to an S3 bucket.
 
+    :param assume_role_response: The Assume Role API call response
     :param s3_bucket_name: the S3 bucket name to use
     :param cluster_id: the cluster ID to use for the S3 bucket prefix and Parquet file name
     :param date: the date to use in the Parquet file name
@@ -646,21 +656,18 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
 
     # Compressing and uploading the Parquet file to the S3 bucket
     s3_file_name = f"{date}_{cluster_name}"
-    os.rename("output.snappy.parquet", f"{s3_file_name}.snappy.parquet")
+    os.rename("/tmp/output.snappy.parquet", f"/tmp/{s3_file_name}.snappy.parquet")
     try:
-        sts = boto3.client("sts")
-        sts_response = sts.assume_role(RoleArn=IRSA_PARENT_IAM_ROLE_ARN,
-                                       RoleSessionName="kubecost-s3-exporter")
-        s3 = boto3.resource("s3", aws_access_key_id=sts_response["Credentials"]["AccessKeyId"],
-                            aws_secret_access_key=sts_response["Credentials"]["SecretAccessKey"],
-                            aws_session_token=sts_response["Credentials"]["SessionToken"])
+        s3 = boto3.resource("s3", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+                            aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
+                            aws_session_token=assume_role_response["Credentials"]["SessionToken"])
         s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
 
-        logger.info(f"Uploading file {s3_file_name}.snappy.parquet to S3 bucket {s3_bucket_name}...")
-        s3.Bucket(s3_bucket_name).upload_file(f"./{s3_file_name}.snappy.parquet",
+        logger.info(f"Uploading file {s3_file_name}.snappy.parquet to S3 Bucket {s3_bucket_name}...")
+        s3.Bucket(s3_bucket_name).upload_file(f"/tmp/{s3_file_name}.snappy.parquet",
                                               f"{s3_bucket_prefix}/{s3_file_name}.snappy.parquet")
     except boto3.exceptions.S3UploadFailedError as error:
-        logger.error(f"Unable to upload file {s3_file_name}.snappy.parquet to S3 bucket {s3_bucket_name}: {error}")
+        logger.error(f"Unable to upload file {s3_file_name}.snappy.parquet to S3 Bucket {s3_bucket_name}: {error}")
         sys.exit(1)
     except botocore.exceptions.ClientError as error:
         logger.error(error)
@@ -668,11 +675,6 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
 
 
 def main():
-
-    # Input validations for the cluster ID, IRSA parent IAM Role ARN, and Kubecost API endpoint
-    cluster_id_input_validation(CLUSTER_ID, "CLUSTER_ID")
-    iam_role_arn_input_validation(IRSA_PARENT_IAM_ROLE_ARN, "IRSA_PARENT_IAM_ROLE_ARN")
-    kubecost_api_endpoint_input_validation(KUBECOST_API_ENDPOINT)
 
     # Defining CSV columns
     columns = define_csv_columns(LABELS)
@@ -684,6 +686,18 @@ def main():
     three_days_ago_date = three_days_ago_midnight.strftime("%Y-%m-%d")
     three_days_ago_year = three_days_ago_midnight.strftime("%Y")
     three_days_ago_month = three_days_ago_midnight.strftime("%m")
+
+    # Assume IAM Role once, for all other AWS API calls
+    assume_role_response = iam_assume_role(IRSA_PARENT_IAM_ROLE_ARN, "kubecost-s3-exporter")
+
+    # If the user gave a secret name as an input to the "KUBECOST_CA_CERTIFICATE_SECRET_NAME" environment variable
+    # The following will occur:
+    # The secret with the given name will be
+    # A file is created from the content of the CA certificate, and the "REQUESTS_CA_BUNDLE" is set with the file name
+    if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
+        kubecost_ca_cert = secrets_manager_get_secret_value(KUBECOST_CA_CERTIFICATE_SECRET_NAME, assume_role_response,
+                                                            KUBECOST_CA_CERTIFICATE_SECRET_REGION)
+        create_ca_cert_file_and_env(kubecost_ca_cert)
 
     # Executing Kubecost Allocation API call
     kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT,
@@ -712,9 +726,9 @@ def main():
 
     # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
     kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
-    kubecost_csv_allocation_data_to_parquet("output.csv", LABELS)
+    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", LABELS)
     upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
-                                             three_days_ago_year)
+                                             three_days_ago_year, assume_role_response)
 
 
 if __name__ == "__main__":
