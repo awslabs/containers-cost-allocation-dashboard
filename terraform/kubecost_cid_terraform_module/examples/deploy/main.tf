@@ -38,6 +38,7 @@ module "us-east-1-111111111111-cluster1" {
   kubecost_assets_api_read_timeout     = 10
   tls_verify                           = "no"
   kubecost_ca_certificate_secret_name  = "kubecost"
+  kubecost_ephemeral_volume_size       = "100Mi"
 
   depends_on = [module.pipeline]
 }
