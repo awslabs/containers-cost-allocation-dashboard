@@ -6,7 +6,12 @@ It's suitable to deploy the resources in multi-account, multi-region, multi-clus
 It's used to deploy the following:
 
 1. The AWS resources that support the solution
-2. The Kubecost S3 Exporter Pod on each cluster, by invoking Helm
+2. The K8s resources (Kubecost S3 Exporter CronJob, and Service Account) on each cluster.<br />
+This is done either by invoking Helm, or by generating a Helm `values.yaml` for you to deploy.<br />
+These options are configurable per cluster by using the `invoke_helm` variable.<br />
+If set, Terraform will invoke Helm and will deploy the K8s resources This is the default option.<br />
+If not set, Terraform will generate a Helm `values.yaml` for this cluster.<br />
+You'll then need to deploy the K8s resources yourself using the `helm` command.
 
 This guide is composed of the following sections:
 
@@ -76,7 +81,8 @@ It contains the common inputs that are used by other modules.
 #### The `pipeline` Module
 
 The `pipeline` module in the `pipeline` directory contains the Terraform IaC required to deploy the AWS pipeline resources.<br />
-It contains module-specific inputs, outputs, and resources.
+It contains module-specific inputs, outputs, and resources.<br />
+It also contains a template file (secret_policy.tpl) that contains IAM policy for AWS Secrets Manager secret policy.
 
 #### The `kubecost_s3_exporter` Module
 
@@ -111,7 +117,7 @@ Deployment of the Kubecost CID solution using this Terraform module requires the
 1. Provide common inputs in the `common` module
 2. Add provider configuration for each module, in the `providers.tf` file
 3. Provide module-specific inputs for the AWS pipeline resources and for each cluster, in the `main.tf` file
-4. Optionally, add outputs to the `main.tf` file 
+4. Optionally, add outputs to the `outputs.tf` file 
 5. Deploy
 
 ### Step 1: Provide Common Inputs
@@ -162,9 +168,15 @@ Optionally, if needed, change the default for the common optional inputs.<br />
 If you decide to change them, you must provide the value in the `default` keyword.<br />
 See examples in the `examples/modules/common/variables.tf` file.
 
-Note - the `clusters_labels` input is a list of clusters and their labels you wish to include in the dataset.<br />
+Notes:
+
+* The `clusters_labels` input is a list of clusters and their labels you wish to include in the dataset.<br />
 If you don't need to include labels for some clusters, don't include those clusters in the list atl all.<br />
 If you don't need to include labels for any cluster, leave the `default` keyword as an empty list (`[]`).
+* The `kubecost_ca_certificates_list` is a list of CA certificates used to verify TLS connection with Kubecost.<br />
+This is only required if you enabled TLS in Kubecost.<br />
+In this case, the Kubecost S3 Exporter container will have to verify the Kubecost server certificate with a provided CA certificate.<br />
+If not provided (when TLS is enabled in Kubecost), the connection will fail, unless `tls_verify` module-specific input is `false`.
 
 ### Step 2: Define Providers in the `providers.tf` File
 
@@ -193,7 +205,7 @@ In the `providers.tf` file in the `deploy` directory, you'll find a pre-created 
 Change the `region` field if needed.<br />
 Also, change the `profile` field to the AWS Profile that Terraform should use to create the pipeline resources. 
 
-#### Define Provider for each EKS Cluster
+#### Define Provider for each EKS Cluster for the `kubecost_s3_exporter` Module
 
 In the `providers.tf` file in the `deploy` directory, you'll find 3 pre-created providers for a sample cluster.<br />
 The first 2 are for a cluster with Helm invocation, and the last one is for cluster without Helm invocation:
@@ -248,16 +260,17 @@ In the `aws` provider:
 2. Change the `region` field if needed
 3. Change the `profile` field to the AWS Profile that Terraform should use to communicate with the cluster.
 
-If you decided to use "Deployment Option 1" (where Terraform invokes Helm), you also need the `helm` provider.<br />
+If you decided to have Terraform invoke Helm, you also need the `helm` provider.<br />
 Otherwise, you don't need it, and it can be removed.<br />
-In case you need it, here's what you need to change in it:
+In case you decided to have Terraform invoke Helm, here's what you need to change in the `helm` provider:
 
 1. Change the `alias` field to a unique name that'll represent your EKS cluster.<br />
-It can be the same alias as in the corresponding `aws` provider for this cluster.
+It can be the same alias as in the corresponding `aws` provider for this cluster.<br />
+It must be unique among the `helm` provider definitions.
 2. Change the `kubernetes.config_context` to the config context of your cluster
 3. Change the `kubernetes.config_path` to the path of your kube config file
 
-Repeat the providers definition for each cluster on which you'd like to deploy the solution.<br />
+Repeat the `aws` and `helm` providers definition for each cluster on which you'd like to deploy the solution.<br />
 Make sure that each provider's alias is unique per provider type.
 
 ### Step 3: Provide Module-Specific Inputs in the `main.tf` File
@@ -375,6 +388,15 @@ Example (more examples can be found in the `examples/deploy/main.tf` file):
     }
 
 Optionally, change module-specific optional inputs.<br />
+Note:
+
+The `tls_verify` and `kubecost_ca_certificate_secret_name` are used for TLS connection to Kubecost.<br />
+If you didn't enable TLS in Kubecost, they aren't relevant, and you can ignore this input for this cluster.<br />
+If you enabled TLS in Kubecost, then `tls_verify` will be used by the Kubecost S3 Exporter container to verify the Kubecost server certificate.<br />
+In this case, you must provide the CA certificate in the `kubecost_ca_certificates_list`, and specify the secret name for it in the `kubecost_ca_certificate_secret_name` input.<br />
+If you don't do so, and `tls_verify` is set, the TLS connection will fail.<br />
+Otherwise, you can unset the `tls_verify` input. The connection will still be encrypted, but it's less secure due to the absence of server certificate verification.
+
 Finally, after providing the inputs, change the providers references in the `providers` block:
 
 1. Always leave the `aws.pipeline` field as is.<br />
