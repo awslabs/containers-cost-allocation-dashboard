@@ -46,6 +46,7 @@ locals {
       "namespace" : var.namespace
       "image" : var.kubecost_s3_exporter_container_image
       "imagePullPolicy" : var.kubecost_s3_exporter_container_image_pull_policy
+      "ephemeralVolumeSize" : var.kubecost_ephemeral_volume_size
       "cronJob" : {
         "name" : "kubecost-s3-exporter",
         "schedule" : var.kubecost_s3_exporter_cronjob_schedule
