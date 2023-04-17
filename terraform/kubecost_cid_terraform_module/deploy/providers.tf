@@ -4,6 +4,7 @@ module "common" {
   source = "../modules/common"
 }
 
+# Example provider for the pipeline
 provider "aws" {
 
   # This is an example, to help you get started
@@ -17,6 +18,7 @@ provider "aws" {
   }
 }
 
+# Example providers for cluster with Helm invocation
 provider "aws" {
 
   # This is an example, to help you get started
@@ -41,5 +43,21 @@ provider "helm" {
   kubernetes {
     config_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
     config_path    = "~/.kube/config"
+  }
+}
+
+# Example providers for cluster without Helm invocation
+provider "aws" {
+
+  # This is an example, to help you get started
+
+  alias = "us-east-1-111111111111-cluster2"
+
+  region                   = "us-east-1"
+  shared_config_files      = module.common.aws_shared_config_files
+  shared_credentials_files = module.common.aws_shared_credentials_files
+  profile                  = "profile1"
+  default_tags {
+    tags = module.common.aws_common_tags
   }
 }
