@@ -1,589 +1,511 @@
 
-# EKS Insights Dashboard
+# Kubecost CID Integration Terraform Module
 
-This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards) to create the EKS Insights Dashboard.<br />
-This dashboard is meant to provide a breakdown of the EKS in-cluster costs in multi-cluster environment, in a single-pane-of-glass alongside the other CID dashboards.
+This Terraform Module is used to deploy the resources required for the Kubecost CID integration.<br />
+It's suitable to deploy the resources in multi-account, multi-region, multi-cluster environments.<br />
+It's used to deploy the following:
 
-## Architecture
+1. The AWS resources that support the solution
+2. The Kubecost S3 Exporter Pod on each cluster, by invoking Helm
 
-The following is the solution's architecture:
+This guide is composed of the following sections:
 
-![Screenshot of the solution's architecture](./screenshots/kubecost_cid_architecture.png)
-
-### Solution's Components
-
-The solution is composed of the following resources:
-
-* An S3 bucket that stores the Kubecost data (should be pre-created, see "Requirements" section)
-* A CronJob controller (that is used to create a data collection pod) and Service Account.<br />
-Both should be deployed on each EKS cluster, using a Terraform module (that invokes Helm) that is provided as part of this solution.<br />
-You can also deploy these resources directly using the Helm chart that is provided as part of this solution.<br />
-The data collection pod is referred to as Kubecost S3 Exporter throughout some parts of the documentation.
-* The following AWS resources (all are deployed using a Terraform module that is provided as part of this solution):
-  * IAM Role for Service Account (in the EKS cluster's account) and a parent IAM role (in the S3 bucket's account) for each cluster.<br />
-    This is to support cross-account authentication between the data collection pod and the S3 bucket, using IAM role chaining. 
-  * AWS Glue Database 
-  * AWS Glue Table
-  * AWS Glue Crawler (along with its IAM Role and IAM Policy)
-
-### High-Level Logic
-
-1. The CronJob K8s controller runs daily and creates a pod that collects cost allocation data from Kubecost. It runs the following API calls:<br />
-The [Allocation On-Demand API (experimental)](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
-The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data.<br />
-It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
-2. Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
-3. The data is made available in Athena using AWS Glue Database, AWS Glue Table and AWS Glue Crawler.<br />
-The AWS Glue Crawler runs daily (using a schedule that you define), to create or update partitions.
-4. QuickSight uses the Athena table as a data source to visualize the data
-
-### Cross-Account Authentication Logic
-
-This solution uses IRSA with IAM role chaining, to support cross-account authentication.<br />
-For each EKS cluster, the Terraform module that's provided with this solution, will create:
-
-* A child IRSA IAM role in the EKS cluster's account and region
-* A parent IAM role in the S3 bucket's account
-
-The child IRSA IAM role will have a Trust Policy that trusts the IAM OIDC Provider ARN.<br />
-It's also specifically narrowed down using `Condition` element, to trust it only from the relevant K8s Service Account and Namespace.<br />
-The inline policy of the IRSA IAM role allows only the `sts:AssumeRole` action, only for the parent IAM role that was created for this cluster.<br />
-
-The parent IAM role will have a Trust Policy that only trusts the chile IAM role ARN.<br />
-The inline policy of the parent IAM role allows only the `s3:PutObject` action, only on the S3 bucket and specific prefix where the Kubecost files for this cluster are expected to be stored.
-
-In addition, an S3 bucket policy sample is provided as part of this documentation (see below "S3 Bucket Specific Notes" section).<br />
-The Terraform module that's provided with this solution does not create it, because it doesn't create the S3 bucket.<br />
-It's up to you to use it on your S3 bucket. 
-
-### Kubecost APIs Used by this Solution
-
-The Kubecost APIs that are being used are:
-
-* The [Allocation On-Demand API (experimental)](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) to retrieve the cost allocation data
-* The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data - specifically for the nodes
-
-For clarifications on issues that may be encountered when querying the Allocation On-Demand API (such as slow response time or memory issues):<br />
-Please see the "Clarifications on the Allocation On-Demand API" part on the Appendix. 
+1. Requirements:<br />
+A list of the requirements to use this module.
+2. Structure:<br />
+Shows the module's structure.
+3. Initial Deployment:<br />
+Provides initial deployment instructions.
+4. Maintenance:<br />
+Provides information on common changes that might be done after the initial deployment.
+5. Cleanup:<br />
+Provides information on the process to clean up resources.
 
 ## Requirements
 
-1. An S3 bucket, which will be used to store the Kubecost data
-2. QuickSight Enterprise with CID deployed
-3. Terraform and Helm installed
-4. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
+This Terraform module requires the following:
 
-For each EKS cluster, have the following:
+* Manage your AWS credentials using [shared configuration and credentials files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).<br /> 
+This is required because this Terraform module is meant to create or access resources in different AWS accounts that may require different sets of credentials.
+* In your kubeconfig file, each EKS cluster should reference the AWS profile from the shared configuration file.<br />
+This is so that Helm (invoked by Terraform or manually) can tell which AWS credentials to use when communicating with the cluster.
 
-1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).<br />
-The IAM OIDC Provider must be created in the EKS cluster's account and region.
-2. Kubecost deployed in the EKS cluster.<br />
-Currently, only the free tier and the EKS-optimized bundle of Kubecost are supported.<br />
-The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations).<br />
-To get network costs, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs Daemonset](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
+## Structure
 
-Please continue reading the specific sections “S3 Bucket Specific Notes”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
+Below is the complete module structure, followed by details on each directory/submodule:
 
-### S3 Bucket Specific Notes
+    kubecost_cid_terraform_module/
+    ├── README.md
+    ├── deploy
+    │   ├── main.tf
+    │   ├── outputs.tf
+    │   └── providers.tf
+    ├── examples
+    │   ├── deploy
+    │   │   ├── main.tf
+    │   │   ├── outputs.tf
+    │   │   └── providers.tf
+    │   └── modules
+    │       └── common
+    │           ├── outputs.tf
+    │           └── variables.tf
+    └── modules
+        ├── common
+        │   ├── outputs.tf
+        │   └── variables.tf
+        ├── kubecost_s3_exporter
+        │   ├── kubecost_s3_exporter.tf
+        │   ├── outputs.tf
+        │   └── variables.tf
+        └── pipeline
+            ├── outputs.tf
+            ├── pipeline.tf
+            ├── secret_policy.tpl
+            └── variables.tf
 
-You may create an S3 Bucket Policy on the bucket that you create to store the Kubecost data.<br />
-In this case, below is a recommended bucket policy to use.<br />
-This bucket policy, along with the identity-based policies of all the identities in this solution, provide minimum access:
+### The `modules` Directory
 
-    {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Deny",
-                "Principal": "*",
-                "Action": "s3:*",
-                "Resource": [
-                    "arn:aws:s3:::kubecost-data-collection-bucket",
-                    "arn:aws:s3:::kubecost-data-collection-bucket/*"
-                ],
-                "Condition": {
-                    "Bool": {
-                        "aws:SecureTransport": "false"
-                    },
-                    "StringNotEquals": {
-                        "aws:PrincipalArn": [
-                            "arn:aws:iam::333333333333:role/<your_management_role>",
-                            "arn:aws:iam::333333333333:role/kubecost_glue_crawler_role",
-                            "arn:aws:iam::333333333333:role/service-role/aws-quicksight-service-role-v0"
-                        ],
-                        "aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"
-                    }
-                }
-            }
-        ]
+The `modules` directory contains the reusable Terraform child modules used to deploy the solution.<br />
+It contains several modules, as follows:
+
+#### The `common` Module
+
+The `common` module in the `common` directory only has variables and outputs.<br />
+It contains the common inputs that are used by other modules.
+
+#### The `pipeline` Module
+
+The `pipeline` module in the `pipeline` directory contains the Terraform IaC required to deploy the AWS pipeline resources.<br />
+It contains module-specific inputs, outputs, and resources.
+
+#### The `kubecost_s3_exporter` Module
+
+The `kubecost_s3_exporter` module in the `kubecost_s3_exporter` directory contains the Terraform IaC required to deploy:
+
+* The K8s resources (the CronJob used to create the Kubecost S3 Exporter pod, and a service account) on each EKS cluster
+* For each EKS cluster, the IRSA (IAM Role for Service Account) in the EKS cluster's account, and a parent IAM role (role chaining) in the S3 bucket's account 
+
+It contains module-specific inputs, outputs, and resources.
+
+### The `deploy` Directory
+
+The `deploy` directory is the root module.<br />
+It contains the `main.tf` file used to call the child reusable modules and deploy the resources.<br />
+Use this file to add module instances that represent the pipline and the clusters on which you want to deploy the Kubecost S3 Exporter pod.<br />
+This directory also has the `providers.tf` file, where you add a provider configuration for each module.<br />
+Lastly, this directory has an `outputs.tf` file, to be used to add your required outputs, and 
+
+### The `examples` Directory
+
+The `examples` directory includes examples of the following files:<br />
+
+* Examples of the `main.tf`, `outputs.tf` and `providers.tf` files from the `deploy` directory
+* Examples of the `variables.tf` and `outputs.tf` files from the `modules/common` directory
+
+These files give some useful examples for you to get started when modifying the actual files.
+
+## Initial Deployment
+
+Deployment of the Kubecost CID solution using this Terraform module requires the following steps:
+
+1. Provide common inputs in the `common` module
+2. Add provider configuration for each module, in the `providers.tf` file
+3. Provide module-specific inputs for the AWS pipeline resources and for each cluster, in the `main.tf` file
+4. Optionally, add outputs to the `main.tf` file 
+5. Deploy
+
+### Step 1: Provide Common Inputs
+
+The deployment of this solution involves both AWS resources deployment and a data collection pod (Kubecost S3 Exporter) deployment.<br />
+Both have some common inputs, and to make things easy, the `common` module is provided for common inputs.<br />
+These inputs must be given in the `variables.tf` file using the `default` keyword, and not in the `main.tf` file.<br />
+This is to not repeat these inputs twice in the `main.tf` file.
+
+The below table lists the required and optional common inputs:
+
+| Name                                                                                | Description                                                                                             | Type                                                                                                                                                        | Default                                     | Possible Values                              | Required |
+|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|----------------------------------------------|----------|
+| <a name="input_bucket_arn"></a> bucket\_arn                                         | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                    | `string`                                                                                                                                                    | `""`                                        | An S3 Bucket ARN                             | yes      |
+| <a name="input_clusters_labels"></a> clusters\_labels                               | A list of objects containing clusters and their K8s labels that you wish to include in the dataset      | <pre>list(object({<br>    cluster_id = string<br>    labels = optional(list(string))<br>  }))</pre>                                                         | `[]`                                        |                                              | no       |
+| <a name="input_kubecost_ca_certificates_list"></a> kubecost\_ca\_certificates\_list | A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager | <pre>list(object({<br>    cert_path = string<br>    cert_secret_name = string<br>    cert_secret_allowed_principals = optional(list(string))<br>  }))</pre> | `[]`                                        |                                              | no       |
+| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files             | Paths to the AWS shared config files                                                                    | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/config"<br>]</pre>      | A list of paths to the AWS config file       | no       |
+| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files   | Paths to the AWS shared credentials files                                                               | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/credentials"<br>]</pre> | A list of paths to the AWS credentials file  | no       |
+| <a name="input_aws_common_tags"></a> aws\_common\_tags                              | Common AWS tags to be used on all AWS resources created by Terraform                                    | `map(any)`                                                                                                                                                  | `{}`                                        | A map of tag keys and their values           | no       |
+| <a name="input_granularity"></a> granularity                                        | The time granularity of the data that is returned from the Kubecost Allocation API                      | `string`                                                                                                                                                    | `"hourly"`                                  | One of "hourly" or "daily", case-insensitive | no       |
+
+The below table lists the required inputs of the `clusters_labels` input:
+
+| Name                                        | Description                                                                   | Type           | Default | Possible Values              | Required |
+|---------------------------------------------|-------------------------------------------------------------------------------|----------------|---------|------------------------------|----------|
+| <a name="input_cluster_id"></a> cluster\_id | The unique ID of the cluster that its labels you'd like to add to the dataset | `string`       | n/a     | An EKS Cluster ARN           | yes      |
+| <a name="input_labels"></a> labels          | A list of labels to include in the dataset                                    | `list(string)` | n/a     | A list of labels, as strings | no       |
+
+The below table lists the required inputs of the `kubecost_ca_certificates_list` input:
+
+| Name                                                                                  | Description                                                                         | Type           | Default | Possible Values                         | Required |
+|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|----------------|---------|-----------------------------------------|----------|
+| <a name="input_cert_path"></a> cert\_path                                             | Local path (including file name) to the CA certificate file                         | `string`       | n/a     | A path                                  | yes      |
+| <a name="input_cert_secret_name"></a> cert\_secret\_name                              | The AWS Secrets Manager secret name to be used for the CA certificate               | `string`       | n/a     | A valid AWS Secrets Manager secret name | yes      |
+| <a name="input_cert_secret_allowed_principals"></a> cert\_secret\_allowed\_principals | A list of additional principal ARNs to add to the AWS Secrets Manager secret policy | `list(string)` | n/a     | A list of principal ARNs                | no       |
+
+To provide the inputs, open the `modules/common/variables.tf` file, and perform the following:
+
+#### Provide the Common Required Inputs
+
+Provide the common required inputs, as listed in the above table.<br />
+You must provide the values in the `default` keyword of each variable, by changing the default empty value.<br />
+See examples in the `examples/modules/common/variables.tf` file.
+
+#### Optionally, Change the Common Optional Inputs
+
+Optionally, if needed, change the default for the common optional inputs.<br />
+If you decide to change them, you must provide the value in the `default` keyword.<br />
+See examples in the `examples/modules/common/variables.tf` file.
+
+Note - the `clusters_labels` input is a list of clusters and their labels you wish to include in the dataset.<br />
+If you don't need to include labels for some clusters, don't include those clusters in the list atl all.<br />
+If you don't need to include labels for any cluster, leave the `default` keyword as an empty list (`[]`).
+
+### Step 2: Define Providers in the `providers.tf` File
+
+After providing common inputs, we need to define providers in the `pipeline.tf` file in the root module, that will be used for the deployment.<br />
+In this file you'll define a provider for the `pipeline` module, and one or more providers for the `kubecost_s3_exporter` module.<br />
+These providers include references to credential files that will be used by Terraform when creating resources.
+
+#### Define Provider for the `pipeline` Module
+
+In the `providers.tf` file in the `deploy` directory, you'll find a pre-created `aws` pipeline provider:
+
+    provider "aws" {
+    
+      # This is an example, to help you get started
+    
+      region                   = "us-east-1"
+      shared_config_files      = module.common.aws_shared_config_files
+      shared_credentials_files = module.common.aws_shared_credentials_files
+      profile                  = "pipeline_profile"
+      default_tags {
+        tags = module.common.aws_common_tags
+      }
     }
 
-This S3 bucket denies all principals from performing all S3 actions, except the principals in the `Condition` section.<br />
-The list of principals shown in the above bucket policy are as follows:
 
-* The `arn:aws:iam::333333333333:role/<your_management_role>` principal:<br />
-This principal is an example of an IAM Role you may use to manage the bucket.
-Add the IAM Roles that will allow you to perform administrative tasks on the bucket.
-* The `arn:aws:iam::333333333333:role/kubecost_glue_crawler_role` principal:<br />
-This principal is the IAM Role that will be attached to the Glue Crawler when it's created by Terraform.<br />
-You must add it to the bucket policy, so that the Glue Crawler will be able to crawl the bucket.
-* The `arn:aws:iam::333333333333:role/service-role/aws-quicksight-service-role-v0` principal:<br />
-This principal is the IAM Role that will is automatically created for QuickSight.<br />
-If you use a different role, please change it in the bucket policy.<br />
-You must add this role to the bucket policy, for proper functionality of the QuickSight dataset that is created as part of this solution.
-* The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"` condition:<br />
-This condition identifies all the EKS clusters from which the Kubecost S3 Exporter pod will communicate with the bucket.<br />
-When Terraform creates the IAM roles for the pod to access the S3 bucket, it tags the parent IAM roles with the above tag.<br />
-This tag is automatically being used in the IAM session when the Kubecost S3 Exporter pod authenticates.<br />
-The reason for using this tag is to easily allow all EKS clusters running the Kubecost S3 Exporter pod, in the bucket policy, without reaching the bucket policy size limit.<br />
-The other alternative is to specify all the parent IAM roles that represent each cluster one-by-one.<br />
-With this approach, the maximum bucket policy size will be quickly reached, and that's why the tag is used.
+Change the `region` field if needed.<br />
+Also, change the `profile` field to the AWS Profile that Terraform should use to create the pipeline resources. 
 
-The resources used in this S3 bucket policy include:
+#### Define Provider for each EKS Cluster
 
-* The bucket name, to allow access to it
-* All objects in the bucket, using the `arn:aws:s3:::kubecost-data-collection-bucket/*` string.<br />
-The reason for using a wildcard here is that multiple principals (multiple EKS clusters) require access to different objects in the bucket.<br />
-Using specific objects for each principal will result in a longer bucket policy that'll eventually exceed the bucket policy size limit.<br />
-The identity policy (the parent IAM role) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.<br >
-Considering this, the access to the S3 bucket is more specific than what's specified in the "Resources" part of this bucket policy.
+In the `providers.tf` file in the `deploy` directory, you'll find 3 pre-created providers for a sample cluster.<br />
+The first 2 are for a cluster with Helm invocation, and the last one is for cluster without Helm invocation:
 
-### Configure Athena Query Results Location
-
-To set the Athena Query Results Location, follow both steps below.
-
-#### Step 1: Set Query Results Location in the Athena Query Editor
-
-Navigate to Athena Console -> Query Editor -> Settings:
-![Screenshot of Athena Query Editor Settings View](./screenshots/athena_query_editor_view_settings.png)
-
-If the "Query result location" field is empty, click "Manage".<br />
-Then, set the Query result location, optionally (recommended) encrypt the query results, and save:
-![Screenshot of Athena Query Editor Settings Edit](./screenshots/athena_query_editor_manage_settings.png)
-
-#### Step 2: Set Query Results Location in the Athena Workgroup Settings
-
-Navigate to Athena Console -> Administration -> Workgroups:
-![Screenshot of Athena Workgroups Page](./screenshots/athena_workgroups_page.png)
-
-Click on the relevant Workgroup, and you'll see the Workgroup settings:
-![Screenshot of Athena Workgroups Settings View](./screenshots/athena_workgroup_settings_view.png)
-
-If the "Query result location" field is empty, go back to the Workgroups page, and edit the Workgroup settings:
-![Screenshot of Athena Workgroups Page Edit Workgroup](./screenshots/athena_workgroups_page_edit_workgroup.png)
-
-In the settings page, set the Query results location, optionally (recommended) encrypt the query results, and save:
-![Screenshot of Athena Workgroup Settings Edit](./screenshots/athena_workgroup_settings_edit.png)
-
-### Configure QuickSight Permissions
-
-1. Navigate to “Manage QuickSight → Security & permissions”
-2. Under “Access granted to X services”, click “Manage”
-3. Under “S3 Bucket”, check the S3 bucket you create, and check the “Write permissions for Athena Workgroup” for this bucket
-
-Note - if at step 2 above, you get the following error:
-
-*Something went wrong*
-*For more information see Set IAM policy (https://docs.aws.amazon.com/console/quicksight/iam-qs-create-users)*
-
-1. Navigate to the IAM console
-2. Edit the QuickSight-managed S3 IAM Policy (usually named AWSQuickSightS3Policy
-3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket
-
-## Deployment
-
-There are 3 high-level steps to deploy the solution:
-
-1. Build an image using `Dockerfile` and push it
-2. Deploy both the AWS resources and the data collection CronJob using Terraform and Helm
-3. Deploy the QuickSight dashboard using `cid-cmd` tool
-
-### Step 1: Build and Push the Container Image
-
-We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.<br />
-In this section, choose either "Build and Push for a Single Platform" or "Build and Push for Multiple Platforms".
-
-#### Build and Push for a Single Platform
-
-Build for a platform as the source machine:
-
-    docker build -t <registry_url>/<repo>:<tag> .
-
-Build for a specific target platform:
-
-    docker build --platform linux/amd64 -t <registry_url>/<repo>:<tag> .
-
-Push:
-
-    docker push <registry_url>/<repo>:<tag>
-
-#### Build and Push for Multiple Platforms
-
-    docker buildx build --push --platform linux/amd64,linux/arm64/v8 --tag <registry_url>/<repo>:<tag> .
-
-### Step 2: Deploy the AWS and K8s Resources
-
-This solution currently provides a Terraform module for deployment of both the AWS the K8s resources.<br />
-There are 2 options to use it:
-* Deployment Option 1: Deploy both the AWS resources and the K8s resources using Terraform (K8s resources are deployed by invoking Helm)
-* Deployment Option 2: Deploy only the AWS resources using Terraform, and deploy the K8s resources using the `helm` command.<br />
-With this option, Terraform will create a cluster-specific `values.yaml` file (with a unique name) for each cluster, which you can use
-
-You can use a mix of these options.<br />
-On some clusters, you can choose to deploy the K8s resources by having Terraform invoke Helm (the first option).<br />
-On other clusters, you can choose to deploy the K8s resources yourself using the `helm` command (the second option).
-
-#### Deployment Option 1
-
-With this deployment option, Terraform deploys both the AWS resources and the K8s resources (by invoking Helm).
-
-Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.<br />
-For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.<br />
-Once you're done with Terraform, continue to step 3 below.
-
-#### Deployment Option 2
-
-With this deployment option, Terraform deploys only the AWS resources, and the K8s resources are deployed using the `helm` command.
-
-1. Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.<br />
-For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.<br />
-When reaching the "Create an Instance of the `kubecost_s3_exporter` Module and Provide Module-Specific Inputs", do the following:<br />
-Make sure that as part of the optional module-specific inputs, you use the `invoke_helm` input with value of `false`.
-
-2. After successfully executing `terraform apply` (the last step - step 4 - of the "Initial Deployment" section), Terraform will create the following:<br /> 
-Per cluster for which you used the `invoke_helm` input with value of `false`, a YAML file will be created containing the Helm values for this cluster.<br />
-The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.<br />
-The YAML files will be created in the `helm/kubecost_s3_exporter/clusters_values` directory.
-
-3. For each cluster, deploy the K8s resources by executing Helm
-
-Executing Helm when you're still in the Terraform `deploy` directory
-
-    helm upgrade -i kubecost-s3-exporter ../../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
-
-Executing Helm when from the `helm` directory
-
-    helm upgrade -i kubecost-s3-exporter kubecost_s3_exporter/ -n <namespace> --values kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
-
-Once you're done, continue to step 3 below.
-
-### Step 3: Dashboard Deployment
-
-From the `cid` folder, run `cid-cmd deploy --resources eks_insights_dashboard.yaml`.<br />
-The output should be similar to the below:
-
-    CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.3 Beta
+    # Example providers for cluster with Helm invocation
+    provider "aws" {
     
-    Loading plugins...
-        Core loaded
-        Internal loaded
+      # This is an example, to help you get started
     
+      alias = "us-east-1-111111111111-cluster1"
     
-    Checking AWS environment...
-        profile name: <profile_name>
-        accountId: <account_id>
-        AWS userId: <user_id>
-        Region: <region>
+      region                   = "us-east-1"
+      shared_config_files      = module.common.aws_shared_config_files
+      shared_credentials_files = module.common.aws_shared_credentials_files
+      profile                  = "profile1"
+      default_tags {
+        tags = module.common.aws_common_tags
+      }
+    }
     
+    provider "helm" {
     
+      # This is an example, to help you get started
     
-    ? [dashboard-id] Please select dashboard to install: (Use arrow keys)
-       [cudos] CUDOS Dashboard
-       [cost_intelligence_dashboard] Cost Intelligence Dashboard
-       [kpi_dashboard] KPI Dashboard
-       [ta-organizational-view] Trusted Advisor Organizational View
-       [trends-dashboard] Trends Dashboard
-       [compute-optimizer-dashboard] Compute Optimizer Dashboard
-     » [eks_insights] EKS Insights
-
-From the list, choose `[eks_insights] EKS Insights`.<br />
-After choosing, wait for dashboards discovery to be completed, and then the additional output should be similar to the below:
-
-    ? [dashboard-id] Please select dashboard to install: [eks_insights] EKS Insights
-    Discovering deployed dashboards...  [####################################]  100%  "CUDOS Dashboard" (cudos)
+      alias = "us-east-1-111111111111-cluster1"
     
-    Required datasets:
-     - eks_insights
+      kubernetes {
+        config_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
+        config_path    = "~/.kube/config"
+      }
+    }
     
+    # Example providers for cluster without Helm invocation
+    provider "aws" {
     
-    Looking by DataSetId defined in template...complete
+      # This is an example, to help you get started
     
-    There are still 1 datasets missing: eks_insights
-    Creating dataset: eks_insights
-    Detected views:
+      alias = "us-east-1-111111111111-cluster2"
     
-    ? [athena-database] Select AWS Athena database to use: (Use arrow keys)
-       <cur_db>
-     » kubecost_db
-       spectrumdb
+      region                   = "us-east-1"
+      shared_config_files      = module.common.aws_shared_config_files
+      shared_credentials_files = module.common.aws_shared_credentials_files
+      profile                  = "profile1"
+      default_tags {
+        tags = module.common.aws_common_tags
+      }
+    }
 
-From the list, choose the Athena database that was created by the Terraform template.<br />
-If you didn't change the AWS Glue Database name in the Terraform template, then it'll be `kubecost_db` - please choose it.
-After choosing, wait for the dataset to be created, and then the additional output should be similar to the below:
+In the `aws` provider:
 
-    ? [athena-database] Select AWS Athena database to use: kubecost_db
-    Dataset "eks_insights" created
-    Latest template: arn:aws:quicksight:<region_code>:<account_id>:template/eks_insights/version/1
-    Deploying dashboard eks_insights
+1. Change the `alias` field to a unique name that'll represent your EKS cluster.<br />
+2. Change the `region` field if needed
+3. Change the `profile` field to the AWS Profile that Terraform should use to communicate with the cluster.
+
+If you decided to use "Deployment Option 1" (where Terraform invokes Helm), you also need the `helm` provider.<br />
+Otherwise, you don't need it, and it can be removed.<br />
+In case you need it, here's what you need to change in it:
+
+1. Change the `alias` field to a unique name that'll represent your EKS cluster.<br />
+It can be the same alias as in the corresponding `aws` provider for this cluster.
+2. Change the `kubernetes.config_context` to the config context of your cluster
+3. Change the `kubernetes.config_path` to the path of your kube config file
+
+Repeat the providers definition for each cluster on which you'd like to deploy the solution.<br />
+Make sure that each provider's alias is unique per provider type.
+
+### Step 3: Provide Module-Specific Inputs in the `main.tf` File
+
+After defining the providers, we need to provide module-specific inputs in the `main.tf` file in the root module, that will be used for the deployment.<br />  
+In this file you'll create an instance of the `pipeline` module, and one or more instances of the `kubecost_s3_exporter` module.<br />
+You'll provide the module-specific inputs in these instances.
+
+#### Create an Instance of the `pipeline` Module and Provide Module-Specific Inputs
+
+The below table lists the required inputs for the `pipeline` module (there are no optional inputs):
+
+| Name                                                               | Description                                                                                                              | Type     | Default | Possible Values                               | Required |
+|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------|---------|-----------------------------------------------|----------|
+| <a name="input_glue_crawler_schedule"></a> glue\_crawler\_schedule | The schedule for the Glue Crawler, in Cron format. Make sure to set it after the last Kubecost S3 Exporter Cron schedule | `string` | n/a     | A Cron expression. For example, `0 1 * * ? *` | yes      |
+
+In the `main.tf` file in the `deploy` directory, you'll find a pre-created `pipeline` module instance:
+
+    module "pipeline" {
+      source   = "../modules/pipeline"
+
+      glue_crawler_schedule = ""
+
+Provide the module-specific required inputs, as listed in the above table. Example:
+
+    module "pipeline" {
+      source = "../modules/pipeline"
+
+      glue_crawler_schedule = "0 1 * * ? *"
+    }
+
+#### Create an Instance of the `kubecost_s3_exporter` Module and Provide Module-Specific Inputs
+
+The below table lists the required and optional inputs for the `kubecost_s3_exporter` module:
+
+| Name                                                                                                                         | Description                                                                                                                   | Type     | Default                                         | Possible Values                                                                                               | Required |
+|------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|----------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
+| <a name="input_cluster_arn"></a> cluster\_arn                                                                                | The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed                                                    | `string` | n/a                                             | An EKS Cluster ARN                                                                                            | yes      |
+| <a name="input_cluster_oidc_provider_arn"></a> cluster\_oidc\_provider\_arn                                                  | The IAM OIDC Provider ARN for the EKS cluster                                                                                 | `string` | n/a                                             | An IAM OIDC Provider ARN                                                                                      | yes      |
+| <a name="input_kubecost_s3_exporter_container_image"></a> kubecost\_s3\_exporter\_container\_image                           | The Kubecost S3 Exporter container image                                                                                      | `string` | n/a                                             | A Docker container image (`<registry_url>/<repo>:<tag>`)                                                      | yes      |
+| <a name="input_kubecost_s3_exporter_container_image_pull_policy"></a> kubecost\_s3\_exporter\_container\_image\_pull\_policy | The image pull policy that'll be used by the Kubecost S3 Exporter pod                                                         | `string` | `"Always"`                                      | One of "Always", "IfNotPresent" or "Never"                                                                    | no       |
+| <a name="input_kubecost_s3_exporter_cronjob_schedule"></a> kubecost\_s3\_exporter\_cronjob\_schedule                         | The schedule of the Kubecost S3 Exporter CronJob                                                                              | `string` | `"0 0 * * *"`                                   | A Cron expression. For example, `0 0 * * *`                                                                   | no       |
+| <a name="input_kubecost_s3_exporter_ephemeral_volume_size"></a> kubecost\_s3\_exporter\_ephemeral\_volume\_size              | The ephemeral volume size for the Kubecost S3 Exporter pod                                                                    | `string` | `"50Mi"`                                        | A volume size in the format of 'NMi', where N >= 1. For example, 10Mi, 50Mi, 100Mi, 150Mi                     | no       |
+| <a name="input_kubecost_api_endpoint"></a> kubecost\_api\_endpoint                                                           | The Kubecost API endpoint in format of 'http://<name\_or\_ip>:<port>'                                                         | `string` | `"http://kubecost-cost-analyzer.kubecost:9090"` | A URI in the format of http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]                            | no       |
+| <a name="input_aggregation"></a> aggregation                                                                                 | The aggregation to use for returning the Kubecost Allocation API results                                                      | `string` | `"container"`                                   | One of "container", "pod", "namespace", "controller", "controllerKind", "node", or "cluster" (case-sensitive) | no       |
+| <a name="input_kubecost_allocation_api_paginate"></a> kubecost_allocation_api_paginate                                       | Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)                                                  | `string` | `"No"`                                          | One of "Yes", "No", "Y" or "N" (case-insensitive)                                                             | no       |
+| <a name="input_kubecost_allocation_api_resolution"></a> kubecost_allocation_api_resolution                                   | The Kubecost Allocation On-demand API resolution, to control accuracy vs performance                                          | `string` | `"1m"`                                          | A resolution in the format of 'Nm', where N >= 1. For example, 1m, 2m, 5m, 10m                                | no       |
+| <a name="input_connection_timeout"></a> connection_timeout                                                                   | The time (in seconds) to wait for TCP connection establishment                                                                | `number` | `10`                                            | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
+| <a name="input_kubecost_allocation_api_read_timeout"></a> kubecost_allocation_api_read_timeout                               | The time (in seconds) to wait for the Kubecost Allocation On-Demand API to send an HTTP response                              | `number` | `60`                                            | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
+| <a name="input_kubecost_assets_api_read_timeout"></a> kubecost_assets_api_read_timeout                                       | The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response                                            | `number` | `30`                                            | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
+| <a name="input_tls_verify"></a> tls_verify                                                                                   | Dictates whether TLS certificate verification is done for HTTPS connections                                                   | `string` | `Yes`                                           | One of "Yes", "No", "Y" or "N" (case-insensitive)                                                             | no       |
+| <a name="input_kubecost_ca_certificate_secret_name"></a> kubecost\_ca\_certificate\_secret\_name                             | The AWS Secrets Manager secret name, for the CA certificate used for verifying Kubecost's server certificate when using HTTPS | `string` | `""`                                            | A valid AWS Secrets Manager secret name                                                                       | no       |
+| <a name="input_k8s_config_path"></a> k8s\_config\_path                                                                       | The K8s config file to be used by Helm                                                                                        | `string` | `"~/.kube/config"`                              | The path to the K8s config file                                                                               | no       |
+| <a name="input_namespace"></a> namespace                                                                                     | The namespace in which the Kubecost S3 Exporter pod and service account will be created                                       | `string` | `"kubecost-s3-exporter"`                        | A valid namespace name                                                                                        | no       |
+| <a name="input_create_namespace"></a> create\_namespace                                                                      | Dictates whether to create the namespace as part of the Helm Chart deployment                                                 | `bool`   | `true`                                          | `true` or `false`                                                                                             | no       |
+| <a name="input_service_account"></a> service\_account                                                                        | The service account for the Kubecost S3 Exporter pod                                                                          | `string` | `"kubecost-s3-exporter"`                        | A valid service account name                                                                                  | no       |
+| <a name="input_create_service_account"></a> create\_service\_account                                                         | Dictates whether to create the service account as part of the Helm Chart deployment                                           | `bool`   | `true`                                          | `true` or `false`                                                                                             | no       |
+| <a name="input_invoke_helm"></a> invoke\_helm                                                                                | Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account)        | `bool`   | `true`                                          | `true` or `false`                                                                                             | no       |
+
+In the `main.tf` file in the `deploy` directory, you'll find 2 pre-created `kubecost-s3-exporter` module instances.<br />
+The first one is for a cluster with Helm invocation, and the last one is for a cluster without Helm invocation:
+
+    # Example module instance for cluster with Helm invocation
+    module "cluster1" {
     
-    #######
-    ####### Congratulations!
-    ####### EKS Insights is available at: https://<region_code>.quicksight.aws.amazon.com/sn/dashboards/eks_insights
-    #######
+      # This is an example, to help you get started
     
-    ? [share-with-account] Share this dashboard with everyone in the QuickSight account?: (Use arrow keys)
-     » yes
-       no
+      source = "../modules/kubecost_s3_exporter"
+    
+      providers = {
+        aws.pipeline = aws
+        aws.eks      = aws.us-east-1-111111111111-cluster1
+        helm         = helm.us-east-1-111111111111-cluster1
+      }
+    
+      cluster_arn                          = ""
+      cluster_oidc_provider_arn            = ""
+      kubecost_s3_exporter_container_image = ""
+    }
+    
+    # Example module instance for cluster without Helm invocation
+    module "cluster2" {
+    
+      # This is an example, to help you get started
+    
+      source = "../modules/kubecost_s3_exporter"
+    
+      providers = {
+        aws.pipeline = aws
+        aws.eks      = aws.us-east-1-111111111111-cluster2
+      }
+    
+      cluster_arn                          = ""
+      cluster_oidc_provider_arn            = ""
+      kubecost_s3_exporter_container_image = ""
 
-Choose whether to share the dashboard with everyone in this account.<br />
-This selection will complete the deployment.<br />
+Change the name of the module instance from "cluster1" to a name that uniquely represents your cluster.<br />
+It doesn't have to be the same name as the provider you defined for the cluster, but using consistent naming convention is advised.<br />
 
-Note:<br />
-Data won't be available in the dashboard at least until the first time the data collection pod runs and collector data.
-You must have data from at lest 72 hours ago in Kubecost for the data collection pod to collect data.
+Then, provide the module-specific required inputs, as listed in the above table.<br />
+Example (more examples can be found in the `examples/deploy/main.tf` file):
 
-## Post-Deployment Steps
+    module "cluster1" {
+      source = "../modules/kubecost_s3_exporter"
 
-### Share the Dataset with Users
+      providers = {
+        aws.pipeline = aws
+        aws.eks      = aws.us-east-1-111111111111-cluster1
+        helm         = helm.us-east-1-111111111111-cluster1
+      }
+    
+      cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
+      cluster_oidc_provider_arn            = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/1"
+      kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
+    }
 
-Share the dataset with users that are authorized to make changes to it:
+Optionally, change module-specific optional inputs.<br />
+Finally, after providing the inputs, change the providers references in the `providers` block:
 
-1. Login to QuickSight, then click on the person icon on the top right, and click "Manage QuickSight"
-2. On the left pane, navigate to "Manage assets", then choose "Datasets"
-3. From the list, choose the `eks_insights` dataset (ID `e88edf48-f2cd-4c23-b6a4-e2b3034e2c41`)
-4. Click "Share", select the desired permissions, start typing your user or group, select it and click "Share"
-5. Navigate back to “Datasets” on the main QuickSight menus on the left, click the eks_insights dataset, and verify that the refresh status shows as “Completed” (It may take a few minutes to complete).<br />
-Once it's completed - the dashboard is ready to be used, and you can navigate to “Dashboards”, click the EKS Insights dashboard, and start using the dashboard.
+1. Always leave the `aws.pipeline` field as is.<br />
+It references the pipeline provider, and is used by the `kubecost_s3_exporter` module to create the parent IAM role in the pipeline account
+2. Change the `aws.eks` field value to the alias of the `aws` provider.<br />
+This must be the alias of the `aws` provider you defined for this cluster in the `providers.tf` file
+3. If this cluster is deployed using Helm invocation, change the `helm` field value to the alias of the `helm` provider.<br />
+This must be the alias of the `helm` provider you defined in the `providers.tf` file for this cluster.<br />
+Otherwise, the `helm` field isn't necessary in this module.
 
-Please continue to the next steps to set dataset refresh (mandatory), and optionally share the dashboard with users and create an Analysis from the dashboard
+Create such a module instance for each cluster on which you wish to deploy the Kubecost S3 Exporter pod.<br />
+Make sure that each module instance has a unique name (`module "<unique_name>"`).
 
-### Set Dataset Refresh Schedule
+**_Important Note:_**<br />
+The inline policy created for the IRSA includes some wildcards.<br />
+The reason for using these wildcards is to specify:
+* All months (part of the S3 bucket prefix)
+* All years (part of the S3 bucket prefix)
+* All dates in the Parquet file name that is being uploaded to the bucket
 
-A dataset refresh schedule needs to be set, so that the data from Athena will be fresh daily in QuickSight:
+Even with these wildcards, the policy restricts access only to a very specific prefix of the bucket.<br />
+This is done specifying the account ID, region and EKS cluster name as part of the resource in the inline policy.<br />
+This is possible because the prefix we use in the S3 bucket includes the account and region for each cluster, and the Parquet file name includes the EKS cluster name.
 
-1. Login to QuickSight as a user that has "Owner" permissions to the dataset (you set it in the previous step)
-2. Navigate to "Datasets" and click on the `eks_insights` dataset
-3. Under "Refresh" tab, click "ADD NEW SCHEDULE"
-4. Select "Incremental refresh", and click "CONFIGURE INCREMENTAL REFRESH"
-5. On "Date column", make sure that "window.start" is selected
-6. Set "Window size (number)" to "4", set "Window size (unit)" to "Days", and click "CONTINUE".<br />
-Notice that any value that is less than "4" in the "Window size (number)" will miss some data.
-7. Select "Timezone" and "Start time".<br />
-Notice that these options set the refresh schedule.<br />
-The refresh schedule should be at least 2 hours after the K8s CronJob schedule.<br />
-This is because 1 hour after the CronJob runs, the AWS Glue Crawler runs.<br />
-8. Set the "Frequency" to "Daily" and click "SAVE"
+### Step 4: Optionally, Add Outputs to the `outputs.tf` File
 
-### Share the Dashboard with Users
+The `deploy` directory has an `outputs.tf` file, used to show useful outputs after deployment.<br />
+Below are explanations on how to use it.
 
-To share the dashboard with users, for them to be able to view it and create Analysis from it, see the following link:<br />
-https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/postdeploymentsteps/share/
+#### The `labels` Output
 
-### Create an Analysis from the Dashboard
+During the deployment, you may add labels to the dataset for each cluster.<br />
+When doing so, Terraform calculates the distinct labels from all clusters labels.<br />
+This is done so that Terraform can create a column in the Glue Table, for each distinct label.<br />
+This output is included, so that you can make sure the labels were added to the QuickSight dataset.
 
-Create an Analysis from the Dashboard, to edit it and create custom visuals:
+The `main.tf` file already has a `labels` output, to show the list of distinct labels:
 
-1. Login to QuickSight as a user that is allowed to save the dashboard as Analysis
-2. Navigate to "Dashboards" and click the `EKS Insights`
-3. On the top right, click the "Save as" icon (refresh the dashboard if you don't see it), name the Analysis, then click "SAVE" - you'll be navigated to the Analysis
-4. You can edit the Analysis as you wish, and save it again as a dashboard, by clicking the "Share" icon on the top right, then click "Publish dashboard"
+    output "labels" {
+      value       = module.pipeline.labels
+      description = "A list of the distinct lab of all clusters, that'll be added to the dataset"
+    }
+
+No need to make any changes to it.
+
+#### Adding Cluster Outputs for each Cluster
+
+This Terraform module creates an IRSA IAM Role and parent IAM Role for each cluster, as part of the `kubecost-s3-exporter` module.<br />
+It creates them with a name that includes the IAM OIDC Provider ID.<br />
+This is done to keep the IAM Role name within the length limit, but it causes difficulties in correlating it to a cluster.<br>
+You can add an output to the `output.tf` file for each cluster, to show the mapping of the cluster name and the IAM Roles (IRSA and parent) ARNs.
+
+The `outputs.tf` file already has a sample output to get you started:
+
+    output "cluster1" {
+      value       = module.cluster1
+      description = "The outputs for 'cluster1'"
+    }
+
+Change the output name from `cluster1` to a name that uniquely represents your cluster.<br />
+Then, change the value to reference to the module instance of your cluster (`module.<module_instance_name>`).
+More examples can be found in the `examples/deploy/outputs.tf` file.
+
+It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Roles ARNs.<br />
+Make sure you use a unique cluster name in the output name.
+
+When deploying, Terraform will output a line showing the output name and the IAM Roles ARNs.
+
+### Step 5: Deploy
+
+From the `deploy` directory, perform the following:
+
+1. Run `terraform init`
+2. Run `terraform apply`
 
 ## Maintenance
 
 After the solution is initially deployed, you might want to make changes.<br />
-Below are instruction for some common changes that you might do after the initial deployment.
+Below are instruction for some common changes that you might do after the initial deployment. 
 
 ### Deploying on Additional Clusters
 
-To add additional clusters to the dashboard, you need to add them to the Terraform module and apply it.<br />
-Please follow the "Maintenance -> Deploying on Additional Clusters" part under `terraform/kubecost_cid_terraform_module/README.md`.<br />
-Wait for the next schedule of the Kubecost S3 Exporter and QuickSight refresh, so that it'll collect the new data.<br />
+When adding additional clusters after the initial deployment, not all the initial deployment steps are required.<br />
+To continue adding additional clusters after the initial deployment, the only required steps are as follows, for each cluster:
 
-Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
-Then, manually run the Glue Crawler and manually refresh the QuickSight dataset.
+1. Create an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html) in the S3 bucket's account.
+2. Define additional providers for the clusters
+3. Create additional instances of the `kubecost_s3_exporter` module in the `main.tf` file, and provide inputs
+4. If you need to add labels for this cluster, follow the "Maintenance -> Adding/Removing Labels to/from the Dataset" section
+5. Optionally, add cluster output for the IRSA (IAM Role for Service Account) and parent IAM role, for each cluster
+
+Then, from the `deploy` directory, run `terraform init` and `terraform apply`
+
+### Updating Clusters Inputs
+
+After the initial deployment, you might want to change parameters.<br />
+Below are instructions for doing so:
+
+#### Updating Inputs for Existing Clusters
+
+To update inputs for existing clusters (all or some), perform the following:
+
+1. In the `deploy` directory, open the `main.tf` file
+2. Change the relevant inputs in the module instances of the clusters you wish to update
+3. From the `deploy` directory, run `terraform apply`
 
 ### Adding/Removing Labels to/from the Dataset
 
 After the initial deployment, you might want to add or remove labels for some or all clusters, to/from the dataset.<br />
 To do this, perform the following:
 
-1. Add/remove the labels to/from the Terraform module and apply it.<br />
-Please follow the "Maintenance -> Adding/Removing Labels to/from the Dataset" part under `terraform/kubecost_cid_terraform_module/README.md`.
-2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels.<br />
-Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
-3. Login to QuickSight, navigate to "Datasets", click on the `eks_insights` dataset, click "EDIT DATASET", and click "SAVE & PUBLISH".<br/>
-Wait the full refresh is done, and the new set of labels should be present in the analysis.<br />
-For it to be available in the dashboard, export the analysis to a dashboard.
-
-### Running the Kubecost S3 Exporter Pod On-Demand
-
-In some cases, you'd like to run the Kubecost S3 Exporter pod on-demand.<br />
-For example, you may want to test it, or you may have added some data and would like to see it immediately.<br />
-To run the Kubecost S3 Exporter pod on-demand, run the following command (replace `<namespace>` with your namespace and `<context>` with your cluster ARN:
-
-    kubectl create job --from=cronjob/kubecost-s3-exporter kubecost-s3-exporter1 -n <namespace> --context <context>
-
-You can see the status by running `kubectl get all -n <namespace> --context <context>`
-
-### Getting Logs from the Kubecost S3 Exporter Pod
-
-To see the logs of the Kubecost S3 Exporter pod, you need to first get the list of pods by running the following command:
-
-    kubectl get all -n <namespace> --context <context>
-
-Then, run the following command to get the logs:
-
-    kubectl logs <pod> -c kubecost-s3-exporter -n <namespace> --context <context>
-
-## Troubleshooting
-
-This section includes some common issues and possible solutions.
-
-### The Data Collection Pod is in Status of `Completed`, But There's No Data in the S3 Bucket
-
-The data collection container collects data between 72 hours ago 00:00:00.000 and 48 hours ago 00:00:00.000.<br />
-Your Kubecost server still have missing data in this timeframe.<br />
-Please check the data collection container logs, and if you see the below message, it means you still don't have enough data:
-
-    <timestamp> ERROR kubecost-s3-exporter: API response appears to be empty.
-    This script collects data between 72 hours ago and 48 hours ago.
-    Make sure that you have data at least within this timeframe.
-
-In this case, please wait for Kubecost to collect data for 72 hours ago, and then check again.
-
-### The Data Pod Container is in Status of `Error`
-
-This could be for various reasons.<br />
-Below are a couple of scenarios caught by the data collection container, and their logs you should expect to see.
-
-#### A Connection Establishment Timeout
-
-In case of a connection establishment timeout, the container logs will show the following log:
-
-    <timestamp> ERROR kubecost-s3-exporter: Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). Consider increasing the connection timeout value.
-
-In this case, please check the following:
-
-1. That you specified the correct Kubecost API endpoint in the `kubecost_api_endpoint` input.
-This should be the Kubecost cost-analyzer service.<br />
-Usually, you should be able to specify `http://<service_name>.<namespace_name>:[port]`, and this DNS name will be resolved.
-The default service name for Kubecost cost-analyzer service is `kubecost-cost-analyzer`, and the default namespace it's created in is `kubecost`.<br />
-The default port the Kubecost cost-analyzer service listens on is TCP 9090.<br />
-Unless you changed the namespace, service name or port, you should be good with the default value of the `kubecost_api_endpoint` input.<br />
-If you changed any of the above, make sure you change the `kubecost_api_endpoint` input value accordingly.
-2. If the `kubecost_api_endpoint` input has the correct value, try increasing the `connection_timeout` input value
-3. If you still get the same error, check network connectivity between the data collection pod and the Kubecost cost-analyzer service
-
-#### An HTTP Server Response Timeout
-
-In case of HTTP server response timeout, the container logs will show one of the following logs (depends on the API being queried):
-
-    <timestamp> ERROR kubecost-s3-exporter: Timed out waiting for Kubecost Allocation On-Demand API to send an HTTP response in the given time ({read_timeout}s). Consider increasing the read timeout value.
-
-    <timestamp> ERROR kubecost-s3-exporter: Timed out waiting for Kubecost Assets API to send an HTTP response in the given time ({read_timeout}s). Consider increasing the read timeout value.
-
-If this is for the Allocation On-Demand API call, please follow the recommendations in the "Clarifications on the Allocation On-Demand API" part on the Appendix.<br />
-If this is for the Assets API call, please try increasing the `kubecost_assets_api_read_timeout` input value.
+1. From the `modules/common` directory, open the `variables.tf` file
+2. If the cluster for which you'd like to add labels to the dataset, isn't in the `clusters_list` list, add it.<br />
+If it's already in the list, and you'd like to update its labels (add/remove), update the `labels` list for this cluster.<br />
+If you'd like to remove labels from the dataset for a cluster, remove the cluster's entry from the `clusters_list` list.
+3. From the `deploy` directory, run `terraform apply`.<br />
+Terraform will output the new list of labels when the deployment is completed.
 
 ## Cleanup
 
-### QuickSight Cleanup
+### Removing the Kubecost S3 Exporter from Specific Clusters
 
-1. Delete any analysis you created from the dashboard
-2. Delete the dashboard
-3. Delete the dataset
+To remove the Kubecost S3 Exporter from a specific cluster, perform the following:
 
-### AWS and K8s Resources Cleanup
+1. From the `main.tf` file in the `deploy` directory, remove the module instance of the cluster.
+2. From the `outputs.tf` file in the `deploy` directory, remove the outputs of the cluster, if any.
+3. Run `terraform apply`
+4. From the `providers.tf` file in the `deploy` directory, remove the providers of the cluster.<br />
+You must remove the providers only after you did step 1-3 above, otherwise the above steps will fail.
 
-1. Follow the "Complete Cleanup" section in the Terraform README.md, located in the `terraform/kubecost_cid_terraform_module/README.md` directory
-2. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
-3. Empty and delete the S3 bucket you created
+### Complete Cleanup
 
-### Helm K8s Resources Cleanup
-
-For clusters on which the K8s resources were deployed using "Deployment Option 2", run the following Helm command per cluster:
-
-    helm uninstall kubecost-s3-exporter -n <namespace> --kube-context <cluster_context>
-
-### Remove Namespaces
-
-For each cluster, remove the namespace by running `kubectl delete ns <namespace> --context <cluster_context>` per cluster.
-
-## Appendix
-
-### Clarifications on the Allocation On-Demand API
-
-The [Allocation API On-Demand API](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) is considered experimental, as mentioned in the referenced link.<br />
-The reason this solution uses this API and not the [standard Allocation API endpoint](https://docs.kubecost.com/apis/apis-overview/allocation#allocation-api), is to fetch specific time range in hourly granularity.<br />
-This solution relies on Kubecost's ability to integrate with the Cost and Usage Report (CUR).<br />
-The CUR is being updated [**up to** 3 times a day](https://docs.aws.amazon.com/cur/latest/userguide/what-is-cur.html). The data recency in the update might be back a few hours from the update time.<br />
-Since Kubecost shows updated cost data up to almost now, it means there could be a gap between Kubecost's data and CUR's data for up to 48 hours.<br />
-Till Kubecost reconciles the data from CUR with its data, it'll show on-demand costs.
-
-This solution, intends to show accurate container costs that reflect not only on-demand, but also RIs, Savings Plans and Spot.<br />
-This means that for this to work, the daily data collection must always collect data from 48 hours ago.<br />
-To be more precise, it must collect data from between 72 hours ago 00:00:00.000 to 48 hours ago 00:00:00.000.<br />
-This solution also intends to show up to hourly granularity of the costs.<br />
-This means that the data collection must provide an option to retrieve the data from Kubecost in hourly granularity.<br />
-Lastly, this solution intends to show container-level cost data, which means the amount of data fetched can be large (as opposed to using higher-level aggregations).
-
-The Kubecost standard Allocation API endpoint doesn't have an input to specify the time granularity.<br />
-Instead, it uses time granularity based on the `window` input.<br />
-For example, a `window` of `24h` will return data in hourly granularity, and a `window` of `3d` will return data in daily granularity.<br />
-We don't use this kind of window, and instead, we use a time range window (as mentioned above).<br />
-With this type of window, Kubecost can't automatically detect the granularity, so it returns an accumulated cost for the whole time range.<br />
-Alternatively, we could specify `72h` window (to get hourly granularity) and get the specific time range at parsing level.<br />
-However, Kubecost standard Allocation API endpoint has a limitation where it returns data in hourly granularity only for `window` of up to `48h`.
-
-As opposed to the standard Allocation API endpoint, the Allocation On-Demand API endpoint has a `step` input.<br />
-This gives us the flexibility to specify a hourly granularity (with `step` set to `1h`), even for a time-range window.<br />
-However, this comes with a performance tradeoff, as it computes everything on-demand.<br />
-This is as opposed to the standard Allocation API endpoint which uses precomputed sets with predefined step sizes.<br />
-This can cause long HTTP response times (for the API calls we make), as well as serious Prometheus performance issues, including OOM errors.
-
-Due to our requirement for CUR data parity and hourly granularity, we chose the Allocation On-Demand API.<br />
-To avoid the possible issues that may be caused by using this API, we provide the following means as part of this solution:
-
-* Ability to set the API call's read timeout, using the `kubecost_allocation_api_read_timeout` Terraform input (`KUBECOST_ALLOCATION_API_READ_TIMEOUT` Helm input).<br />
-The read timeout defines the time to wait for the server to return an HTTP response, and provides ability to set high read timeout.<br />
-This is useful in cases of large clusters where Kubecost Allocation On-Demand API will take time to compute the data before returning a response.<br />
-The default read timeout is 60 seconds, and can be changed on per cluster basis. 
-* Ability to paginate using the `kubecost_allocation_api_paginate` Terraform input (`KUBECOST_ALLOCATION_API_PAGINATE` Helm input).<br />
-Kubecost doesn't provide a native pagination functionality on this API.<br />
-In some cases, returning large volumes of data may cause OOM errors.<br />
-So, setting the read timeout to a large value to allow for a long processing time solves one issue, but causes another issue.<br />
-To avoid possible OOM errors, this solution implements pagination by querying 1-hour time ranges within the 24-hour range it queries.<br />
-This means that with pagination enabled, the data collection will perform 24 API calls and will concatenate them to a single data set.<br />
-This means a potentially longer time to finish the retrieving all data (due to multiple request-response transactions over the network).<br />
-However, in this expense, we reduce the risk for OOM errors because we retrieve smaller set of data on every API call.<br />
-Pagination is disabled by default, and can be enabled on per cluster basis.
-* Ability to define query resolution using the `kubecost_allocation_api_resolution` Terraform input (`KUBECOST_ALLOCATION_API_RESOLUTION` Helm input).<br />
-This provides the ability to make tradeoffs between accuracy and performance.<br />
-The default value is `1m`, and it can be changed on per cluster basis.<br />
-For more information on this functionality from Kubecost's documentation, see [Theoretical error bounds](https://docs.kubecost.com/apis/apis-overview/allocation#theoretical-error-bounds) in the Allocation On-Demand API documentation.
-* Ability to choose higher-level response aggregation, using the `aggregation` Terraform input (`AGGREGATION` Helm input).<br />
-Although we intend to collect container-level cost data to provide the most granular data set, we provide an option to choose the aggregation.<br />
-This can potentially reduce the amount of data that needs to be returned by Kubecost, which means less time for Kubecost to process it.<br />
-This can reduce the risk for OOM errors, and also reduce the time it takes for the API to respond (hence, you could reduce the `kubecost_allocation_api_read_timeout`).<br />
-The default value is `container`, and it can be changed on per cluster basis, to different higher level aggregation options (such ash pod, namespace).<br />
-Using different aggregation option on different cluster will NOT cause issues on the data set, so feel free to use different options on different clusters.<br />
-Please note that using aggregation higher than `container` will prevent using container right-sizing features of this solution for the respective clusters.
-* Ability to specify daily time granularity using the `granularity` Terraform input (`GRANULARITY` Helm input).<br />
-Although we intend to provide hourly granularity for accurate data, we provide an option to choose the time granularity.<br />
-This can dramatically reduce the amount of data that needs to be returned by Kubecost, which means less time for Kubecost to process it.<br />
-This can reduce the risk for OOM errors, and also reduce the time it takes for the API to respond (hence, you could reduce the `kubecost_allocation_api_read_timeout`).<br />
-The default value is `hourly`, and it can be changed globally, only on the `common` Terraform module.<br />
-Please DO NOT change it manually on an individual cluster basis on Helm.<br />
-Please note that changing the time granularity to `daily` will reduce the ability to investigate costs for short-term containers.
-
-We recommend approaching the problems outlined above, as follows:
-
-1. Run the data collection container for the first time, with the default settings, on a dev cluster.<br />
-If the Allocation On-Demand API fails to return an HTTP response in the given time, you'll see an error as in the "An HTTP Server Response Timeout" section.<br />
-In this case, increase the `kubecost_allocation_api_read_timeout` incrementally, till you receive a response.
-2. Based on the time it takes the Allocation On-Demand API to return (can be seen in the data collection container logs), adjust the read timeout on larger clusters.<br />
-3. If you observe a too high memory usage on the Kubecost pod or Prometheus, or OOM errors on them, enable pagination for the cluster
-4. If the above doesn't help, change the `kubecost_allocation_api_resolution` input to more than `1m` (do it incrementally till you see improvement)
-5. If the above doesn't help, use higher level aggregation using the `aggreagation` input (for example, "pod" or "namespace") for the cluster
-6. If the above doesn't help, move to daily granularity as a last resort (this will affect all clusters).<br />
-Do so by changing the default value of the `granularity` input in the `common` module to `daily`
+To completely clean up the entire setup, run `terraform destroy` from the `deploy` directory.<br />
+Then, follow the "Cleanup" section of the main README.md to clean up other resources that weren't created by Terraform.
