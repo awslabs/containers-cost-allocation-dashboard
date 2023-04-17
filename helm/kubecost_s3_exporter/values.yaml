@@ -8,6 +8,7 @@ namespace: "kubecost-s3-exporter"
 
 image: "<registry_url>/<repo>:<tag>"
 imagePullPolicy: Always
+ephemeralVolumeSize: "50Mi"
 
 cronJob:
   name: "kubecost-s3-exporter"
