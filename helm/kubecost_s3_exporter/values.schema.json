@@ -368,7 +368,7 @@
     },
     "ephemeralVolumeSize": {
       "type": "string",
-      "description": "The ephemeral volume size for the Kubecost S3 Exporter container",
+      "description": "The ephemeral volume size for the Kubecost S3 Exporter pod",
       "default": "50Mi",
       "pattern": "^[1-9][0-9]?Mi.*$"
     },
