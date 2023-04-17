@@ -107,10 +107,6 @@ variable "kubecost_ca_certificates_list" {
     condition     = length([for cert_secret_name in var.kubecost_ca_certificates_list.*.cert_secret_name : cert_secret_name if can(regex("^[a-z[A-Z0-9/_+=.@-]{1,512}$", cert_secret_name))]) == length(var.kubecost_ca_certificates_list)
     error_message = "At least one of the 'cert_secret_name' keys in the 'kubecost_ca_certificates_list' list, contains an invalid secret name"
   }
-  validation {
-    condition     = length([for cert_secret_region in var.kubecost_ca_certificates_list.*.cert_secret_region : cert_secret_region if can(regex("^(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\\d$", cert_secret_region))]) == length(var.kubecost_ca_certificates_list)
-    error_message = "At least one of the 'cert_secret_region' keys in the 'kubecost_ca_certificates_list' list, contains an invalid region-code"
-  }
 }
 
 variable "aws_shared_config_files" {
