@@ -51,7 +51,7 @@ provider "helm" {
 }
 
 provider "aws" {
-  alias = "us-east-1-111111111111-cluster-2"
+  alias = "us-east-1-111111111111-cluster2"
 
   region                   = "us-east-1"
   shared_config_files      = module.common.aws_shared_config_files
@@ -63,7 +63,7 @@ provider "aws" {
 }
 
 provider "helm" {
-  alias = "us-east-1-111111111111-cluster-2"
+  alias = "us-east-1-111111111111-cluster2"
 
   kubernetes {
     config_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster2"
@@ -95,7 +95,7 @@ provider "helm" {
 }
 
 provider "aws" {
-  alias = "us-east-2-111111111111-cluster-2"
+  alias = "us-east-2-111111111111-cluster2"
 
   region                   = "us-east-2"
   shared_config_files      = module.common.aws_shared_config_files
@@ -103,15 +103,6 @@ provider "aws" {
   profile                  = "profile1"
   default_tags {
     tags = module.common.aws_common_tags
-  }
-}
-
-provider "helm" {
-  alias = "us-east-2-111111111111-cluster-2"
-
-  kubernetes {
-    config_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster2"
-    config_path    = "~/.kube/config"
   }
 }
 
@@ -143,7 +134,7 @@ provider "helm" {
 }
 
 provider "aws" {
-  alias = "us-east-1-222222222222-cluster-2"
+  alias = "us-east-1-222222222222-cluster2"
 
   region                   = "us-east-1"
   shared_config_files      = module.common.aws_shared_config_files
@@ -155,7 +146,7 @@ provider "aws" {
 }
 
 provider "helm" {
-  alias = "us-east-1-222222222222-cluster-2"
+  alias = "us-east-1-222222222222-cluster2"
 
   kubernetes {
     config_context = "arn:aws:eks:us-east-1:222222222222:cluster/cluster2"
@@ -177,17 +168,8 @@ provider "aws" {
   }
 }
 
-provider "helm" {
-  alias = "us-east-2-222222222222-cluster1"
-
-  kubernetes {
-    config_context = "arn:aws:eks:us-east-1:222222222222:cluster/cluster1"
-    config_path    = "~/.kube/config"
-  }
-}
-
 provider "aws" {
-  alias = "us-east-2-222222222222-cluster-2"
+  alias = "us-east-2-222222222222-cluster2"
 
   region                   = "us-east-2"
   shared_config_files      = module.common.aws_shared_config_files
@@ -199,7 +181,7 @@ provider "aws" {
 }
 
 provider "helm" {
-  alias = "us-east-2-222222222222-cluster-2"
+  alias = "us-east-2-222222222222-cluster2"
 
   kubernetes {
     config_context = "arn:aws:eks:us-east-1:222222222222:cluster/cluster2"
