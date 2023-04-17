@@ -82,14 +82,14 @@ variable "kubecost_s3_exporter_cronjob_schedule" {
   }
 }
 
-variable "kubecost_ephemeral_volume_size" {
+variable "kubecost_s3_exporter_ephemeral_volume_size" {
   type        = string
   default     = "50Mi"
   description = "The ephemeral volume size for the Kubecost S3 Exporter container"
 
   validation {
-    condition     = can(regex("^[1-9][0-9]?Mi.*$", var.kubecost_ephemeral_volume_size))
-    error_message = "The 'kubecost_ephemeral_volume_size' input must be in format of 'NMi', where N >= 1.\nFor example, 10Mi, 50Mi, 100Mi, 150Mi."
+    condition     = can(regex("^[1-9][0-9]?Mi.*$", var.kubecost_s3_exporter_ephemeral_volume_size))
+    error_message = "The 'kubecost_s3_exporter_ephemeral_volume_size' input must be in format of 'NMi', where N >= 1.\nFor example, 10Mi, 50Mi, 100Mi, 150Mi."
   }
 }
 
