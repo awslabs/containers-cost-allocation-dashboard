@@ -86,7 +86,6 @@ module "us-east-2-111111111111-cluster2" {
   providers = {
     aws.pipeline = aws
     aws.eks      = aws.us-east-2-111111111111-cluster2
-    helm         = helm.us-east-2-111111111111-cluster2
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-2:111111111111:cluster/cluster2"
