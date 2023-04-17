@@ -8,16 +8,16 @@ terraform {
   required_providers {
     aws = {
       source                = "hashicorp/aws"
-      version               = "= 4.63.0"
+      version               = "<= 4.63.0"
       configuration_aliases = [aws.pipeline, aws.eks]
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "= 2.9.0"
+      version = "<= 2.9.0"
     }
     local = {
       source  = "hashicorp/local"
-      version = "= 2.4.0"
+      version = "<= 2.4.0"
     }
   }
 }
@@ -46,7 +46,7 @@ locals {
       "namespace" : var.namespace
       "image" : var.kubecost_s3_exporter_container_image
       "imagePullPolicy" : var.kubecost_s3_exporter_container_image_pull_policy
-      "ephemeralVolumeSize" : var.kubecost_ephemeral_volume_size
+      "ephemeralVolumeSize" : var.kubecost_s3_exporter_ephemeral_volume_size
       "cronJob" : {
         "name" : "kubecost-s3-exporter",
         "schedule" : var.kubecost_s3_exporter_cronjob_schedule
