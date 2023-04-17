@@ -41,4 +41,4 @@ spec:
           volumes:
           - name: kubecost
             emptyDir:
-              sizeLimit: 50Mi
+              sizeLimit: {{ .Values.ephemeralVolumeSize }}
