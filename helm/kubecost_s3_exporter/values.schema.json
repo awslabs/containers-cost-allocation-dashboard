@@ -4,6 +4,7 @@
     "namespace",
     "image",
     "imagePullPolicy",
+    "ephemeralVolumeSize",
     "cronJob",
     "serviceAccount",
     "env"
@@ -353,7 +354,7 @@
     },
     "image": {
       "type": "string",
-      "description": "The 'kubecost_s3_exporter_container_image' input is empty. It must contain a Docker container image string"
+      "description": "The Kubecost S3 Exporter container image"
     },
     "imagePullPolicy": {
       "type": "string",
@@ -364,6 +365,12 @@
         "IfNotPresent",
         "Never"
       ]
+    },
+    "ephemeralVolumeSize": {
+      "type": "string",
+      "description": "The ephemeral volume size for the Kubecost S3 Exporter container",
+      "default": "50Mi",
+      "pattern": "^[1-9][0-9]?Mi.*$"
     },
     "serviceAccount": {
       "type": "object",
