@@ -85,7 +85,7 @@ variable "kubecost_s3_exporter_cronjob_schedule" {
 variable "kubecost_s3_exporter_ephemeral_volume_size" {
   type        = string
   default     = "50Mi"
-  description = "The ephemeral volume size for the Kubecost S3 Exporter container"
+  description = "The ephemeral volume size for the Kubecost S3 Exporter pod"
 
   validation {
     condition     = can(regex("^[1-9][0-9]?Mi.*$", var.kubecost_s3_exporter_ephemeral_volume_size))
