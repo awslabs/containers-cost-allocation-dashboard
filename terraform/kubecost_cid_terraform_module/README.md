@@ -390,14 +390,21 @@ Example (more examples can be found in the `examples/deploy/main.tf` file):
     }
 
 Optionally, change module-specific optional inputs.<br />
-Note:
 
-The `tls_verify` and `kubecost_ca_certificate_secret_name` are used for TLS connection to Kubecost.<br />
+Notes:
+
+1. The `tls_verify` and `kubecost_ca_certificate_secret_name` are used for TLS connection to Kubecost.<br />
 If you didn't enable TLS in Kubecost, they aren't relevant, and you can ignore this input for this cluster.<br />
 If you enabled TLS in Kubecost, then `tls_verify` will be used by the Kubecost S3 Exporter container to verify the Kubecost server certificate.<br />
 In this case, you must provide the CA certificate in the `kubecost_ca_certificates_list`, and specify the secret name for it in the `kubecost_ca_certificate_secret_name` input.<br />
 If you don't do so, and `tls_verify` is set, the TLS connection will fail.<br />
 Otherwise, you can unset the `tls_verify` input. The connection will still be encrypted, but it's less secure due to the absence of server certificate verification.
+2. If you defined a secret name in `kubecost_ca_certificate_secret_name`, you MUST add the `depends_on = [module.pipeline]` line in the module instance.<br />
+Thi is due to the following process that happens in Terraform when specifying the above input:<br />
+Terraform will pull the configuration of the secret that was created by the `pipeline` module.<br />
+This is to then use the secret's ARN in the parent IAM role's inline policy, and to use its region in the Python script to get the secret value.<br />
+For this process (Terraform pulling the secret configuration) to work, there must be a dependency between the `kubecost_s3_exporter` module that pulls the secret configuration, and the `pipeline` module that created the secret.<br />
+If the `depends_on = [module.pipeline]` line isn't added in this case, the deployment fails.
 
 Finally, after providing the inputs, change the providers references in the `providers` block:
 
