@@ -76,8 +76,9 @@ To enable this, please follow the "Enabling Encryption In-Transit Between the Da
 
 1. An S3 bucket, which will be used to store the Kubecost data
 2. QuickSight Enterprise with CID deployed
-3. Terraform and Helm installed
-4. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
+3. Athena Workspace
+4. Terraform and Helm installed
+5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
 
 For each EKS cluster, have the following:
 
