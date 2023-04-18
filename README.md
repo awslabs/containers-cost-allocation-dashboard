@@ -615,7 +615,7 @@ Note that the private key must have no passphrase, otherwise, you'll get `error:
 It's advised that you'll use a server certificate that's signed by a root CA certificate, and not a self-signed certificate.
 
 2. Enable TLS in Kubecost by changing the below values [2] in the Kubecost Helm chart.<br />
-See full `helm` command example below [3].
+See full `helm` command example below [3].<br />
 Once the Helm upgrade finishes successfully, you should see the Kubecost service listens on port 443.<br />
 See example of the `kubectl get services` command output below [4].
 
