@@ -37,7 +37,7 @@ This is so that Helm (invoked by Terraform or manually) can tell which AWS crede
 
 ## Structure
 
-Below is the complete module structure, followed by details on each directory/child module:
+Below is the complete module structure, followed by details on each directory/module:
 
     kubecost_cid_terraform_module/
     ├── README.md
