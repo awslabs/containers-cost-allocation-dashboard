@@ -193,7 +193,7 @@ Note - if at step 2 above, you get the following error:
 *For more information see Set IAM policy (https://docs.aws.amazon.com/console/quicksight/iam-qs-create-users)*
 
 1. Navigate to the IAM console
-2. Edit the QuickSight-managed S3 IAM Policy (usually named AWSQuickSightS3Policy
+2. Edit the QuickSight-managed S3 IAM Policy (usually named `AWSQuickSightS3Policy`)
 3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket
 
 ## Deployment
