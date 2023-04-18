@@ -66,6 +66,11 @@ The Kubecost APIs that are being used are:
 For clarifications on issues that may be encountered when querying the Allocation On-Demand API (such as slow response time or memory issues):<br />
 Please see the "Clarifications on the Allocation On-Demand API" part on the Appendix. 
 
+### Encrypting Data In-Transit
+
+This solution supports encrypting the data between the data collection pod and the Kubecost pod, in-transit.<br />
+To enable this, please follow the "Enabling Encryption In-Transit Between the Data Collection Pod and Kubecost Pod" section in the Appendix.
+
 ## Requirements
 
 1. An S3 bucket, which will be used to store the Kubecost data
@@ -594,7 +599,7 @@ In this case, increase the `kubecost_allocation_api_read_timeout` incrementally,
 6. If the above doesn't help, move to daily granularity as a last resort (this will affect all clusters).<br />
 Do so by changing the default value of the `granularity` input in the `common` module to `daily`
 
-### Enabling Encryption in Transit Between the Data Collection Pod and Kubecost Pod
+### Enabling Encryption In-Transit Between the Data Collection Pod and Kubecost Pod
 
 By default, the Kubecost cost-analyzer-frontend service uses HTTP service to serve the UI/API endpoints, over TCP port 9090.<br />
 For secure communication between the data collection pod and the Kubecost service, it's recommended to encrypt the data in-transit.<br />
