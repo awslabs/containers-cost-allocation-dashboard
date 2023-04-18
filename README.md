@@ -25,6 +25,7 @@ The data collection pod is referred to as Kubecost S3 Exporter throughout some p
   * AWS Glue Database 
   * AWS Glue Table
   * AWS Glue Crawler (along with its IAM Role and IAM Policy)
+  * AWS Secrets Manager Secret (if TLS is enabled)
 
 ### High-Level Logic
 
