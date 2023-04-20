@@ -608,7 +608,7 @@ For secure communication between the data collection pod and the Kubecost servic
 To do that, you first need to enable TLS in Kubecost, and then enable communication over HTTPS in the data collection pod.<br />
 Below you'll find the necessary steps to take.
 
-#### Enabling TLS in the Kubecost
+#### Enabling TLS in Kubecost
 
 At the time of writing this document, Kubecost doesn't have any public documentation on enabling TLS.<br />
 This section will help you go through enabling TLS in Kubecost.<br />
