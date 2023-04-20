@@ -87,7 +87,7 @@ The IAM OIDC Provider must be created in the EKS cluster's account and region.
 2. Kubecost deployed in the EKS cluster.<br />
 Currently, only the free tier and the EKS-optimized bundle of Kubecost are supported.<br />
 The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations).<br />
-To get network costs, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs Daemonset](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
+To get network costs, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs DaemonSet](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
 
 Please continue reading the specific sections “S3 Bucket Specific Notes”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
 
@@ -534,7 +534,7 @@ Since Kubecost shows updated cost data up to almost now, it means there could be
 Till Kubecost reconciles the data from CUR with its data, it'll show on-demand costs.
 
 This solution, intends to show accurate container costs that reflect not only on-demand, but also RIs, Savings Plans and Spot.<br />
-This means that for this to work, the daily data collection must always collect data from 48 hours ago.<br />
+This means that for this to work, the daily data collection must always collect data from 72 hours ago.<br />
 To be more precise, it must collect data from between 72 hours ago 00:00:00.000 to 48 hours ago 00:00:00.000.<br />
 This solution also intends to show up to hourly granularity of the costs.<br />
 This means that the data collection must provide an option to retrieve the data from Kubecost in hourly granularity.<br />
@@ -549,7 +549,7 @@ Alternatively, we could specify `72h` window (to get hourly granularity) and get
 However, Kubecost standard Allocation API endpoint has a limitation where it returns data in hourly granularity only for `window` of up to `48h`.
 
 As opposed to the standard Allocation API endpoint, the Allocation On-Demand API endpoint has a `step` input.<br />
-This gives us the flexibility to specify a hourly granularity (with `step` set to `1h`), even for a time-range window.<br />
+This gives us the flexibility to specify an hourly granularity (with `step` set to `1h`), even for a time-range window.<br />
 However, this comes with a performance tradeoff, as it computes everything on-demand.<br />
 This is as opposed to the standard Allocation API endpoint which uses precomputed sets with predefined step sizes.<br />
 This can cause long HTTP response times (for the API calls we make), as well as serious Prometheus performance issues, including OOM errors.
