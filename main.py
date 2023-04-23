@@ -553,9 +553,11 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
     # DataFrame definition, including all time sets from Kubecost Allocation data
     all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
     df = pd.concat(all_dfs)
+    df = df.reindex(columns=csv_columns, fill_value="missing_from_original_dataset")
 
     # Transforming the DataFrame to a CSV and creating the CSV file locally
-    df.to_csv("/tmp/output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\", columns=csv_columns)
+    df.to_csv("/tmp/output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\",
+              columns=csv_columns)
 
 
 def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels):
