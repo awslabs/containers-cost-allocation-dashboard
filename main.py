@@ -22,7 +22,8 @@ try:
     if not re.match(r"(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", S3_BUCKET_NAME):
         logger.error(f"The 'S3_BUCKET_NAME' input contains an invalid S3 Bucket name: {S3_BUCKET_NAME}")
         sys.exit(1)
-    if re.match(r".*\d{12}.*|.*(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d.*", S3_BUCKET_NAME):
+    if re.match(r".*\d{12}.*|.*(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d.*",
+                S3_BUCKET_NAME):
         logger.warning("The S3 Bucket name includes an AWS account ID or a region-code. "
                        "This could lead to bucket sniping. "
                        "It's advised to use an S3 Bucket name that doesn't include an AWS account ID or a region-code")
@@ -39,7 +40,8 @@ except KeyError:
     sys.exit(1)
 try:
     IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
-    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$", IRSA_PARENT_IAM_ROLE_ARN):
+    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$",
+                    IRSA_PARENT_IAM_ROLE_ARN):
         logger.error(f"The 'IRSA_PARENT_IAM_ROLE_ARN' input contains an invalid ARN: {IRSA_PARENT_IAM_ROLE_ARN}")
         sys.exit(1)
 
@@ -50,7 +52,8 @@ except KeyError:
 # Optional environment variables, and input validations
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost:9090")
 if not re.match(r"^https?://.+$", KUBECOST_API_ENDPOINT):
-    logger.error("The Kubecost API endpoint is invalid. It must be in the format of 'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'")
+    logger.error("The Kubecost API endpoint is invalid. It must be in the format of "
+                 "'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'")
     sys.exit(1)
 
 GRANULARITY = os.environ.get("GRANULARITY", "hourly").lower()
@@ -60,12 +63,14 @@ if GRANULARITY not in ["hourly", "daily"]:
 
 AGGREGATION = os.environ.get("AGGREGATION", "container")
 if AGGREGATION not in ["container", "pod", "namespace", "controller", "controllerKind", "node", "cluster"]:
-    logger.error("Aggregation must be one of 'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
+    logger.error("Aggregation must be one of "
+                 "'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
     sys.exit(1)
 
 KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "No").lower()
 if KUBECOST_ALLOCATION_API_PAGINATE not in ["yes", "no", "y", "n"]:
-    logger.error("The 'KUBECOST_ALLOCATION_API_PAGINATE' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)")
+    logger.error("The 'KUBECOST_ALLOCATION_API_PAGINATE' input must be one of "
+                 "'Yes', 'No', 'Y' or 'N' (case-insensitive)")
     sys.exit(1)
 
 KUBECOST_ALLOCATION_API_RESOLUTION = os.environ.get("KUBECOST_ALLOCATION_API_RESOLUTION", "1m")
@@ -113,89 +118,94 @@ else:
 KUBECOST_CA_CERTIFICATE_SECRET_NAME = os.environ.get("KUBECOST_CA_CERTIFICATE_SECRET_NAME")
 if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
     if not re.match(r"^[a-z[A-Z0-9/_+=.@-]{1,512}$", KUBECOST_CA_CERTIFICATE_SECRET_NAME):
-        logger.error(f"The 'KUBECOST_CA_CERTIFICATE_SECRET_NAME' input contains an invalid secret name: {KUBECOST_CA_CERTIFICATE_SECRET_NAME}")
+        logger.error("The 'KUBECOST_CA_CERTIFICATE_SECRET_NAME' input contains an invalid secret name: "
+                     f"{KUBECOST_CA_CERTIFICATE_SECRET_NAME}")
         sys.exit(1)
 
 KUBECOST_CA_CERTIFICATE_SECRET_REGION = os.environ.get("KUBECOST_CA_CERTIFICATE_SECRET_REGION")
 if KUBECOST_CA_CERTIFICATE_SECRET_REGION:
-    if not re.match(r"^(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d$", KUBECOST_CA_CERTIFICATE_SECRET_REGION):
-        logger.error(f"The 'KUBECOST_CA_CERTIFICATE_SECRET_REGION' input contains an invalid region code: {KUBECOST_CA_CERTIFICATE_SECRET_REGION}")
+    if not re.match(r"^(us(-gov)?|ap|ca|cn|eu|sa)-(central|(north|south)?(east|west)?)-\d$",
+                    KUBECOST_CA_CERTIFICATE_SECRET_REGION):
+        logger.error("The 'KUBECOST_CA_CERTIFICATE_SECRET_REGION' input contains an invalid region code: "
+                     f"{KUBECOST_CA_CERTIFICATE_SECRET_REGION}")
         sys.exit(1)
 
 LABELS = os.environ.get("LABELS")
 
 
 def define_csv_columns(labels):
-    """Defines the CSV columns, including static columns, and comma-separated string of K8s labels
+    """Defines the CSV columns and their mapping to default missing value.
 
-    :param labels: Comma-separated string of K8s labels
-    :return: List of CSV columns
+    :param labels: Comma-separated string of K8s labels to include in the columns' definition
+    :return: Dictionary of CSV columns mapped to their default missing value
     """
 
     # CSV columns definition
-    columns = [
-        "name",
-        "window.start",
-        "window.end",
-        "minutes",
-        "cpuCores",
-        "cpuCoreRequestAverage",
-        "cpuCoreUsageAverage",
-        "cpuCoreHours",
-        "cpuCost",
-        "cpuCostAdjustment",
-        "cpuEfficiency",
-        "gpuCount",
-        "gpuHours",
-        "gpuCost",
-        "gpuCostAdjustment",
-        "networkTransferBytes",
-        "networkReceiveBytes",
-        "networkCost",
-        "networkCostAdjustment",
-        "loadBalancerCost",
-        "loadBalancerCostAdjustment",
-        "pvBytes",
-        "pvByteHours",
-        "pvCost",
-        "pvCostAdjustment",
-        "ramBytes",
-        "ramByteRequestAverage",
-        "ramByteUsageAverage",
-        "ramByteHours",
-        "ramCost",
-        "ramCostAdjustment",
-        "ramEfficiency",
-        "sharedCost",
-        "externalCost",
-        "totalCost",
-        "totalEfficiency",
-        "properties.provider",
-        "properties.region",
-        "properties.cluster",
-        "properties.clusterid",
-        "properties.eksClusterName",
-        "properties.container",
-        "properties.namespace",
-        "properties.pod",
-        "properties.node",
-        "properties.node_instance_type",
-        "properties.node_availability_zone",
-        "properties.node_capacity_type",
-        "properties.node_architecture",
-        "properties.node_os",
-        "properties.node_nodegroup",
-        "properties.node_nodegroup_image",
-        "properties.controller",
-        "properties.controllerKind",
-        "properties.providerID"
-    ]
+    csv_columns_default_missing_value_mapping = {
+        "name": "",
+        "window.start": "",
+        "window.end": "",
+        "minutes": 0,
+        "cpuCores": 0,
+        "cpuCoreRequestAverage": 0,
+        "cpuCoreUsageAverage": 0,
+        "cpuCoreHours": 0,
+        "cpuCost": 0,
+        "cpuCostAdjustment": 0,
+        "cpuEfficiency": 0,
+        "gpuCount": 0,
+        "gpuHours": 0,
+        "gpuCost": 0,
+        "gpuCostAdjustment": 0,
+        "networkTransferBytes": 0,
+        "networkReceiveBytes": 0,
+        "networkCost": 0,
+        "networkCostAdjustment": 0,
+        "loadBalancerCost": 0,
+        "loadBalancerCostAdjustment": 0,
+        "pvBytes": 0,
+        "pvByteHours": 0,
+        "pvCost": 0,
+        "pvCostAdjustment": 0,
+        "ramBytes": 0,
+        "ramByteRequestAverage": 0,
+        "ramByteUsageAverage": 0,
+        "ramByteHours": 0,
+        "ramCost": 0,
+        "ramCostAdjustment": 0,
+        "ramEfficiency": 0,
+        "sharedCost": 0,
+        "externalCost": 0,
+        "totalCost": 0,
+        "totalEfficiency": 0,
+        "properties.provider": "",
+        "properties.region": "",
+        "properties.cluster": "",
+        "properties.clusterid": "",
+        "properties.eksClusterName": "",
+        "properties.container": "",
+        "properties.namespace": "",
+        "properties.pod": "",
+        "properties.node": "",
+        "properties.node_instance_type": "",
+        "properties.node_availability_zone": "",
+        "properties.node_capacity_type": "",
+        "properties.node_architecture": "",
+        "properties.node_os": "",
+        "properties.node_nodegroup": "",
+        "properties.node_nodegroup_image": "",
+        "properties.controller": "",
+        "properties.controllerKind": "",
+        "properties.providerID": "",
+        "field1": 0
+    }
 
     if labels:
         labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
-        return columns + labels_columns
-    else:
-        return columns
+        for label in labels_columns:
+            csv_columns_default_missing_value_mapping[label] = ""
+
+    return csv_columns_default_missing_value_mapping
 
 
 def iam_assume_role(iam_role_arn, iam_role_session_name):
@@ -540,35 +550,38 @@ def kubecost_allocation_data_timestamp_update(allocation_data):
     return allocation_data_with_updated_timestamps
 
 
-def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns):
+def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_default_missing_value_mapping):
     """Transforms the Kubecost Allocation data to CSV.
 
     :param updated_allocation_data: Kubecost's Allocation data after:
      1. Transforming to a nested list
      2. Updating timestamps
-    :param csv_columns: the list of columns to use as CSV columns
+    :param csv_columns_default_missing_value_mapping: A dict of the CSV columns, mapped to their default missing value
     :return:
     """
+
+    # print(csv_columns_default_missing_value_mapping)
+    csv_columns = list(csv_columns_default_missing_value_mapping.keys())
 
     # DataFrame definition, including all time sets from Kubecost Allocation data
     all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
     df = pd.concat(all_dfs)
-    df = df.reindex(columns=csv_columns, fill_value="missing_from_original_dataset")
-
+    df = df.reindex(columns=csv_columns, fill_value="")
     # Transforming the DataFrame to a CSV and creating the CSV file locally
     df.to_csv("/tmp/output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\",
               columns=csv_columns)
 
 
-def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels):
+def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels, csv_columns_default_missing_value_mapping):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
     :param labels: Comma-separated string of K8s labels
     :param csv_file_name: the name of the CSV file
+    :param csv_columns_default_missing_value_mapping: A dict of the CSV columns, mapped to their default missing value
     :return:
     """
 
-    df = pd.read_csv(csv_file_name, encoding='utf8', sep=",", quotechar="'", escapechar="\\")
+    df = pd.read_csv(csv_file_name, encoding="utf8", sep=",", quotechar="'", escapechar="\\")
 
     # Static definitions of data types, to not have them mistakenly set as incorrect data type
     df["name"] = df["name"].astype("object")
@@ -625,11 +638,13 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels):
     df["properties.controller"] = df["properties.controller"].astype("object")
     df["properties.controllerKind"] = df["properties.controllerKind"].astype("object")
     df["properties.providerID"] = df["properties.providerID"].astype("object")
+    df["field1"] = df["field1"].astype("float64")
     if labels:
         labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
         for labels_column in labels_columns:
             df[labels_column] = df[labels_column].astype("object")
 
+    df = df.fillna(value=csv_columns_default_missing_value_mapping)
     df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
 
 
@@ -678,8 +693,8 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
 
 def main():
 
-    # Defining CSV columns
-    columns = define_csv_columns(LABELS)
+    # Defining CSV columns mapping to their default missing value
+    csv_columns_default_missing_value_mapping = define_csv_columns(LABELS)
 
     # Kubecost window definition
     three_days_ago = datetime.datetime.now() - datetime.timedelta(days=3)
@@ -693,9 +708,9 @@ def main():
     assume_role_response = iam_assume_role(IRSA_PARENT_IAM_ROLE_ARN, "kubecost-s3-exporter")
 
     # If the user gave a secret name as an input to the "KUBECOST_CA_CERTIFICATE_SECRET_NAME" environment variable
-    # The following will occur:
-    # The secret with the given name will be
-    # A file is created from the content of the CA certificate, and the "REQUESTS_CA_BUNDLE" is set with the file name
+    # 1. The secret with the given name will be retrieved from AWS Secrets Manager
+    # 2. A file will be created from the content of the CA certificate
+    # 3. The "REQUESTS_CA_BUNDLE" will be set with the file path
     if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
         kubecost_ca_cert = secrets_manager_get_secret_value(KUBECOST_CA_CERTIFICATE_SECRET_NAME, assume_role_response,
                                                             KUBECOST_CA_CERTIFICATE_SECRET_REGION)
@@ -727,8 +742,8 @@ def main():
         kubecost_allocation_data_with_assets_data)
 
     # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
-    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, columns)
-    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", LABELS)
+    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, csv_columns_default_missing_value_mapping)
+    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", LABELS, csv_columns_default_missing_value_mapping)
     upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
                                              three_days_ago_year, assume_role_response)
 
