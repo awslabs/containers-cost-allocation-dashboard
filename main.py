@@ -196,8 +196,7 @@ def define_csv_columns(labels):
         "properties.node_nodegroup_image": "",
         "properties.controller": "",
         "properties.controllerKind": "",
-        "properties.providerID": "",
-        "field1": 0
+        "properties.providerID": ""
     }
 
     if labels:
@@ -638,7 +637,6 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels, csv_columns_d
     df["properties.controller"] = df["properties.controller"].astype("object")
     df["properties.controllerKind"] = df["properties.controllerKind"].astype("object")
     df["properties.providerID"] = df["properties.providerID"].astype("object")
-    df["field1"] = df["field1"].astype("float64")
     if labels:
         labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
         for labels_column in labels_columns:
