@@ -586,11 +586,11 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
     # Static definitions of data types, to not have them mistakenly set as incorrect data type
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
-    for column, default_missing_value in csv_columns_to_na_value_mapping.items():
+    for column, na_value in csv_columns_to_na_value_mapping.items():
         if column not in ["window.start", "window.end"]:
-            if type(default_missing_value) == str:
+            if type(na_value) == str:
                 df[column] = df[column].astype("object")
-            elif type(default_missing_value) == int:
+            elif type(na_value) == int:
                 df[column] = df[column].astype("float64")
 
     # Converting NA/NaN to values to their respective empty value based on data type
