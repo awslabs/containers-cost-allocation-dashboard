@@ -137,11 +137,11 @@ def define_csv_columns(labels):
     """Defines the CSV columns and their mapping to default missing value.
 
     :param labels: Comma-separated string of K8s labels to include in the columns' definition
-    :return: Dictionary of CSV columns mapped to their default missing value
+    :return: Dictionary of CSV columns mapped to their NA/NaN value
     """
 
     # CSV columns definition
-    csv_columns_default_missing_value_mapping = {
+    csv_columns_to_na_value_mapping = {
         "name": "",
         "window.start": "",
         "window.end": "",
@@ -202,9 +202,9 @@ def define_csv_columns(labels):
     if labels:
         labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
         for label in labels_columns:
-            csv_columns_default_missing_value_mapping[label] = ""
+            csv_columns_to_na_value_mapping[label] = ""
 
-    return csv_columns_default_missing_value_mapping
+    return csv_columns_to_na_value_mapping
 
 
 def iam_assume_role(iam_role_arn, iam_role_session_name):
@@ -549,100 +549,53 @@ def kubecost_allocation_data_timestamp_update(allocation_data):
     return allocation_data_with_updated_timestamps
 
 
-def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_default_missing_value_mapping):
+def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_to_na_value_mapping):
     """Transforms the Kubecost Allocation data to CSV.
 
     :param updated_allocation_data: Kubecost's Allocation data after:
      1. Transforming to a nested list
      2. Updating timestamps
-    :param csv_columns_default_missing_value_mapping: A dict of the CSV columns, mapped to their default missing value
+    :param csv_columns_to_na_value_mapping: A dict of the CSV columns, mapped to their NA/NaN value
     :return:
     """
 
     # print(csv_columns_default_missing_value_mapping)
-    csv_columns = list(csv_columns_default_missing_value_mapping.keys())
+    csv_columns = list(csv_columns_to_na_value_mapping.keys())
 
     # DataFrame definition, including all time sets from Kubecost Allocation data
     all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
     df = pd.concat(all_dfs)
-    df = df.reindex(columns=csv_columns, fill_value="")
+
+    # Filling in an empty value for columns missing from the DataFrame (that were missing from the original dataset)
     # Transforming the DataFrame to a CSV and creating the CSV file locally
+    df = df.reindex(columns=csv_columns, fill_value="")
     df.to_csv("/tmp/output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\",
               columns=csv_columns)
 
 
-def kubecost_csv_allocation_data_to_parquet(csv_file_name, labels, csv_columns_default_missing_value_mapping):
+def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_value_mapping):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
-    :param labels: Comma-separated string of K8s labels
     :param csv_file_name: the name of the CSV file
-    :param csv_columns_default_missing_value_mapping: A dict of the CSV columns, mapped to their default missing value
+    :param csv_columns_to_na_value_mapping: A dict of the CSV columns, mapped to their NA/NaN value
     :return:
     """
 
     df = pd.read_csv(csv_file_name, encoding="utf8", sep=",", quotechar="'", escapechar="\\")
 
     # Static definitions of data types, to not have them mistakenly set as incorrect data type
-    df["name"] = df["name"].astype("object")
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
-    df["minutes"] = df["minutes"].astype("float64")
-    df["cpuCores"] = df["cpuCores"].astype("float64")
-    df["cpuCoreRequestAverage"] = df["cpuCoreRequestAverage"].astype("float64")
-    df["cpuCoreUsageAverage"] = df["cpuCoreUsageAverage"].astype("float64")
-    df["cpuCoreHours"] = df["cpuCoreHours"].astype("float64")
-    df["cpuCost"] = df["cpuCost"].astype("float64")
-    df["cpuCostAdjustment"] = df["cpuCostAdjustment"].astype("float64")
-    df["cpuEfficiency"] = df["cpuEfficiency"].astype("float64")
-    df["gpuCount"] = df["gpuCount"].astype("float64")
-    df["gpuHours"] = df["gpuHours"].astype("float64")
-    df["gpuCost"] = df["gpuCost"].astype("float64")
-    df["gpuCostAdjustment"] = df["gpuCostAdjustment"].astype("float64")
-    df["networkTransferBytes"] = df["networkTransferBytes"].astype("float64")
-    df["networkReceiveBytes"] = df["networkReceiveBytes"].astype("float64")
-    df["networkCost"] = df["networkCost"].astype("float64")
-    df["networkCostAdjustment"] = df["networkCostAdjustment"].astype("float64")
-    df["loadBalancerCost"] = df["loadBalancerCost"].astype("float64")
-    df["loadBalancerCostAdjustment"] = df["loadBalancerCostAdjustment"].astype("float64")
-    df["pvBytes"] = df["pvBytes"].astype("float64")
-    df["pvByteHours"] = df["pvByteHours"].astype("float64")
-    df["pvCost"] = df["pvCost"].astype("float64")
-    df["pvCostAdjustment"] = df["pvCostAdjustment"].astype("float64")
-    df["ramBytes"] = df["ramBytes"].astype("float64")
-    df["ramByteRequestAverage"] = df["ramByteRequestAverage"].astype("float64")
-    df["ramByteUsageAverage"] = df["ramByteUsageAverage"].astype("float64")
-    df["ramByteHours"] = df["ramByteHours"].astype("float64")
-    df["ramCost"] = df["ramCost"].astype("float64")
-    df["ramCostAdjustment"] = df["ramCostAdjustment"].astype("float64")
-    df["ramEfficiency"] = df["ramEfficiency"].astype("float64")
-    df["sharedCost"] = df["sharedCost"].astype("float64")
-    df["externalCost"] = df["externalCost"].astype("float64")
-    df["totalCost"] = df["totalCost"].astype("float64")
-    df["totalEfficiency"] = df["totalEfficiency"].astype("float64")
-    df["properties.provider"] = df["properties.provider"].astype("object")
-    df["properties.region"] = df["properties.region"].astype("object")
-    df["properties.cluster"] = df["properties.cluster"].astype("object")
-    df["properties.clusterid"] = df["properties.clusterid"].astype("object")
-    df["properties.eksClusterName"] = df["properties.eksClusterName"].astype("object")
-    df["properties.container"] = df["properties.container"].astype("object")
-    df["properties.namespace"] = df["properties.namespace"].astype("object")
-    df["properties.node"] = df["properties.node"].astype("object")
-    df["properties.node_instance_type"] = df["properties.node_instance_type"].astype("object")
-    df["properties.node_availability_zone"] = df["properties.node_availability_zone"].astype("object")
-    df["properties.node_capacity_type"] = df["properties.node_capacity_type"].astype("object")
-    df["properties.node_architecture"] = df["properties.node_architecture"].astype("object")
-    df["properties.node_os"] = df["properties.node_os"].astype("object")
-    df["properties.node_nodegroup"] = df["properties.node_nodegroup"].astype("object")
-    df["properties.node_nodegroup_image"] = df["properties.node_nodegroup_image"].astype("object")
-    df["properties.controller"] = df["properties.controller"].astype("object")
-    df["properties.controllerKind"] = df["properties.controllerKind"].astype("object")
-    df["properties.providerID"] = df["properties.providerID"].astype("object")
-    if labels:
-        labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
-        for labels_column in labels_columns:
-            df[labels_column] = df[labels_column].astype("object")
+    for column, default_missing_value in csv_columns_to_na_value_mapping.items():
+        if column not in ["window.start", "window.end"]:
+            if type(default_missing_value) == str:
+                df[column] = df[column].astype("object")
+            elif type(default_missing_value) == int:
+                df[column] = df[column].astype("float64")
 
-    df = df.fillna(value=csv_columns_default_missing_value_mapping)
+    # Converting NA/NaN to values to their respective empty value based on data type
+    # Transforming the DataFrame to a Parquet and creating the Parquet file locally
+    df = df.fillna(value=csv_columns_to_na_value_mapping)
     df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
 
 
@@ -691,8 +644,8 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
 
 def main():
 
-    # Defining CSV columns mapping to their default missing value
-    csv_columns_default_missing_value_mapping = define_csv_columns(LABELS)
+    # Defining a mapping of the CSV columns to their NA/NaN value
+    csv_columns_to_na_value_mapping = define_csv_columns(LABELS)
 
     # Kubecost window definition
     three_days_ago = datetime.datetime.now() - datetime.timedelta(days=3)
@@ -740,8 +693,8 @@ def main():
         kubecost_allocation_data_with_assets_data)
 
     # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
-    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, csv_columns_default_missing_value_mapping)
-    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", LABELS, csv_columns_default_missing_value_mapping)
+    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, csv_columns_to_na_value_mapping)
+    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", csv_columns_to_na_value_mapping)
     upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
                                              three_days_ago_year, assume_role_response)
 
