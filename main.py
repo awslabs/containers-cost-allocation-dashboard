@@ -589,7 +589,7 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
     for column, na_value in csv_columns_to_na_value_mapping.items():
         if column not in ["window.start", "window.end"]:
             if type(na_value) == str:
-                df[column] = df[column].astype("object")
+                df[column] = df[column].astype("string")
             elif type(na_value) == int:
                 df[column] = df[column].astype("float64")
 
