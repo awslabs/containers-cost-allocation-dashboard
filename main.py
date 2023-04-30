@@ -133,15 +133,35 @@ if KUBECOST_CA_CERTIFICATE_SECRET_REGION:
 LABELS = os.environ.get("LABELS")
 
 
-def define_csv_columns(labels):
+def create_kubecost_labels_to_k8s_labels_mapping(labels):
+    """Creates a dict of the K8s labels keys as they're seen in Kubecost API response, to the original K8s labels keys.
+    This is because Kubecost reports K8s labels with underscores replacing dots and forward-slash characters.
+    In the destination dataset (Athena), we'd like the labels columns to show the original K8s labels keys.
+
+    :param labels: A comma-separated list of the original K8s labels keys as they were given by the user input.
+    :return: A dict mapping the Kubecost representation of K8s labels keys, to the original K8s labels keys
+    """
+
+    kubecost_labels_to_orig_labels = {}
+
+    if labels:
+        labels_columns_kubecost = ["properties.labels." + re.sub(r"[./]", "_", x.strip()) for x in labels.split(",")]
+        labels_columns_orig = ["properties.labels." + x.strip() for x in labels.split(",")]
+        kubecost_labels_to_orig_labels = dict(zip(labels_columns_kubecost, labels_columns_orig))
+
+    return kubecost_labels_to_orig_labels
+
+
+def define_csv_columns(kubecost_labels_to_orig_labels):
     """Defines the CSV columns and their mapping to default missing value.
 
-    :param labels: Comma-separated string of K8s labels to include in the columns' definition
-    :return: Dictionary of CSV columns mapped to their NA/NaN value
+    :param kubecost_labels_to_orig_labels: A dict mapping the Kubecost K8s labels keys, to the original K8s labels keys
+    :return: Dictionary of CSV columns mapped to their NA/NaN value.
+    This is including columns for K8s label keys, the way they're represented in Kubecost.
     """
 
     # CSV columns definition
-    csv_columns_to_na_value_mapping = {
+    csv_columns_to_na_value_mapping_with_kubecost_labels = {
         "name": "",
         "window.start": "",
         "window.end": "",
@@ -199,12 +219,11 @@ def define_csv_columns(labels):
         "properties.providerID": ""
     }
 
-    if labels:
-        labels_columns = ["properties.labels." + x.strip() for x in labels.split(",")]
-        for label in labels_columns:
-            csv_columns_to_na_value_mapping[label] = ""
+    if kubecost_labels_to_orig_labels:
+        for kubecost_label in kubecost_labels_to_orig_labels.keys():
+            csv_columns_to_na_value_mapping_with_kubecost_labels[kubecost_label] = ""
 
-    return csv_columns_to_na_value_mapping
+    return csv_columns_to_na_value_mapping_with_kubecost_labels
 
 
 def iam_assume_role(iam_role_arn, iam_role_session_name):
@@ -549,18 +568,18 @@ def kubecost_allocation_data_timestamp_update(allocation_data):
     return allocation_data_with_updated_timestamps
 
 
-def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_to_na_value_mapping):
+def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_to_na_value_mapping_with_kubecost_labels):
     """Transforms the Kubecost Allocation data to CSV.
 
     :param updated_allocation_data: Kubecost's Allocation data after:
      1. Transforming to a nested list
      2. Updating timestamps
-    :param csv_columns_to_na_value_mapping: A dict of the CSV columns, mapped to their NA/NaN value
+    :param csv_columns_to_na_value_mapping_with_kubecost_labels: Dictionary of CSV columns mapped to their NA/NaN value.
+    This is including columns for K8s label keys, the way they're represented in Kubecost.
     :return:
     """
 
-    # print(csv_columns_default_missing_value_mapping)
-    csv_columns = list(csv_columns_to_na_value_mapping.keys())
+    csv_columns = list(csv_columns_to_na_value_mapping_with_kubecost_labels.keys())
 
     # DataFrame definition, including all time sets from Kubecost Allocation data
     all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
@@ -573,11 +592,14 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_to_na_v
               columns=csv_columns)
 
 
-def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_value_mapping):
+def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_value_mapping_with_kubecost_labels,
+                                            kubecost_labels_to_orig_labels):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
     :param csv_file_name: the name of the CSV file
-    :param csv_columns_to_na_value_mapping: A dict of the CSV columns, mapped to their NA/NaN value
+    :param csv_columns_to_na_value_mapping_with_kubecost_labels: Dictionary of CSV columns mapped to their NA/NaN value.
+    This is including columns for K8s label keys, the way they're represented in Kubecost.
+    :param kubecost_labels_to_orig_labels: A dict mapping the Kubecost K8s labels keys, to the original K8s labels keys
     :return:
     """
 
@@ -586,7 +608,7 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
     # Static definitions of data types, to not have them mistakenly set as incorrect data type
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
-    for column, na_value in csv_columns_to_na_value_mapping.items():
+    for column, na_value in csv_columns_to_na_value_mapping_with_kubecost_labels.items():
         if column not in ["window.start", "window.end"]:
             if type(na_value) == str:
                 df[column] = df[column].astype("string")
@@ -594,8 +616,16 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
                 df[column] = df[column].astype("float64")
 
     # Converting NA/NaN to values to their respective empty value based on data type
+    df = df.fillna(value=csv_columns_to_na_value_mapping_with_kubecost_labels)
+
+    # Renaming columns of the Kubecost representation of K8s labels to the original K8s labels
+    if kubecost_labels_to_orig_labels:
+        kubecost_labels_to_orig_labels_only_renamed = {k: v for k, v in kubecost_labels_to_orig_labels.items() if
+                                                       re.search(r"[./]", v.strip("properties.labels."))}
+        if kubecost_labels_to_orig_labels_only_renamed:
+            df = df.rename(columns=kubecost_labels_to_orig_labels_only_renamed)
+
     # Transforming the DataFrame to a Parquet and creating the Parquet file locally
-    df = df.fillna(value=csv_columns_to_na_value_mapping)
     df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
 
 
@@ -645,7 +675,9 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
 def main():
 
     # Defining a mapping of the CSV columns to their NA/NaN value
-    csv_columns_to_na_value_mapping = define_csv_columns(LABELS)
+    # csv_columns_to_na_value_mapping = define_csv_columns(LABELS)
+    kubecost_labels_to_orig_labels = create_kubecost_labels_to_k8s_labels_mapping(LABELS)
+    csv_columns_to_na_value_mapping_with_kubecost_labels = define_csv_columns(kubecost_labels_to_orig_labels)
 
     # Kubecost window definition
     three_days_ago = datetime.datetime.now() - datetime.timedelta(days=3)
@@ -693,8 +725,10 @@ def main():
         kubecost_allocation_data_with_assets_data)
 
     # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
-    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data, csv_columns_to_na_value_mapping)
-    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", csv_columns_to_na_value_mapping)
+    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data,
+                                    csv_columns_to_na_value_mapping_with_kubecost_labels)
+    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", csv_columns_to_na_value_mapping_with_kubecost_labels,
+                                            kubecost_labels_to_orig_labels)
     upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
                                              three_days_ago_year, assume_role_response)
 
