@@ -40,7 +40,7 @@ module "us-east-1-111111111111-cluster1" {
   kubecost_ca_certificate_secret_name  = "kubecost"
   kubecost_ephemeral_volume_size       = "100Mi"
 
-  depends_on = [module.pipeline]
+  depends_on = [module.pipeline.kubecost_ca_cert_secret]
 }
 
 module "us-east-1-111111111111-cluster2" {
