@@ -104,6 +104,17 @@ variable "kubecost_api_endpoint" {
   }
 }
 
+variable "backfill_period_days" {
+  type        = number
+  default     = 15
+  description = "The number of days to check for backfilling"
+
+  validation {
+    condition     = var.backfill_period_days >= 3
+    error_message = "The 'backfill_period_days' input must be a positive integer equal to or larger than 3"
+  }
+}
+
 variable "aggregation" {
   type        = string
   default     = "container"
