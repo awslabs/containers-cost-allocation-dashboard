@@ -66,6 +66,10 @@ locals {
           "value" : var.kubecost_api_endpoint
         },
         {
+          "name" : "BACKFILL_PERIOD_DAYS",
+          "value" : var.backfill_period_days
+        },
+        {
           "name" : "CLUSTER_ID",
           "value" : var.cluster_arn
         },
@@ -196,6 +200,22 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
             Action   = "s3:PutObject"
             Effect   = "Allow"
             Resource = "${module.common.bucket_arn}/account_id=${local.cluster_account_id}/region=${local.cluster_region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+          }
+        ]
+        Version = "2012-10-17"
+      }
+    )
+  }
+
+  inline_policy {
+    name = "kubecost_s3_exporter_parent_list_bucket"
+    policy = jsonencode(
+      {
+        Statement = [
+          {
+            Action   = "s3:ListBucket"
+            Effect   = "Allow"
+            Resource = module.common.bucket_arn
           }
         ]
         Version = "2012-10-17"
