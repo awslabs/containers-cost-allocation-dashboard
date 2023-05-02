@@ -39,6 +39,7 @@ module "us-east-1-111111111111-cluster1" {
   tls_verify                           = "no"
   kubecost_ca_certificate_secret_name  = "kubecost"
   kubecost_ephemeral_volume_size       = "100Mi"
+  backfill_period_days                 = 5
 
   depends_on = [module.pipeline.kubecost_ca_cert_secret]
 }
