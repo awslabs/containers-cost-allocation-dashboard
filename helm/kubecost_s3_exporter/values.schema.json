@@ -12,8 +12,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 16,
-      "maxItems": 16,
+      "minItems": 17,
+      "maxItems": 17,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -27,6 +27,7 @@
             "enum": [
               "S3_BUCKET_NAME",
               "KUBECOST_API_ENDPOINT",
+              "BACKFILL_PERIOD_DAYS",
               "CLUSTER_ID",
               "IRSA_PARENT_IAM_ROLE_ARN",
               "GRANULARITY",
@@ -97,6 +98,25 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "The number of days to check for backfilling",
+                  "const": "BACKFILL_PERIOD_DAYS"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "number",
+                  "default": 15,
+                  "minimum": 3
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
                   "description": "The ID of the cluster in which the Kubecost S3 Exporter pod will be deployed",
                   "const": "CLUSTER_ID"
                 }
@@ -124,7 +144,7 @@
               "properties": {
                 "value": {
                   "type": "string",
-                  "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$"
+                  "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role/[a-zA-Z0-9+=,.@_-]{1,64}$"
                 }
               }
             }
