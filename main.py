@@ -19,7 +19,7 @@ logger = logging.getLogger("kubecost-s3-exporter")
 # Mandatory environment variables, and input validations
 try:
     S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
-    if not re.match(r"(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", S3_BUCKET_NAME):
+    if not re.match(r"(?!(^xn--|.+-s3alias$))(^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$)", S3_BUCKET_NAME):
         logger.error(f"The 'S3_BUCKET_NAME' input contains an invalid S3 Bucket name: {S3_BUCKET_NAME}")
         sys.exit(1)
     if re.match(r".*\d{12}.*|.*(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d.*",
@@ -40,7 +40,7 @@ except KeyError:
     sys.exit(1)
 try:
     IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
-    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@-_]{1,64}$",
+    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@_-]{1,64}$",
                     IRSA_PARENT_IAM_ROLE_ARN):
         logger.error(f"The 'IRSA_PARENT_IAM_ROLE_ARN' input contains an invalid ARN: {IRSA_PARENT_IAM_ROLE_ARN}")
         sys.exit(1)
@@ -54,6 +54,15 @@ KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost
 if not re.match(r"^https?://.+$", KUBECOST_API_ENDPOINT):
     logger.error("The Kubecost API endpoint is invalid. It must be in the format of "
                  "'http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]'")
+    sys.exit(1)
+
+try:
+    BACKFILL_PERIOD_DAYS = int(os.environ.get("BACKFILL_PERIOD_DAYS", 15))
+    if BACKFILL_PERIOD_DAYS < 3:
+        logger.error("The BACKFILL_PERIOD_DAYS input must be a positive integer equal to or larger than 3")
+        sys.exit(1)
+except ValueError:
+    logger.error("The BACKFILL_PERIOD_DAYS input must be an integer")
     sys.exit(1)
 
 GRANULARITY = os.environ.get("GRANULARITY", "hourly").lower()
@@ -227,7 +236,7 @@ def define_csv_columns(kubecost_labels_to_orig_labels):
 
 
 def iam_assume_role(iam_role_arn, iam_role_session_name):
-    """Assumes an IAM Role.
+    """Assumes an IAM Role, to be used on all AWS API calls.
 
     :param iam_role_arn: The ARN of the IAM Role to be assumed.
     :param iam_role_session_name: The IAM session name.
@@ -258,7 +267,7 @@ def secrets_manager_get_secret_value(secret_name, assume_role_response, region_c
                               aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
                               aws_session_token=assume_role_response["Credentials"]["SessionToken"],
                               region_name=region_code)
-        logger.info(f"Retrieving secret {secret_name} from AWS Secrets Manager...")
+        logger.info(f"Retrieving secret '{secret_name}' from AWS Secrets Manager...")
 
         response = client.get_secret_value(SecretId=secret_name)
         secret_value = response["SecretString"]
@@ -269,9 +278,8 @@ def secrets_manager_get_secret_value(secret_name, assume_role_response, region_c
         sys.exit(1)
 
 
-def create_ca_cert_file_and_env(ca_cert_string):
+def create_ca_cert_file(ca_cert_string):
     """Creates a CA certificate file from the content of a CA certificate.
-    Then, sets the file name as the "REQUESTS_CA_BUNDLE" environment variable for Python requests module to use.
 
     :param ca_cert_string: The CA certificate string (not file)
     :return:
@@ -281,7 +289,159 @@ def create_ca_cert_file_and_env(ca_cert_string):
     cat_cert_file.write(ca_cert_string)
     cat_cert_file.close()
 
-    os.environ["REQUESTS_CA_BUNDLE"] = "/tmp/ca.cert.pem"
+
+def kubecost_backfill_period_window_calc(backfill_period_days):
+    """Calculates the window to use for querying Kubecost API to get available dates for the backfill period.
+    This is as part of the backfill logic.
+
+    :param backfill_period_days: The backfill period in days
+    :return: Returns the following:
+    backfill_start_date_midnight: The window start for query Kubecost API
+    backfill_end_date_midnight: The window end for query Kubecost API
+    """
+
+    # Calculating the window for Kubecost Allocation On-Demand API call to retrieve
+    backfill_start_date = datetime.datetime.now() - datetime.timedelta(days=backfill_period_days)
+    backfill_start_date_midnight = backfill_start_date.replace(microsecond=0, second=0, minute=0, hour=0)
+    backfill_end_date = datetime.datetime.now() - datetime.timedelta(days=2)
+    backfill_end_date_midnight = backfill_end_date.replace(microsecond=0, second=0, minute=0, hour=0)
+
+    return backfill_start_date_midnight, backfill_end_date_midnight
+
+
+def get_kubecost_backfill_period_available_dates(allocation_data):
+    """Extracts the available dates for the backfill period, from Kubecost Allocation API response.
+
+    :param allocation_data: The allocation "data" list from Kubecost Allocation API On-demand query HTTP response
+    :return: A dictionary with the available dates for the backfill period, along with the time window for each date
+    """
+
+    # Iterating over each timeset and retrieving the window
+    # Then, creating a dictionary mapping the timeset date to the window
+    kubecost_backfill_period_available_dates = {}
+    for timeset in allocation_data:
+        date = {timeset[next(iter(timeset))]["window"]["start"].split("T")[0]: timeset[next(iter(timeset))]["window"]}
+        kubecost_backfill_period_available_dates.update(date)
+
+    return kubecost_backfill_period_available_dates
+
+
+def get_s3_backfill_period_available_dates(s3_bucket_name, cluster_id, backfill_period_days, assume_role_response):
+    """Retrieving the Kubecost allocation data dates that are available as Parquet files in S3.
+    This is done as per the following process:
+    1. Executing s3:ListObjectsV2 to get the available objects for the cluster, for the backfill period only.
+    2. Extracting the Kubecost allocation data date from the name of each Parquet file
+    3. Creating a list of the dates
+
+    :param s3_bucket_name: The S3 bucket name to use
+    :param cluster_id: The cluster ID to use for the S3 bucket prefix and Parquet file name
+    :param backfill_period_days: The backfill period in days
+    :param assume_role_response: The Assume Role API call response
+    :return: A list of the Kubecost allocation data dates that are available as Parquet files in the S3 bucket
+    """
+
+    # Removing the environment variable that is used to specify customer root CA certificate for the Kubecost API
+    # This is so that Python will use the default CA bundle
+    try:
+        del os.environ["REQUESTS_CA_BUNDLE"]
+    except KeyError:
+        pass
+
+    # Extracting EKS cluster ARN, account ID and region
+    cluster_name = cluster_id.split("/")[-1]
+    cluster_account_id = cluster_id.split(":")[4]
+    cluster_region_code = cluster_id.split(":")[3]
+
+    # Defining the date and time pieces that will be used in the "StartAfter" input
+    # This is done so that only the objects relevant for the backfill period will be listed
+    backfill_start_date = datetime.datetime.now() - datetime.timedelta(days=backfill_period_days)
+    start_after_datetime = backfill_start_date - datetime.timedelta(days=1)
+    start_after_date = start_after_datetime.strftime("%Y-%m-%d")
+    start_after_year = start_after_datetime.strftime("%Y")
+    start_after_month = start_after_datetime.strftime("%m")
+
+    # Based on the above date and time pieces and EKS cluster ARN pieces, the prefix and file name are defined
+    # Then, they're used as the key specified in the "StartAfter" input
+    # In addition, the prefix respose limit is defined
+    s3_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={start_after_year}/month={start_after_month}"
+    s3_file_name = f"{start_after_date}_{cluster_name}.snappy.parquet"
+    s3_list_object_v2_start_after = f"{s3_prefix}/{s3_file_name}"
+    s3_list_object_v2_prefix_response_limit = f"account_id={cluster_account_id}/region={cluster_region_code}/"
+
+    # Executing the s3:ListObjectsV2 API call
+    try:
+        client = boto3.client("s3", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+                              aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
+                              aws_session_token=assume_role_response["Credentials"]["SessionToken"])
+        logger.info(f"Retrieving list of objects for cluster '{cluster_id}' in the last {backfill_period_days} "
+                    f"days from S3 Bucket '{s3_bucket_name}'...")
+        paginator = client.get_paginator("list_objects_v2")
+        response = paginator.paginate(Bucket=s3_bucket_name, StartAfter=s3_list_object_v2_start_after,
+                                      Prefix=s3_list_object_v2_prefix_response_limit)
+    except botocore.exceptions.ClientError as error:
+        logger.error(error)
+        sys.exit(1)
+
+    # Extracting the available dates for the backfill period
+    try:
+        cluster_s3_keys_for_backfill_period = []
+
+        # Paginating through the response pages, and consolidating all relevant keys to a single list
+        for page in response:
+            for s3_object in page["Contents"]:
+
+                # The below condition addresses the following scenario:
+                # Given the objects prefix and filename structure, we can't filter the list in the API call level
+                # Even that we use "StartAfter" and "Prefix" inputs, other clusters objects can be returned
+                # Therefore, we only the keys that include the given cluster name are extracted from each page
+                # They're then added to a consolidated list of all keys that include the cluster name, in all pages
+                if cluster_name in s3_object["Key"]:
+                    cluster_s3_keys_for_backfill_period.append(s3_object["Key"])
+
+        # If items S3 keys are found in the consolidated list, the date portion is extracted from each one of them.
+        # This date represents the date when the data was collected by Kubecost
+        # If the consolidated list is empty, we return an empty list.
+        # This means there's no Kubecost data for this cluster for the given backfill period
+        if cluster_s3_keys_for_backfill_period:
+            cluster_s3_files_for_backfill_period = [s3_key.split("/")[-1] for s3_key in
+                                                    cluster_s3_keys_for_backfill_period]
+            cluster_s3_available_dates_for_backfill_period = [s3_file.split("_")[0] for s3_file in
+                                                              cluster_s3_files_for_backfill_period]
+            return cluster_s3_available_dates_for_backfill_period
+        else:
+            logger.info(f"There are objects in S3 Bucket '{s3_bucket_name}' in the requested backfill period "
+                        f"({backfill_period_days} days ago), but no objects found for cluster '{cluster_id}'")
+            return []
+
+    # Catching scenario where there are no objects at all based on the "StartAfter" and "Prefix" filters in the API call
+    except KeyError:
+        logger.info(f"No objects found in S3 Bucket '{s3_bucket_name}' in the requested backfill period "
+                    f"({backfill_period_days} days ago) for cluster '{cluster_id}'")
+        return []
+
+
+def calc_kubecost_dates_missing_from_s3(kubecost_backfill_period_available_dates, s3_backfill_period_available_dates):
+    """Calculates the Kubecost available dates, that are missing from S3, for the backfill period.
+    This is based on the following set of data:
+    1. The available dates that were extracted from Kubecost Allocation API
+    2. The Kubecost allocation data available dates in S3
+
+    :param kubecost_backfill_period_available_dates: The available dates in Kubecost Allocation API
+    :param s3_backfill_period_available_dates: The Kubecost allocation data dates that are available in S3
+    :return: A dictionary with the missing dates from S3, for the backfill period, mapped to the time window
+    """
+
+    # Comparing the Kubecost available dates to the dates available in S3
+    # The result is a dictionary with:
+    # The missing dates from S3, for the backfill period, mapped to the time window
+    kuebcost_dates_missing_from_s3 = {date: window for (date, window) in
+                                      kubecost_backfill_period_available_dates.items() if
+                                      date not in s3_backfill_period_available_dates}
+    if kuebcost_dates_missing_from_s3:
+        logger.info(f"Found missing Kubecost data in S3 for dates {', '.join(kuebcost_dates_missing_from_s3)}")
+        return kuebcost_dates_missing_from_s3
+    else:
+        logger.info("All dates for Kubecost data for the backfill period, are available in S3. No collection needed")
 
 
 def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, end, granularity, aggregate,
@@ -301,6 +461,9 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
     :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
     :return: The Kubecost Allocation API On-demand query "data" list from the HTTP response
     """
+
+    if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
+        os.environ["REQUESTS_CA_BUNDLE"] = "/tmp/ca.cert.pem"
 
     # Setting the step
     step = "1h" if granularity == "hourly" else "1d"
@@ -411,6 +574,9 @@ def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, c
     :return: The Kubecost Assets API On-demand query "data" list from the HTTP response
     """
 
+    if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
+        os.environ["REQUESTS_CA_BUNDLE"] = "/tmp/ca.cert.pem"
+
     # Calculating the window
     window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
 
@@ -451,13 +617,13 @@ def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, c
         sys.exit(1)
 
 
-def kubecost_allocation_data_add_cluster_id_and_name_from_input(allocation_data, cluster_id):
+def kubecost_allocation_data_add_cluster_id_and_name(allocation_data, cluster_id):
     """Adds the cluster unique ID and name from the CLUSTER_ID input, to each allocation.
     The cluster ID is needed in case we'd like to identify the unique cluster ID in the dataset.
     The cluster name is needed because the Kubecost's representation of the cluster name might not be the real name.
 
-    :param allocation_data: the allocation "data" list from Kubecost Allocation API On-demand query HTTP response
-    :param cluster_id: the cluster unique ID (for example, EKS cluster ARN)
+    :param allocation_data: The allocation "data" list from Kubecost Allocation API On-demand query HTTP response
+    :param cluster_id: The cluster unique ID (for example, EKS cluster ARN)
     :return: Kubecost allocation data with the real EKS cluster name
     """
 
@@ -474,8 +640,8 @@ def kubecost_allocation_data_add_cluster_id_and_name_from_input(allocation_data,
 def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
     """Adds assets data from the Kubecost Assets API to the Kubecost allocation data.
 
-    :param allocation_data: the allocation "data" list from Kubecost Allocation API
-    :param assets_data: the asset "data" list from the Kubecost Assets API query HTTP response
+    :param allocation_data: The allocation "data" list from Kubecost Allocation API
+    :param assets_data: The asset "data" list from the Kubecost Assets API query HTTP response
     :return: Kubecost allocation data with matching asset data
     """
 
@@ -596,7 +762,7 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
                                             kubecost_labels_to_orig_labels):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
-    :param csv_file_name: the name of the CSV file
+    :param csv_file_name: The name of the CSV file
     :param csv_columns_to_na_value_mapping_with_kubecost_labels: Dictionary of CSV columns mapped to their NA/NaN value.
     This is including columns for K8s label keys, the way they're represented in Kubecost.
     :param kubecost_labels_to_orig_labels: A dict mapping the Kubecost K8s labels keys, to the original K8s labels keys
@@ -632,12 +798,12 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
 def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year, assume_role_response):
     """Compresses and uploads the Kubecost Allocation Parquet to an S3 bucket.
 
+    :param s3_bucket_name: The S3 bucket name to use
+    :param cluster_id: The cluster ID to use for the S3 bucket prefix and Parquet file name
+    :param date: The date to use in the Parquet file name
+    :param month: The month to use as part of the S3 bucket prefix
+    :param year: The year to use as part of the S3 bucket prefix
     :param assume_role_response: The Assume Role API call response
-    :param s3_bucket_name: the S3 bucket name to use
-    :param cluster_id: the cluster ID to use for the S3 bucket prefix and Parquet file name
-    :param date: the date to use in the Parquet file name
-    :param month: the month to use as part of the S3 bucket prefix
-    :param year: the year to use as part of the S3 bucket prefix
     :return:
     """
 
@@ -661,11 +827,11 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
                             aws_session_token=assume_role_response["Credentials"]["SessionToken"])
         s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
 
-        logger.info(f"Uploading file {s3_file_name}.snappy.parquet to S3 Bucket {s3_bucket_name}...")
+        logger.info(f"Uploading file '{s3_file_name}.snappy.parquet' to S3 Bucket '{s3_bucket_name}'...")
         s3.Bucket(s3_bucket_name).upload_file(f"/tmp/{s3_file_name}.snappy.parquet",
                                               f"{s3_bucket_prefix}/{s3_file_name}.snappy.parquet")
     except boto3.exceptions.S3UploadFailedError as error:
-        logger.error(f"Unable to upload file {s3_file_name}.snappy.parquet to S3 Bucket {s3_bucket_name}: {error}")
+        logger.error(f"Unable to upload file {s3_file_name}.snappy.parquet to S3 Bucket '{s3_bucket_name}': {error}")
         sys.exit(1)
     except botocore.exceptions.ClientError as error:
         logger.error(error)
@@ -674,20 +840,20 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
 
 def main():
 
+    ################
+    # Preparations #
+    ################
+
+    # The below set of funcitons are used to prepare things needed to execute other logic, as follows:
+    # 1. Define the CSV columns
+    # 2. Assume IAM Role to be used in all other AWS API calls
+    # 3. Optionally, retrieve Kubecost root CA certificate from AWS Secrets Manager
+
     # Defining a mapping of the CSV columns to their NA/NaN value
-    # csv_columns_to_na_value_mapping = define_csv_columns(LABELS)
     kubecost_labels_to_orig_labels = create_kubecost_labels_to_k8s_labels_mapping(LABELS)
     csv_columns_to_na_value_mapping_with_kubecost_labels = define_csv_columns(kubecost_labels_to_orig_labels)
 
-    # Kubecost window definition
-    three_days_ago = datetime.datetime.now() - datetime.timedelta(days=3)
-    three_days_ago_midnight = three_days_ago.replace(microsecond=0, second=0, minute=0, hour=0)
-    three_days_ago_midnight_plus_one_day = three_days_ago_midnight + datetime.timedelta(days=1)
-    three_days_ago_date = three_days_ago_midnight.strftime("%Y-%m-%d")
-    three_days_ago_year = three_days_ago_midnight.strftime("%Y")
-    three_days_ago_month = three_days_ago_midnight.strftime("%m")
-
-    # Assume IAM Role once, for all other AWS API calls
+    # Assume IAM Role once, to be used in all other AWS API calls
     assume_role_response = iam_assume_role(IRSA_PARENT_IAM_ROLE_ARN, "kubecost-s3-exporter")
 
     # If the user gave a secret name as an input to the "KUBECOST_CA_CERTIFICATE_SECRET_NAME" environment variable
@@ -697,40 +863,124 @@ def main():
     if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
         kubecost_ca_cert = secrets_manager_get_secret_value(KUBECOST_CA_CERTIFICATE_SECRET_NAME, assume_role_response,
                                                             KUBECOST_CA_CERTIFICATE_SECRET_REGION)
-        create_ca_cert_file_and_env(kubecost_ca_cert)
+        create_ca_cert_file(kubecost_ca_cert)
 
-    # Executing Kubecost Allocation API call
-    kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT,
-                                                               three_days_ago_midnight,
-                                                               three_days_ago_midnight_plus_one_day, GRANULARITY,
-                                                               AGGREGATION, CONNECTION_TIMEOUT,
-                                                               KUBECOST_ALLOCATION_API_READ_TIMEOUT,
-                                                               KUBECOST_ALLOCATION_API_PAGINATE,
-                                                               KUBECOST_ALLOCATION_API_RESOLUTION)
+    ##################
+    # Backfill logic #
+    ##################
 
-    kubecost_assets_data = execute_kubecost_assets_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, three_days_ago_midnight,
-                                                       three_days_ago_midnight_plus_one_day, CONNECTION_TIMEOUT,
-                                                       KUBECOST_ASSETS_API_READ_TIMEOUT)
+    # The below set of functions is used to calculate which dates should be collected from Kubecost.
+    # This is based on a backfill period in days that is given as an input (default is 15 days).
+    # The logic is as follows:
 
-    # Adding the real cluster ID and name from the cluster ID input
-    kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_cluster_id_and_name_from_input(
-        kubecost_allocation_data, CLUSTER_ID)
+    # Based on the given backfill period, the following is done:
+    # 1. The window for the Kubecost API call is defined, based on the backfill period.
+    # The start date is the first day of the backfill period, and end date is 2 days ago (from today).
+    # 2. Executing Kubecost Allocation On-Demand API call for the above window.
+    # The API call is executed with the highest possible aggregation (cluster), daily granularity, and "1d" resolution
+    # This is to improve performance, as cost data isn't needed from this API.
+    # The only purpose of executing this API call is to later extract the dates of each timeset (each day).
+    # 3. Extracting the dates and the window for each timeset in the API response.
+    # This is how the dates with available data in the backfill period are identified.
+    # This list of dates is used as a baseline to later compare which of these dates is missing (if at all) from S3
+    # 4. Extracting the dates available in S3 for the backfill period, for this cluster
+    # 5. Find the missing dates in S3, by comparing the dates available in Kubecost with the dates available in S3.
+    # Those dates will be used as input to the data collection logic.
 
-    # Adding assets data from the Kubecost Assets API
-    kubecost_allocation_data_with_assets_data = kubecost_allocation_data_add_assets_data(
-        kubecost_allocation_data_with_eks_cluster_name, kubecost_assets_data)
+    logger.info("### Backfill Dates Calculation Logic Start ###")
 
-    # Transforming Kubecost's Allocation API data to a list of lists, and updating timestamps
-    kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(
-        kubecost_allocation_data_with_assets_data)
+    # Define the Kubecost window, execute Kubecost API call and extract the dates and window for each timeset
+    kubecost_backfill_start_date_midnight, kubecost_backfill_end_date_midnight = kubecost_backfill_period_window_calc(
+        BACKFILL_PERIOD_DAYS)
+    kubecost_backfill_period_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT,
+                                                                               kubecost_backfill_start_date_midnight,
+                                                                               kubecost_backfill_end_date_midnight,
+                                                                               "daily", "cluster", CONNECTION_TIMEOUT,
+                                                                               KUBECOST_ALLOCATION_API_READ_TIMEOUT,
+                                                                               "No", "1d")
+    kubecost_backfill_period_available_dates = get_kubecost_backfill_period_available_dates(
+        kubecost_backfill_period_allocation_data)
 
-    # Transforming Kubecost's updated allocation data to CSV, then to Parquet, compressing, and uploading it to S3
-    kubecost_allocation_data_to_csv(kubecost_updated_allocation_data,
-                                    csv_columns_to_na_value_mapping_with_kubecost_labels)
-    kubecost_csv_allocation_data_to_parquet("/tmp/output.csv", csv_columns_to_na_value_mapping_with_kubecost_labels,
-                                            kubecost_labels_to_orig_labels)
-    upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, three_days_ago_date, three_days_ago_month,
-                                             three_days_ago_year, assume_role_response)
+    # Get available dates in S3
+    s3_backfill_period_available_dates = get_s3_backfill_period_available_dates(S3_BUCKET_NAME, CLUSTER_ID,
+                                                                                BACKFILL_PERIOD_DAYS,
+                                                                                assume_role_response)
+
+    # Find missing dates in S3
+    kubecost_dates_missing_from_s3 = calc_kubecost_dates_missing_from_s3(kubecost_backfill_period_available_dates,
+                                                                         s3_backfill_period_available_dates)
+
+    logger.info("### Backfill Dates Calculation Logic End ###")
+
+    #########################
+    # Data Collection Logic #
+    #########################
+
+    # The below set of functions is used collect the data from Kubecost, convert it to Parquet and upload it to S3.
+    # The collection windows are based on the result of the backfill logic above.
+    # The logic is as follows, for each date identified as missing in S3 (if any. If none - data collection isn't done):
+    # 1. Executing the Kubecost Allocation On-Demand API call
+    # 2. Executing the Kubecost Assets API call
+    # 3. Performing different changes on the data:
+    # 3.1 Adding the real cluster ID and name to each allocation properties
+    # 3.2 Consolidating the Allocation data and the Assets data to a single JSON
+    # 3.3 Updating the timestamps to java.sql.Timestamp format
+    # 4. Converting the JSON to DataFrame, then to CSV.
+    # As part of this transformation, only the defined columns are extracted from the JSON.
+    # Columns that are completely missing from the DataFrame are added with empty value.
+    # 5. Converting the CSV back to DataFrame, then to Snappy-compressed Parquet.
+    # As part of this transformation, the following is also done:
+    # 5.1 Any NA/NaN value is converted to a defined value based on the datatype
+    # 5.2 Static data types are set for each column
+    # 5.3 Label keys that were renamed by Kubecost are renamed back to their original label key
+    # 6. Uploading the Snappy-compressed Parquet file to S3
+
+    if kubecost_dates_missing_from_s3:
+
+        logger.info("### Data Collection Logic Start ###")
+        logger.info(f"Data will be collected from Kubecost for dates {', '.join(kubecost_dates_missing_from_s3)}")
+
+        for date, window in kubecost_dates_missing_from_s3.items():
+            start = datetime.datetime.strptime(window["start"], "%Y-%m-%dT%H:%M:%SZ")
+            end = datetime.datetime.strptime(window["end"], "%Y-%m-%dT%H:%M:%SZ")
+            year = date.split("-")[0]
+            month = date.split("-")[1]
+
+            # Executing Kubecost Allocation On-Demand API call
+            kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start, end,
+                                                                       GRANULARITY, AGGREGATION, CONNECTION_TIMEOUT,
+                                                                       KUBECOST_ALLOCATION_API_READ_TIMEOUT,
+                                                                       KUBECOST_ALLOCATION_API_PAGINATE,
+                                                                       KUBECOST_ALLOCATION_API_RESOLUTION)
+
+            # Executing Kubecost Assets API call
+            kubecost_assets_data = execute_kubecost_assets_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start,
+                                                               end, CONNECTION_TIMEOUT,
+                                                               KUBECOST_ASSETS_API_READ_TIMEOUT)
+
+            # Adding the real cluster ID and name from the cluster ID input
+            kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_cluster_id_and_name(
+                kubecost_allocation_data, CLUSTER_ID)
+
+            # Adding assets data from the Kubecost Assets API
+            kubecost_allocation_data_with_assets_data = kubecost_allocation_data_add_assets_data(
+                kubecost_allocation_data_with_eks_cluster_name, kubecost_assets_data)
+
+            # Transforming Kubecost's Allocation API data to a list of lists, and updating timestamps
+            kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(
+                kubecost_allocation_data_with_assets_data)
+
+            # Transforming Kubecost's updated allocation data to CSV, then to a Snappy-compressed Parquet.
+            # Then, uploading it to S3
+            kubecost_allocation_data_to_csv(kubecost_updated_allocation_data,
+                                            csv_columns_to_na_value_mapping_with_kubecost_labels)
+            kubecost_csv_allocation_data_to_parquet("/tmp/output.csv",
+                                                    csv_columns_to_na_value_mapping_with_kubecost_labels,
+                                                    kubecost_labels_to_orig_labels)
+            upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, date, month,
+                                                     year, assume_role_response)
+
+        logger.info("### Data Collection Logic End ###")
 
 
 if __name__ == "__main__":
