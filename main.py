@@ -655,54 +655,60 @@ def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
                         and "node" in allocation["properties"].keys():
 
                     # Identify the asset ID that matches the allocation's instance ID
-                    asset_id = [asset_id_key for asset_id_key in all_assets_ids if
-                                asset_id_key.split("/")[-2] == allocation["properties"]["providerID"]][0]
+                    try:
+                        asset_id = [asset_id_key for asset_id_key in all_assets_ids if
+                                    asset_id_key.split("/")[-2] == allocation["properties"]["providerID"]][0]
+                    # Handle missing asset (such as in cases of short-lived nodes)
+                    except IndexError:
+                        continue
 
                     # Updating matching asset data from the Assets API, on the allocation properties
                     # If a certain asset data isn't found, the field is added to the allocation data as an empty string
                     # This is to keep the dataset with all required fields
+                    # The "KeyError" exception handling is meant to handle field which is missing from the JSON
+                    # The "TypeError" exception handling is meant to handle field with value of "null"
                     try:
                         allocation["properties"]["provider"] = assets_data[0][asset_id]["properties"]["provider"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["provider"] = ""
                     try:
                         allocation["properties"]["region"] = assets_data[0][asset_id]["labels"][
                             "label_topology_kubernetes_io_region"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["region"] = ""
                     try:
                         allocation["properties"]["node_instance_type"] = assets_data[0][asset_id]["nodeType"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["node_instance_type"] = ""
                     try:
                         allocation["properties"]["node_availability_zone"] = assets_data[0][asset_id]["labels"][
                             "label_topology_kubernetes_io_zone"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["node_availability_zone"] = ""
                     try:
                         allocation["properties"]["node_capacity_type"] = assets_data[0][asset_id]["labels"][
                             "label_eks_amazonaws_com_capacityType"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["node_capacity_type"] = ""
                     try:
                         allocation["properties"]["node_architecture"] = assets_data[0][asset_id]["labels"][
                             "label_kubernetes_io_arch"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["node_architecture"] = ""
                     try:
                         allocation["properties"]["node_os"] = assets_data[0][asset_id]["labels"][
                             "label_kubernetes_io_os"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["node_os"] = ""
                     try:
                         allocation["properties"]["node_nodegroup"] = assets_data[0][asset_id]["labels"][
                             "label_eks_amazonaws_com_nodegroup"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["node_nodegroup"] = ""
                     try:
                         allocation["properties"]["node_nodegroup_image"] = assets_data[0][asset_id]["labels"][
                             "label_eks_amazonaws_com_nodegroup_image"]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         allocation["properties"]["node_nodegroup_image"] = ""
 
     return allocation_data
