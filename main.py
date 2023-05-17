@@ -525,7 +525,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                              timeout=(connection_timeout, read_timeout), verify=tls_verify)
 
             if list(filter(None, r.json()["data"])):
-                return r.json()["data"]
+                return list(filter(None, r.json()["data"]))
             else:
                 logger.error("API response appears to be empty.\n"
                              "This script collects data between 72 hours ago and 48 hours ago.\n"
@@ -587,7 +587,7 @@ def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, c
         r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params,
                          timeout=(connection_timeout, read_timeout), verify=tls_verify)
         if list(filter(None, r.json()["data"])):
-            return r.json()["data"]
+            return list(filter(None, r.json()["data"]))
         else:
             logger.error("API response appears to be empty.\n"
                          "This script collects data between 72 hours ago and 48 hours ago.\n"
