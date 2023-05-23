@@ -445,7 +445,7 @@ def calc_kubecost_dates_missing_from_s3(kubecost_backfill_period_available_dates
 
 
 def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, end, granularity, aggregate,
-                                    connection_timeout, read_timeout, paginate, resolution, accumulate=False):
+                                    connection_timeout, read_timeout, paginate, idle, accumulate=False):
     """Executes Kubecost Allocation On-Demand API.
 
     :param tls_verify: Dictates whether TLS certificate verification is done for HTTPS connections
@@ -457,7 +457,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
     :param connection_timeout: The timeout (in seconds) to wait for TCP connection establishment
     :param read_timeout: The timeout (in seconds) to wait for the server to send an HTTP response
     :param paginate: Dictates whether to paginate using 1-hour time ranges (relevant for "1h" step)
-    :param resolution: The Kubecost Allocation On-demand API resolution, to control accuracy vs performance
+    :param idle: Dictates whether to include idle costs
     :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
     :return: The Kubecost Allocation API On-demand query "data" list from the HTTP response
     """
@@ -484,15 +484,15 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                 # Calculating the window and defining the API call requests parameters
                 window = f'{start_h.strftime("%Y-%m-%dT%H:%M:%SZ")},{end_h.strftime("%Y-%m-%dT%H:%M:%SZ")}'
                 if aggregate == "container":
-                    params = {"window": window, "accumulate": accumulate, "step": step, "resolution": resolution}
+                    params = {"window": window, "accumulate": accumulate, "step": step, "idle": idle}
                 else:
                     params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step,
-                              "resolution": resolution}
+                              "idle": idle}
 
                 # Executing the API call
                 logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start_h} and {end_h} "
                             f"in {granularity.lower()} granularity...")
-                r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params,
+                r = requests.get(f"{kubecost_api_endpoint}/model/allocation", params=params,
                                  timeout=(connection_timeout, read_timeout), verify=tls_verify)
 
                 # Adding the hourly allocation data to the list that'll eventually contain a full 24-hour data
@@ -513,15 +513,15 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
             # Calculating the window and defining the API call requests parameters
             window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
             if aggregate == "container":
-                params = {"window": window, "accumulate": accumulate, "step": step, "resolution": resolution}
+                params = {"window": window, "accumulate": accumulate, "step": step, "idle": idle}
             else:
                 params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step,
-                          "resolution": resolution}
+                          "idle": idle}
 
             # Executing the API call
             logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
                         f"in {granularity.lower()} granularity...")
-            r = requests.get(f"{kubecost_api_endpoint}/model/allocation/compute", params=params,
+            r = requests.get(f"{kubecost_api_endpoint}/model/allocation", params=params,
                              timeout=(connection_timeout, read_timeout), verify=tls_verify)
 
             if list(filter(None, r.json()["data"])):
@@ -903,7 +903,7 @@ def main():
                                                                                kubecost_backfill_end_date_midnight,
                                                                                "daily", "cluster", CONNECTION_TIMEOUT,
                                                                                KUBECOST_ALLOCATION_API_READ_TIMEOUT,
-                                                                               "No", "1d")
+                                                                               "No", False)
     kubecost_backfill_period_available_dates = get_kubecost_backfill_period_available_dates(
         kubecost_backfill_period_allocation_data)
 
@@ -954,10 +954,10 @@ def main():
 
             # Executing Kubecost Allocation On-Demand API call
             kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start, end,
-                                                                       GRANULARITY, AGGREGATION, CONNECTION_TIMEOUT,
+                                                                       "daily", AGGREGATION, CONNECTION_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_READ_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_PAGINATE,
-                                                                       KUBECOST_ALLOCATION_API_RESOLUTION)
+                                                                       False)
 
             # Executing Kubecost Assets API call
             kubecost_assets_data = execute_kubecost_assets_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start,
