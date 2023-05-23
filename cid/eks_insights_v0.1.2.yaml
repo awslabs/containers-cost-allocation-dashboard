@@ -5,6 +5,7 @@ dashboards:
     name: EKS Insights
     templateId: eks_insights
     sourceAccountId: '829389350341'
+    region: us-east-1
     dashboardId: eks_insights
     dependsOn:
       datasets:
