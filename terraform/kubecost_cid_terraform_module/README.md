@@ -180,7 +180,7 @@ If not provided (when TLS is enabled in Kubecost), the connection will fail, unl
 
 ### Step 2: Define Providers in the `providers.tf` File
 
-After providing common inputs, we need to define providers in the `pipeline.tf` file in the root module, that will be used for the deployment.<br />
+After providing common inputs, we need to define providers in the `providers.tf` file in the root module, that will be used for the deployment.<br />
 In this file you'll define a provider for the `pipeline` module, and one or more providers for the `kubecost_s3_exporter` module.<br />
 These providers include references to credential files that will be used by Terraform when creating resources.
 
