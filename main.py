@@ -296,8 +296,8 @@ def kubecost_backfill_period_window_calc(backfill_period_days):
 
     :param backfill_period_days: The backfill period in days
     :return: Returns the following:
-    backfill_start_date_midnight: The window start for query Kubecost API
-    backfill_end_date_midnight: The window end for query Kubecost API
+    backfill_start_date_midnight: The window start to query Kubecost Allocation API
+    backfill_end_date_midnight: The window end too query Kubecost Allocation API
     """
 
     # Calculating the window for Kubecost Allocation API call to retrieve
