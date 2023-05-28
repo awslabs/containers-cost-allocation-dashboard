@@ -79,6 +79,7 @@ module "us-east-2-111111111111-cluster1" {
   kubecost_s3_exporter_pod_schedule                = "0 0 * * 5"
   kubecost_api_endpoint                            = "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
   kubecost_allocation_api_resolution               = "10m"
+  share_tenancy_costs                              = "No"
 }
 
 module "us-east-2-111111111111-cluster2" {
