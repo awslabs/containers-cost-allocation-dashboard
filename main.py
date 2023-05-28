@@ -300,7 +300,7 @@ def kubecost_backfill_period_window_calc(backfill_period_days):
     backfill_end_date_midnight: The window end for query Kubecost API
     """
 
-    # Calculating the window for Kubecost Allocation On-Demand API call to retrieve
+    # Calculating the window for Kubecost Allocation API call to retrieve
     backfill_start_date = datetime.datetime.now() - datetime.timedelta(days=backfill_period_days)
     backfill_start_date_midnight = backfill_start_date.replace(microsecond=0, second=0, minute=0, hour=0)
     backfill_end_date = datetime.datetime.now() - datetime.timedelta(days=2)
@@ -312,7 +312,7 @@ def kubecost_backfill_period_window_calc(backfill_period_days):
 def get_kubecost_backfill_period_available_dates(allocation_data):
     """Extracts the available dates for the backfill period, from Kubecost Allocation API response.
 
-    :param allocation_data: The allocation "data" list from Kubecost Allocation API On-demand query HTTP response
+    :param allocation_data: The allocation "data" list from Kubecost Allocation API response
     :return: A dictionary with the available dates for the backfill period, along with the time window for each date
     """
 
@@ -446,20 +446,20 @@ def calc_kubecost_dates_missing_from_s3(kubecost_backfill_period_available_dates
 
 def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, end, granularity, aggregate,
                                     connection_timeout, read_timeout, paginate, idle, accumulate=False):
-    """Executes Kubecost Allocation On-Demand API.
+    """Executes Kubecost Allocation API.
 
     :param tls_verify: Dictates whether TLS certificate verification is done for HTTPS connections
     :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
     :param start: The start time for calculating Kubecost Allocation API window
     :param end: The end time for calculating Kubecost Allocation API window
     :param granularity: The user input time granularity, to use for calculating the step (daily or hourly)
-    :param aggregate: The K8s object used for aggregation, as per Kubecost Allocation API On-demand query documentation
+    :param aggregate: The K8s object used for aggregation, as per Kubecost Allocation API documentation
     :param connection_timeout: The timeout (in seconds) to wait for TCP connection establishment
     :param read_timeout: The timeout (in seconds) to wait for the server to send an HTTP response
     :param paginate: Dictates whether to paginate using 1-hour time ranges (relevant for "1h" step)
     :param idle: Dictates whether to include idle costs
     :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
-    :return: The Kubecost Allocation API On-demand query "data" list from the HTTP response
+    :return: The Kubecost Allocation API "data" list from the HTTP response
     """
 
     if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
@@ -468,7 +468,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
     # Setting the step
     step = "1h" if granularity == "hourly" else "1d"
 
-    # Executing Kubecost Allocation API call (On-demand query)
+    # Executing Kubecost Allocation API call
     try:
 
         # If the step is "1h" and pagination is true, the API call is executed for each hour in the 24-hour timeframe
@@ -490,7 +490,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                               "idle": idle}
 
                 # Executing the API call
-                logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start_h} and {end_h} "
+                logger.info(f"Querying Kubecost Allocation API for data between {start_h} and {end_h} "
                             f"in {granularity.lower()} granularity...")
                 r = requests.get(f"{kubecost_api_endpoint}/model/allocation", params=params,
                                  timeout=(connection_timeout, read_timeout), verify=tls_verify)
@@ -519,7 +519,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                           "idle": idle}
 
             # Executing the API call
-            logger.info(f"Querying Kubecost Allocation On-demand Query API for data between {start} and {end} "
+            logger.info(f"Querying Kubecost Allocation API for data between {start} and {end} "
                         f"in {granularity.lower()} granularity...")
             r = requests.get(f"{kubecost_api_endpoint}/model/allocation", params=params,
                              timeout=(connection_timeout, read_timeout), verify=tls_verify)
@@ -554,7 +554,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                      "and that you're using the correct port in your URL.")
         sys.exit(1)
     except requests.exceptions.ReadTimeout:
-        logger.error("Timed out waiting for Kubecost Allocation On-Demand API "
+        logger.error("Timed out waiting for Kubecost Allocation API "
                      f"to send an HTTP response in the given time ({read_timeout}s). "
                      "Consider increasing the read timeout value.")
         sys.exit(1)
@@ -571,7 +571,7 @@ def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, c
     :param connection_timeout: The timeout (in seconds) to wait for TCP connection establishment
     :param read_timeout: The timeout (in seconds) to wait for the server to send an HTTP response
     :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
-    :return: The Kubecost Assets API On-demand query "data" list from the HTTP response
+    :return: The Kubecost Assets API "data" list from the HTTP response
     """
 
     if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
@@ -622,7 +622,7 @@ def kubecost_allocation_data_add_cluster_id_and_name(allocation_data, cluster_id
     The cluster ID is needed in case we'd like to identify the unique cluster ID in the dataset.
     The cluster name is needed because the Kubecost's representation of the cluster name might not be the real name.
 
-    :param allocation_data: The allocation "data" list from Kubecost Allocation API On-demand query HTTP response
+    :param allocation_data: The allocation "data" list from Kubecost Allocation API response
     :param cluster_id: The cluster unique ID (for example, EKS cluster ARN)
     :return: Kubecost allocation data with the real EKS cluster name
     """
@@ -882,7 +882,7 @@ def main():
     # Based on the given backfill period, the following is done:
     # 1. The window for the Kubecost API call is defined, based on the backfill period.
     # The start date is the first day of the backfill period, and end date is 2 days ago (from today).
-    # 2. Executing Kubecost Allocation On-Demand API call for the above window.
+    # 2. Executing Kubecost Allocation API call for the above window.
     # The API call is executed with the highest possible aggregation (cluster), daily granularity, and "1d" resolution
     # This is to improve performance, as cost data isn't needed from this API.
     # The only purpose of executing this API call is to later extract the dates of each timeset (each day).
@@ -925,7 +925,7 @@ def main():
     # The below set of functions is used collect the data from Kubecost, convert it to Parquet and upload it to S3.
     # The collection windows are based on the result of the backfill logic above.
     # The logic is as follows, for each date identified as missing in S3 (if any. If none - data collection isn't done):
-    # 1. Executing the Kubecost Allocation On-Demand API call
+    # 1. Executing the Kubecost Allocation API call
     # 2. Executing the Kubecost Assets API call
     # 3. Performing different changes on the data:
     # 3.1 Adding the real cluster ID and name to each allocation properties
@@ -952,7 +952,7 @@ def main():
             year = date.split("-")[0]
             month = date.split("-")[1]
 
-            # Executing Kubecost Allocation On-Demand API call
+            # Executing Kubecost Allocation API call
             kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start, end,
                                                                        "daily", AGGREGATION, CONNECTION_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_READ_TIMEOUT,
