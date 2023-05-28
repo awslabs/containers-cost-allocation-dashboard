@@ -12,8 +12,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 17,
-      "maxItems": 17,
+      "minItems": 18,
+      "maxItems": 18,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -32,6 +32,7 @@
               "IRSA_PARENT_IAM_ROLE_ARN",
               "GRANULARITY",
               "AGGREGATION",
+              "SHARE_TENANCY_COSTS",
               "KUBECOST_ALLOCATION_API_PAGINATE",
               "KUBECOST_ALLOCATION_API_RESOLUTION",
               "CONNECTION_TIMEOUT",
@@ -191,6 +192,25 @@
                     "node",
                     "cluster"
                   ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "Dictates whether to include shared tenancy costs in the \"sharedCost\" field",
+                  "const": "SHARE_TENANCY_COSTS"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "default": "Yes",
+                  "pattern": "^(?i)(Yes|No|Y|N)$"
                 }
               }
             }
