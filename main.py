@@ -76,6 +76,15 @@ if AGGREGATION not in ["container", "pod", "namespace", "controller", "controlle
                  "'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
     sys.exit(1)
 
+SHARE_TENANCY_COSTS = os.environ.get("SHARE_TENANCY_COSTS", "Yes").lower()
+if SHARE_TENANCY_COSTS in ["yes", "y"]:
+    SHARE_TENANCY_COSTS = True
+elif SHARE_TENANCY_COSTS in ["no", "n"]:
+    SHARE_TENANCY_COSTS = False
+else:
+    logger.error("The 'TLS_VERIFY' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)")
+    sys.exit(1)
+
 KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "No").lower()
 if KUBECOST_ALLOCATION_API_PAGINATE not in ["yes", "no", "y", "n"]:
     logger.error("The 'KUBECOST_ALLOCATION_API_PAGINATE' input must be one of "
@@ -445,7 +454,7 @@ def calc_kubecost_dates_missing_from_s3(kubecost_backfill_period_available_dates
 
 
 def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, end, granularity, aggregate,
-                                    connection_timeout, read_timeout, paginate, idle, accumulate=False):
+                                    connection_timeout, read_timeout, paginate, idle, share_tenancy_costs, accumulate):
     """Executes Kubecost Allocation API.
 
     :param tls_verify: Dictates whether TLS certificate verification is done for HTTPS connections
@@ -458,6 +467,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
     :param read_timeout: The timeout (in seconds) to wait for the server to send an HTTP response
     :param paginate: Dictates whether to paginate using 1-hour time ranges (relevant for "1h" step)
     :param idle: Dictates whether to include idle costs
+    :param share_tenancy_costs: Dictates whether to include shared tenancy costs in the "sharedCost" field
     :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
     :return: The Kubecost Allocation API "data" list from the HTTP response
     """
@@ -484,10 +494,11 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                 # Calculating the window and defining the API call requests parameters
                 window = f'{start_h.strftime("%Y-%m-%dT%H:%M:%SZ")},{end_h.strftime("%Y-%m-%dT%H:%M:%SZ")}'
                 if aggregate == "container":
-                    params = {"window": window, "accumulate": accumulate, "step": step, "idle": idle}
+                    params = {"window": window, "accumulate": accumulate, "step": step, "idle": idle,
+                              "shareTenancyCosts": share_tenancy_costs}
                 else:
                     params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step,
-                              "idle": idle}
+                              "idle": idle, "shareTenancyCosts": share_tenancy_costs}
 
                 # Executing the API call
                 logger.info(f"Querying Kubecost Allocation API for data between {start_h} and {end_h} "
@@ -513,10 +524,11 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
             # Calculating the window and defining the API call requests parameters
             window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
             if aggregate == "container":
-                params = {"window": window, "accumulate": accumulate, "step": step, "idle": idle}
+                params = {"window": window, "accumulate": accumulate, "step": step, "idle": idle,
+                          "shareTenancyCosts": share_tenancy_costs}
             else:
                 params = {"window": window, "aggregate": aggregate, "accumulate": accumulate, "step": step,
-                          "idle": idle}
+                          "idle": idle, "shareTenancyCosts": share_tenancy_costs}
 
             # Executing the API call
             logger.info(f"Querying Kubecost Allocation API for data between {start} and {end} "
@@ -903,7 +915,7 @@ def main():
                                                                                kubecost_backfill_end_date_midnight,
                                                                                "daily", "cluster", CONNECTION_TIMEOUT,
                                                                                KUBECOST_ALLOCATION_API_READ_TIMEOUT,
-                                                                               "No", False)
+                                                                               "No", False, SHARE_TENANCY_COSTS, False)
     kubecost_backfill_period_available_dates = get_kubecost_backfill_period_available_dates(
         kubecost_backfill_period_allocation_data)
 
@@ -957,7 +969,7 @@ def main():
                                                                        "daily", AGGREGATION, CONNECTION_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_READ_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_PAGINATE,
-                                                                       False)
+                                                                       False, SHARE_TENANCY_COSTS, False)
 
             # Executing Kubecost Assets API call
             kubecost_assets_data = execute_kubecost_assets_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start,
