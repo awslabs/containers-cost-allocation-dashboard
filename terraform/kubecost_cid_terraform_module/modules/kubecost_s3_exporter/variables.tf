@@ -126,6 +126,17 @@ variable "aggregation" {
   }
 }
 
+variable "share_tenancy_costs" {
+  type        = string
+  default     = "Yes"
+  description = "Dictates whether to include shared tenancy costs in the 'sharedCost' field"
+
+  validation {
+    condition     = can(regex("^(?i)(Yes|No|Y|N)$", var.share_tenancy_costs))
+    error_message = "The 'share_tenancy_costs' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)"
+  }
+}
+
 variable "kubecost_allocation_api_paginate" {
   type        = string
   default     = "No"
