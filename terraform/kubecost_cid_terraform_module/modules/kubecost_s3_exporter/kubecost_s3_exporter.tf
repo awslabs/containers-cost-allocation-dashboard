@@ -86,6 +86,10 @@ locals {
           "value" : var.aggregation
         },
         {
+          "name" : "SHARE_TENANCY_COSTS",
+          "value" : var.share_tenancy_costs
+        },
+        {
           "name" : "KUBECOST_ALLOCATION_API_PAGINATE",
           "value" : var.kubecost_allocation_api_paginate
         },
