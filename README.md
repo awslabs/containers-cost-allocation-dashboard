@@ -119,6 +119,9 @@ This bucket policy, along with the identity-based policies of all the identities
                             "arn:aws:iam::<account_id>:role/service-role/aws-quicksight-service-role-v0"
                         ],
                         "aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"
+                    },
+                    "NumericLessThan": {
+                        "s3:TlsVersion": "1.2"
                     }
                 }
             }
