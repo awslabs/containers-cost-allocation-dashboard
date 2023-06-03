@@ -12,8 +12,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 18,
-      "maxItems": 18,
+      "minItems": 15,
+      "maxItems": 15,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -30,11 +30,8 @@
               "BACKFILL_PERIOD_DAYS",
               "CLUSTER_ID",
               "IRSA_PARENT_IAM_ROLE_ARN",
-              "GRANULARITY",
               "AGGREGATION",
-              "SHARE_TENANCY_COSTS",
               "KUBECOST_ALLOCATION_API_PAGINATE",
-              "KUBECOST_ALLOCATION_API_RESOLUTION",
               "CONNECTION_TIMEOUT",
               "KUBECOST_ALLOCATION_API_READ_TIMEOUT",
               "KUBECOST_ASSETS_API_READ_TIMEOUT",
@@ -154,25 +151,6 @@
             "if": {
               "properties": {
                 "name": {
-                  "description": "The time granularity of the data that is returned from the Kubecost Allocation API",
-                  "const": "GRANULARITY"
-                }
-              }
-            },
-            "then": {
-              "properties": {
-                "value": {
-                  "type": "string",
-                  "default": "hourly",
-                  "pattern": "^(?i)(hourly|daily)$"
-                }
-              }
-            }
-          },
-          {
-            "if": {
-              "properties": {
-                "name": {
                   "description": "The aggregation to use for returning the Kubecost Allocation API results",
                   "const": "AGGREGATION"
                 }
@@ -200,25 +178,6 @@
             "if": {
               "properties": {
                 "name": {
-                  "description": "Dictates whether to include shared tenancy costs in the \"sharedCost\" field",
-                  "const": "SHARE_TENANCY_COSTS"
-                }
-              }
-            },
-            "then": {
-              "properties": {
-                "value": {
-                  "type": "string",
-                  "default": "Yes",
-                  "pattern": "^(?i)(Yes|No|Y|N)$"
-                }
-              }
-            }
-          },
-          {
-            "if": {
-              "properties": {
-                "name": {
                   "description": "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)",
                   "const": "KUBECOST_ALLOCATION_API_PAGINATE"
                 }
@@ -230,25 +189,6 @@
                   "type": "string",
                   "default": "No",
                   "pattern": "^(?i)(Yes|No|Y|N)$"
-                }
-              }
-            }
-          },
-          {
-            "if": {
-              "properties": {
-                "name": {
-                  "description": "The Kubecost Allocation On-demand API resolution, to control accuracy vs performance",
-                  "const": "KUBECOST_ALLOCATION_API_RESOLUTION"
-                }
-              }
-            },
-            "then": {
-              "properties": {
-                "value": {
-                  "type": "string",
-                  "default": "1m",
-                  "pattern": "^[1-9][0-9]?m.*$"
                 }
               }
             }
