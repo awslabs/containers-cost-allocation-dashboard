@@ -30,16 +30,10 @@ env:
     value: "<cluster_arn>" # Change to your EKS cluster ARN
   - name: "IRSA_PARENT_IAM_ROLE_ARN"
     value: ""
-  - name: "GRANULARITY"
-    value: "hourly"
   - name: "AGGREGATION"
     value: "container"
-  - name: "SHARE_TENANCY_COSTS"
-    value: "Yes"
   - name: "KUBECOST_ALLOCATION_API_PAGINATE"
     value: "No"
-  - name: "KUBECOST_ALLOCATION_API_RESOLUTION"
-    value: "1m"
   - name: "CONNECTION_TIMEOUT"
     value: 10
   - name: "KUBECOST_ALLOCATION_API_READ_TIMEOUT"
