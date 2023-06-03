@@ -557,11 +557,11 @@ The way it works is as follows:
 1. An environment variable is passed to the data collection pod (`BACKFILL_PERIOD_DAYS` in Helm, `backfill_period_days` in Terraform).  
 The default value is 15 days (according to the Kubecost free tier retention limit), but it can be changed.
 2. Every time the data collection pod runs, it performs the following:
-   1. Identifies the available data in Kubecost for the backfill period.  
+   1. Identifies the available data in Kubecost for the back-fill period.  
    This is done by querying the Allocation API for the given period, in daily granularity and `cluster` aggregation.  
    This API call intentionally uses high granularity and high aggregation levels, because the cost data isn't the purpose of this call.  
    The purpose of this call is to identify the dates where Kubecost data is available.
-   2. Identifies the available data in the S3 bucket for the backfill period.  
+   2. Identifies the available data in the S3 bucket for the back-fill period.  
    This is done by querying Amazon S3 API for the given bucket, using the `s3:ListObjectV2` API call.  
    The dates are then extracted from the Parquet files names.
    3. The dates extracted from Kubecost Allocation API and Amazon S3 `s3:ListObjectV2` API are compared.  
@@ -581,7 +581,7 @@ The missing data will be automatically back-filled the next time the job runs af
 It could be that the data collection pod failed for some reason, more than the maximum number of job failures.  
 Assuming the issue is fixed within the Kubecost retention limit, the missing data will be back-filled automatically the next time the job runs successfully.
 4. Back-filling for accidental deletion of Parquet files:  
-If Parquet files within the Kubeost retention limit timeframe were accidentally deleted, the missing data will be automatically back-filled
+If Parquet files within the Kubecost retention limit timeframe were accidentally deleted, the missing data will be automatically back-filled.
 
 Notes:
 
