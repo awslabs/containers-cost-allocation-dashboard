@@ -65,36 +65,16 @@ except ValueError:
     logger.error("The BACKFILL_PERIOD_DAYS input must be an integer")
     sys.exit(1)
 
-GRANULARITY = os.environ.get("GRANULARITY", "hourly").lower()
-if GRANULARITY not in ["hourly", "daily"]:
-    logger.error("Granularity must be one of 'hourly' or 'daily' (case-insensitive)")
-    sys.exit(1)
-
 AGGREGATION = os.environ.get("AGGREGATION", "container")
 if AGGREGATION not in ["container", "pod", "namespace", "controller", "controllerKind", "node", "cluster"]:
     logger.error("Aggregation must be one of "
                  "'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
     sys.exit(1)
 
-SHARE_TENANCY_COSTS = os.environ.get("SHARE_TENANCY_COSTS", "Yes").lower()
-if SHARE_TENANCY_COSTS in ["yes", "y"]:
-    SHARE_TENANCY_COSTS = True
-elif SHARE_TENANCY_COSTS in ["no", "n"]:
-    SHARE_TENANCY_COSTS = False
-else:
-    logger.error("The 'TLS_VERIFY' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)")
-    sys.exit(1)
-
 KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "No").lower()
 if KUBECOST_ALLOCATION_API_PAGINATE not in ["yes", "no", "y", "n"]:
     logger.error("The 'KUBECOST_ALLOCATION_API_PAGINATE' input must be one of "
                  "'Yes', 'No', 'Y' or 'N' (case-insensitive)")
-    sys.exit(1)
-
-KUBECOST_ALLOCATION_API_RESOLUTION = os.environ.get("KUBECOST_ALLOCATION_API_RESOLUTION", "1m")
-if not re.match(r"^[1-9][0-9]?m.*$", KUBECOST_ALLOCATION_API_RESOLUTION):
-    logger.error("The 'KUBECOST_ALLOCATION_API_RESOLUTION' input must be in format of 'Nm', where N >= 1.\n"
-                 "For example, 1m, 2m, 5m, 10m.")
     sys.exit(1)
 
 try:
@@ -921,8 +901,7 @@ def main():
                                                                                kubecost_backfill_end_date_midnight,
                                                                                "daily", "cluster", CONNECTION_TIMEOUT,
                                                                                KUBECOST_ALLOCATION_API_READ_TIMEOUT,
-                                                                               "No", True, True, True,
-                                                                               SHARE_TENANCY_COSTS, False)
+                                                                               "No", True, True, True, True, False)
     kubecost_backfill_period_available_dates = get_kubecost_backfill_period_available_dates(
         kubecost_backfill_period_allocation_data)
 
@@ -976,7 +955,7 @@ def main():
                                                                        "daily", AGGREGATION, CONNECTION_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_READ_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_PAGINATE, True, True,
-                                                                       True, SHARE_TENANCY_COSTS, False)
+                                                                       True, True, False)
 
             # Executing Kubecost Assets API call
             kubecost_assets_data = execute_kubecost_assets_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start,
