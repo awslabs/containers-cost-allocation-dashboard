@@ -30,7 +30,7 @@ The data collection pod is referred to as Kubecost S3 Exporter throughout some p
 ### High-Level Logic
 
 1. The CronJob K8s controller runs daily and creates a pod that collects cost allocation data from Kubecost. It runs the following API calls:<br />
-The [Allocation On-Demand API (experimental)](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) to retrieve the cost allocation data.<br />
+The [Allocation API](https://docs.kubecost.com/apis/apis-overview/allocation) to retrieve the cost allocation data.<br />
 The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data.<br />
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.<br />
 2. Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes<br />
@@ -61,16 +61,32 @@ It's up to you to use it on your S3 bucket.
 
 The Kubecost APIs that are being used are:
 
-* The [Allocation On-Demand API (experimental)](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) to retrieve the cost allocation data
+* The [Allocation API](https://docs.kubecost.com/apis/apis-overview/allocation) to retrieve the cost allocation data
 * The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data - specifically for the nodes
-
-For clarifications on issues that may be encountered when querying the Allocation On-Demand API (such as slow response time or memory issues):<br />
-Please see the "Clarifications on the Allocation On-Demand API" part on the Appendix. 
 
 ### Encrypting Data In-Transit
 
 This solution supports encrypting the data between the data collection pod and the Kubecost pod, in-transit.<br />
 To enable this, please follow the "Enabling Encryption In-Transit Between the Data Collection Pod and Kubecost Pod" section in the Appendix.
+
+### Back-filling Past Data
+
+This solution supports back-filling past data up to the Kubecost retention limits (15 days for the free tier, 30 days for the business tier).  
+The back-filling is done automatically by the data collection pod if it identifies gaps in the S3 data compared to the Kubecost data.  
+For more information and use-cases that the back-filling solution solves, see the "Back-filling Past Data" section in the Appendix.
+
+### Logging
+
+Logging is supported in this solution as follows:
+
+1. The data collection container outputs logs to `stdout` or `stderr`. It does NOT support writing logs to an external logging server.  
+This is to keep it simple and remove this heavy lifting task from the container.    
+It's within your responsibility to run a sidecar container to collect the data collection container logs and write them to an external logging server.  
+You're highly encouraged to do so, as the data collection container logs are available for a limited time in the cluster.
+2. The AWS Glue Crawler writes logs to Amazon CloudWatch Logs.  
+It'll create a Log Group and Log Stream the first time it runs, if those aren't available.
+3. All management API made by the data collection container, can be viewed in Amazon CloudTrail (unless aren't supported by CloudTrail).  
+It's within your responsibility to configure Amazon CloudTrail to log these events.
 
 ## Requirements
 
@@ -86,8 +102,8 @@ For each EKS cluster, have the following:
 The IAM OIDC Provider must be created in the EKS cluster's account and region.
 2. Kubecost deployed in the EKS cluster.<br />
 Currently, only the free tier and the EKS-optimized bundle of Kubecost are supported.<br />
-The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations).<br />
-To get network costs, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs DaemonSet](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
+The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations) and [Spot Data Feed](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations/aws-spot-instances).<br />
+To get accurate network costs from Kubecost, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs DaemonSet](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
 
 Please continue reading the specific sections “S3 Bucket Specific Notes”, “Configure Athena Query Results Location” and “Configure QuickSight Permissions”. 
 
@@ -439,7 +455,12 @@ To run the Kubecost S3 Exporter pod on-demand, run the following command (replac
 
     kubectl create job --from=cronjob/kubecost-s3-exporter kubecost-s3-exporter1 -n <namespace> --context <context>
 
-You can see the status by running `kubectl get all -n <namespace> --context <context>`
+You can see the status by running `kubectl get all -n <namespace> --context <context>`.
+
+Please note that due to the automatic back-filling solution, you can't run the data collection on-demand for data that already exists in S3.  
+If data already exists for the date you'd like to run the collection for, you must delete the Parquet file for this date first.  
+This will trigger the automatic back-filling solution to identify the missing date and back-fill it, when you run the data collection.    
+Notice that this is possible only up to the Kubecost retention limit (15 days for the free tier, 30 days for the business tier).
 
 ### Getting Logs from the Kubecost S3 Exporter Pod
 
@@ -527,82 +548,48 @@ For each cluster, remove the namespace by running `kubectl delete ns <namespace>
 
 ## Appendix
 
-### Clarifications on the Allocation On-Demand API
+### Back-filling Past Data
 
-The [Allocation API On-Demand API](https://docs.kubecost.com/apis/apis-overview/allocation#querying-on-demand-experimental) is considered experimental, as mentioned in the referenced link.<br />
-The reason this solution uses this API and not the [standard Allocation API endpoint](https://docs.kubecost.com/apis/apis-overview/allocation#allocation-api), is to fetch specific time range in hourly granularity.<br />
-This solution relies on Kubecost's ability to integrate with the Cost and Usage Report (CUR).<br />
-The CUR is being updated [**up to** 3 times a day](https://docs.aws.amazon.com/cur/latest/userguide/what-is-cur.html). The data recency in the update might be back a few hours from the update time.<br />
-Since Kubecost shows updated cost data up to almost now, it means there could be a gap between Kubecost's data and CUR's data for up to 48 hours.<br />
-Till Kubecost reconciles the data from CUR with its data, it'll show on-demand costs.
+This solution supports back-filling past data up to the Kubecost retention limits (15 days for the free tier, 30 days for the business tier).  
+The back-filling is done automatically by the data collection pod if it identifies gaps in the S3 data compared to the Kubecost data.  
+The way it works is as follows:
 
-This solution, intends to show accurate container costs that reflect not only on-demand, but also RIs, Savings Plans and Spot.<br />
-This means that for this to work, the daily data collection must always collect data from 72 hours ago.<br />
-To be more precise, it must collect data from between 72 hours ago 00:00:00.000 to 48 hours ago 00:00:00.000.<br />
-This solution also intends to show up to hourly granularity of the costs.<br />
-This means that the data collection must provide an option to retrieve the data from Kubecost in hourly granularity.<br />
-Lastly, this solution intends to show container-level cost data, which means the amount of data fetched can be large (as opposed to using higher-level aggregations).
+1. An environment variable is passed to the data collection pod (`BACKFILL_PERIOD_DAYS` in Helm, `backfill_period_days` in Terraform).  
+The default value is 15 days (according to the Kubecost free tier retention limit), but it can be changed.
+2. Every time the data collection pod runs, it performs the following:
+   1. Identifies the available data in Kubecost for the backfill period.  
+   This is done by querying the Allocation API for the given period, in daily granularity and `cluster` aggregation.  
+   This API call intentionally uses high granularity and high aggregation levels, because the cost data isn't the purpose of this call.  
+   The purpose of this call is to identify the dates where Kubecost data is available.
+   2. Identifies the available data in the S3 bucket for the backfill period.  
+   This is done by querying Amazon S3 API for the given bucket, using the `s3:ListObjectV2` API call.  
+   The dates are then extracted from the Parquet files names.
+   3. The dates extracted from Kubecost Allocation API and Amazon S3 `s3:ListObjectV2` API are compared.  
+   If there are dates in the Kubecost API response that aren't available in the S3 bucket, data collection is performed from Kubecost for these dates.
 
-The Kubecost standard Allocation API endpoint doesn't have an input to specify the time granularity.<br />
-Instead, it uses time granularity based on the `window` input.<br />
-For example, a `window` of `24h` will return data in hourly granularity, and a `window` of `3d` will return data in daily granularity.<br />
-We don't use this kind of window, and instead, we use a time range window (as mentioned above).<br />
-With this type of window, Kubecost can't automatically detect the granularity, so it returns an accumulated cost for the whole time range.<br />
-Alternatively, we could specify `72h` window (to get hourly granularity) and get the specific time range at parsing level.<br />
-However, Kubecost standard Allocation API endpoint has a limitation where it returns data in hourly granularity only for `window` of up to `48h`.
+On a regular basis, this logic is simply used to perform the daily data collection.  
+It'll always identify one day gap between Kubecost and S3, and will collect the missing day.  
+However, in cases of missing data for other dates, the above logic is used to back-fill the missing data.  
+This is instead of simply running the data collection always on a given timeframe (e.g., 3 days ago), which will only work for daily collection.  
+This automatic back-filling solution can fit the following use-cases:
 
-As opposed to the standard Allocation API endpoint, the Allocation On-Demand API endpoint has a `step` input.<br />
-This gives us the flexibility to specify an hourly granularity (with `step` set to `1h`), even for a time-range window.<br />
-However, this comes with a performance tradeoff, as it computes everything on-demand.<br />
-This is as opposed to the standard Allocation API endpoint which uses precomputed sets with predefined step sizes.<br />
-This can cause long HTTP response times (for the API calls we make), as well as serious Prometheus performance issues, including OOM errors.
+1. Back-filling data for a newly deployed data collection pod, if Kubecost was already deployed on the same cluster for multiple days
+2. Back-filling data for clusters that are regularly powered off for certain days:  
+On the days they're powered off, the data collection pod isn't running, and therefore isn't collecting the data relative to those dates (3 days back).  
+The missing data will be automatically back-filled the next time the job runs after the cluster was powered back up.
+3. Back-filling for failed jobs:  
+It could be that the data collection pod failed for some reason, more than the maximum number of job failures.  
+Assuming the issue is fixed within the Kubecost retention limit, the missing data will be back-filled automatically the next time the job runs successfully.
+4. Back-filling for accidental deletion of Parquet files:  
+If Parquet files within the Kubeost retention limit timeframe were accidentally deleted, the missing data will be automatically back-filled
 
-Due to our requirement for CUR data parity and hourly granularity, we chose the Allocation On-Demand API.<br />
-To avoid the possible issues that may be caused by using this API, we provide the following means as part of this solution:
+Notes:
 
-* Ability to set the API call's read timeout, using the `kubecost_allocation_api_read_timeout` Terraform input (`KUBECOST_ALLOCATION_API_READ_TIMEOUT` Helm input).<br />
-The read timeout defines the time to wait for the server to return an HTTP response, and provides ability to set high read timeout.<br />
-This is useful in cases of large clusters where Kubecost Allocation On-Demand API will take time to compute the data before returning a response.<br />
-The default read timeout is 60 seconds, and can be changed on per cluster basis. 
-* Ability to paginate using the `kubecost_allocation_api_paginate` Terraform input (`KUBECOST_ALLOCATION_API_PAGINATE` Helm input).<br />
-Kubecost doesn't provide a native pagination functionality on this API.<br />
-In some cases, returning large volumes of data may cause OOM errors.<br />
-So, setting the read timeout to a large value to allow for a long processing time solves one issue, but causes another issue.<br />
-To avoid possible OOM errors, this solution implements pagination by querying 1-hour time ranges within the 24-hour range it queries.<br />
-This means that with pagination enabled, the data collection will perform 24 API calls and will concatenate them to a single data set.<br />
-This means a potentially longer time to finish the retrieving all data (due to multiple request-response transactions over the network).<br />
-However, in this expense, we reduce the risk for OOM errors because we retrieve smaller set of data on every API call.<br />
-Pagination is disabled by default, and can be enabled on per cluster basis.
-* Ability to define query resolution using the `kubecost_allocation_api_resolution` Terraform input (`KUBECOST_ALLOCATION_API_RESOLUTION` Helm input).<br />
-This provides the ability to make tradeoffs between accuracy and performance.<br />
-The default value is `1m`, and it can be changed on per cluster basis.<br />
-For more information on this functionality from Kubecost's documentation, see [Theoretical error bounds](https://docs.kubecost.com/apis/apis-overview/allocation#theoretical-error-bounds) in the Allocation On-Demand API documentation.
-* Ability to choose higher-level response aggregation, using the `aggregation` Terraform input (`AGGREGATION` Helm input).<br />
-Although we intend to collect container-level cost data to provide the most granular data set, we provide an option to choose the aggregation.<br />
-This can potentially reduce the amount of data that needs to be returned by Kubecost, which means less time for Kubecost to process it.<br />
-This can reduce the risk for OOM errors, and also reduce the time it takes for the API to respond (hence, you could reduce the `kubecost_allocation_api_read_timeout`).<br />
-The default value is `container`, and it can be changed on per cluster basis, to different higher level aggregation options (such ash pod, namespace).<br />
-Using different aggregation option on different cluster will NOT cause issues on the data set, so feel free to use different options on different clusters.<br />
-Please note that using aggregation higher than `container` will prevent using container right-sizing features of this solution for the respective clusters.
-* Ability to specify daily time granularity using the `granularity` Terraform input (`GRANULARITY` Helm input).<br />
-Although we intend to provide hourly granularity for accurate data, we provide an option to choose the time granularity.<br />
-This can dramatically reduce the amount of data that needs to be returned by Kubecost, which means less time for Kubecost to process it.<br />
-This can reduce the risk for OOM errors, and also reduce the time it takes for the API to respond (hence, you could reduce the `kubecost_allocation_api_read_timeout`).<br />
-The default value is `hourly`, and it can be changed globally, only on the `common` Terraform module.<br />
-Please DO NOT change it manually on an individual cluster basis on Helm.<br />
-Please note that changing the time granularity to `daily` will reduce the ability to investigate costs for short-term containers.
-
-We recommend approaching the problems outlined above, as follows:
-
-1. Run the data collection container for the first time, with the default settings, on a dev cluster.<br />
-If the Allocation On-Demand API fails to return an HTTP response in the given time, you'll see an error as in the "An HTTP Server Response Timeout" section.<br />
-In this case, increase the `kubecost_allocation_api_read_timeout` incrementally, till you receive a response.
-2. Based on the time it takes the Allocation On-Demand API to return (can be seen in the data collection container logs), adjust the read timeout on larger clusters.<br />
-3. If you observe a too high memory usage on the Kubecost pod or Prometheus, or OOM errors on them, enable pagination for the cluster
-4. If the above doesn't help, change the `kubecost_allocation_api_resolution` input to more than `1m` (do it incrementally till you see improvement)
-5. If the above doesn't help, use higher level aggregation using the `aggreagation` input (for example, "pod" or "namespace") for the cluster
-6. If the above doesn't help, move to daily granularity as a last resort (this will affect all clusters).<br />
-Do so by changing the default value of the `granularity` input in the `common` module to `daily`
+1. The back-filling solution supports back-filling data only up to the Kubecost retention limit (15 days for the free tier, 30 days for the business tier)
+2. The back-filling solution is automatic, and does not support force-back-filling of data that already exists in the S3 bucket.
+If you'd like to force-back-fill existing data, you must delete the Parquet file for the desired date, and then run the data collection.  
+An example reason for such a scenario is that an issue was fixed or a feature was added to the solution, and you'd like it to be applied for past data.  
+Notice that this is possible only up to the Kubecost retention limit (15 days for the free tier, 30 days for the business tier).
 
 ### Enabling Encryption In-Transit Between the Data Collection Pod and Kubecost Pod
 
