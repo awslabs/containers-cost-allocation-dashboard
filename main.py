@@ -178,6 +178,9 @@ def define_csv_columns(kubecost_labels_to_orig_labels):
         "networkTransferBytes": 0,
         "networkReceiveBytes": 0,
         "networkCost": 0,
+        "networkCrossZoneCost": 0,
+        "networkCrossRegionCost": 0,
+        "networkInternetCost": 0,
         "networkCostAdjustment": 0,
         "loadBalancerCost": 0,
         "loadBalancerCostAdjustment": 0,
@@ -664,7 +667,8 @@ def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
                     # If a certain asset data isn't found, the field is added to the allocation data as an empty string
                     # This is to keep the dataset with all required fields
                     # The "KeyError" exception handling is meant to handle field which is missing from the JSON
-                    # The "TypeError" exception handling is meant to handle field with value of "null"
+                    # The "TypeError" exception handling is meant to handle field with "null" value in dict[key]
+                    # The "AttributeError" exception handling is meant to handle field with "null" value in dict.get()
                     try:
                         allocation["properties"]["provider"] = assets_data[0][asset_id]["properties"]["provider"]
                     except (KeyError, TypeError):
@@ -684,9 +688,10 @@ def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
                     except (KeyError, TypeError):
                         allocation["properties"]["node_availability_zone"] = ""
                     try:
-                        allocation["properties"]["node_capacity_type"] = assets_data[0][asset_id]["labels"][
-                            "label_eks_amazonaws_com_capacityType"]
-                    except (KeyError, TypeError):
+                        allocation["properties"]["node_capacity_type"] = assets_data[0][asset_id]["labels"].get(
+                            "label_eks_amazonaws_com_capacityType",
+                            assets_data[0][asset_id]["labels"].get("label_karpenter_sh_capacity_type", ""))
+                    except (KeyError, TypeError, AttributeError):
                         allocation["properties"]["node_capacity_type"] = ""
                     try:
                         allocation["properties"]["node_architecture"] = assets_data[0][asset_id]["labels"][
@@ -699,14 +704,16 @@ def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
                     except (KeyError, TypeError):
                         allocation["properties"]["node_os"] = ""
                     try:
-                        allocation["properties"]["node_nodegroup"] = assets_data[0][asset_id]["labels"][
-                            "label_eks_amazonaws_com_nodegroup"]
-                    except (KeyError, TypeError):
+                        allocation["properties"]["node_nodegroup"] = assets_data[0][asset_id]["labels"].get(
+                            "label_eks_amazonaws_com_nodegroup",
+                            assets_data[0][asset_id]["labels"].get("label_karpenter_sh_provisioner_name", ""))
+                    except (KeyError, TypeError, AttributeError):
                         allocation["properties"]["node_nodegroup"] = ""
                     try:
-                        allocation["properties"]["node_nodegroup_image"] = assets_data[0][asset_id]["labels"][
-                            "label_eks_amazonaws_com_nodegroup_image"]
-                    except (KeyError, TypeError):
+                        allocation["properties"]["node_nodegroup_image"] = assets_data[0][asset_id]["labels"].get(
+                            "label_eks_amazonaws_com_nodegroup_image",
+                            assets_data[0][asset_id]["labels"].get("label_karpenter_k8s_aws_instance_ami_id", ""))
+                    except (KeyError, TypeError, AttributeError):
                         allocation["properties"]["node_nodegroup_image"] = ""
 
     return allocation_data
