@@ -78,24 +78,12 @@ locals {
           "value" : aws_iam_role.kubecost_s3_exporter_irsa_parent_role.arn
         },
         {
-          "name" : "GRANULARITY",
-          "value" : module.common.granularity
-        },
-        {
           "name" : "AGGREGATION",
           "value" : var.aggregation
         },
         {
-          "name" : "SHARE_TENANCY_COSTS",
-          "value" : var.share_tenancy_costs
-        },
-        {
           "name" : "KUBECOST_ALLOCATION_API_PAGINATE",
           "value" : var.kubecost_allocation_api_paginate
-        },
-        {
-          "name" : "KUBECOST_ALLOCATION_API_RESOLUTION",
-          "value" : var.kubecost_allocation_api_resolution
         },
         {
           "name" : "CONNECTION_TIMEOUT",
