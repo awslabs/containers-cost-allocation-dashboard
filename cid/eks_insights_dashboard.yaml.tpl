@@ -59,6 +59,12 @@ datasets:
               Type: DECIMAL
             - Name: networkcost
               Type: DECIMAL
+            - Name: networkcrosszonecost
+              Type: DECIMAL
+            - Name: networkcrossregioncost
+              Type: DECIMAL
+            - Name: networkinternetcost
+              Type: DECIMAL
             - Name: networkcostadjustment
               Type: DECIMAL
             - Name: loadbalancercost
@@ -175,6 +181,9 @@ datasets:
               - networktransferbytes
               - networkreceivebytes
               - networkcost
+              - networkcrosszonecost
+              - networkcrossregioncost
+              - networkinternetcost
               - networkcostadjustment
               - loadbalancercost
               - loadbalancercostadjustment
