@@ -489,7 +489,7 @@ Below are instruction for some common changes that you might do after the initia
 When adding additional clusters after the initial deployment, not all the initial deployment steps are required.<br />
 To continue adding additional clusters after the initial deployment, the only required steps are as follows, for each cluster:
 
-1. Create an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html) in the S3 bucket's account.
+1. Create an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html) in the EKS cluster's account and region
 2. Define additional providers for the clusters
 3. Create additional instances of the `kubecost_s3_exporter` module in the `main.tf` file, and provide inputs
 4. If you need to add labels for this cluster, follow the "Maintenance -> Adding/Removing Labels to/from the Dataset" section
