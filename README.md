@@ -427,7 +427,7 @@ Notice that not all steps are always necessary - it depends on the changes in th
 
 1. Build and push the Docker image (follow the same steps as in "Deployment -> Step 1: Build and Push the Container Image").  
 Notice that if no changes were made in the Python data collection script, this step can be skipped.
-2. Run `terraform apply` on the Terraform module.
+2. Run `terraform apply` on the Terraform module, from the `deploy` directory.
 Notice that if no changes were made in the Terraform module, this step can be skipped.  
 If you're not sure, run `terraform apply`, and if there are no changes, Terraform will identify it and will make no changes.
 3. If you used Helm separately to deploy the K8s resources, run `helm upgrade` on the new Helm chart.  
