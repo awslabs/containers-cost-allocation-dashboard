@@ -435,10 +435,10 @@ Notice that if no changes were made in the Helm chart, this step can be skipped.
 4. Update the dashboard using the `cid-cmd update --recursive --force --resources eks_insights_dashboard.yaml`.  
 Notice that if you customized the dashboard, make sure to keep a copy of the customized dashboard, update the original one, and customize again.  
 See sample outputs below. [1][2]
+5. Login to QuickSight, navigate to "Datasets", click on the `eks_insights` dataset, click "EDIT DATASET", and click "SAVE & PUBLISH"
 
 
-
-[1] Here's the expected output when there's an updated version:
+[1] Expected output when there's an updated version:
 
 
 
@@ -485,7 +485,7 @@ See sample outputs below. [1][2]
     #######
     Do you wish to open it in your browser? [y/N]: y
 
-[2] Here's the expected output when update is not required:
+[2] Expected output when update is not required:
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.12 Beta
     
