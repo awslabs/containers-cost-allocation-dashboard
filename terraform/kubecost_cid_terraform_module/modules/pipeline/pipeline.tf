@@ -226,6 +226,18 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       type = "double"
     }
     columns {
+      name = "networkcrosszonecost"
+      type = "double"
+    }
+    columns {
+      name = "networkcrossregioncost"
+      type = "double"
+    }
+    columns {
+      name = "networkinternetcost"
+      type = "double"
+    }
+    columns {
       name = "networkcostadjustment"
       type = "double"
     }
