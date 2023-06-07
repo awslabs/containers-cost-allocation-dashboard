@@ -434,7 +434,12 @@ If you're not sure, run `terraform apply`, and if there are no changes, Terrafor
 Notice that if no changes were made in the Helm chart, this step can be skipped.
 4. Update the dashboard using the `cid-cmd update --recursive --force --resources eks_insights_dashboard.yaml`.  
 Notice that if you customized the dashboard, make sure to keep a copy of the customized dashboard, update the original one, and customize again.  
-Here's the expected output when there's an updated version:
+See sample outputs below. [1][2]
+
+
+
+[1] Here's the expected output when there's an updated version:
+
 
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.12 Beta
@@ -480,7 +485,7 @@ Here's the expected output when there's an updated version:
     #######
     Do you wish to open it in your browser? [y/N]: y
 
-Here's the expected output when update is not required:
+[2] Here's the expected output when update is not required:
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.12 Beta
     
