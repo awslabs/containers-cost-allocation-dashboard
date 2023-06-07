@@ -312,10 +312,10 @@ The output should be similar to the below:
     
     
     Checking AWS environment...
-        profile name: <profile_name>
-        accountId: <account_id>
-        AWS userId: <user_id>
-        Region: <region>
+        profile name: <your_profile_name>
+        accountId: <your_account_id>
+        AWS userId: <your_user_id>
+        Region: <your_region_code>
     
     
     
@@ -355,12 +355,12 @@ After choosing, wait for the dataset to be created, and then the additional outp
 
     ? [athena-database] Select AWS Athena database to use: kubecost_db
     Dataset "eks_insights" created
-    Latest template: arn:aws:quicksight:<region_code>:<account_id>:template/eks_insights/version/1
+    Latest template: arn:aws:quicksight:<source_region_code>:<source_account_id>:template/eks_insights/version/1
     Deploying dashboard eks_insights
     
     #######
     ####### Congratulations!
-    ####### EKS Insights is available at: https://<region_code>.quicksight.aws.amazon.com/sn/dashboards/eks_insights
+    ####### EKS Insights is available at: https://<your_region_code>.quicksight.aws.amazon.com/sn/dashboards/eks_insights
     #######
     
     ? [share-with-account] Share this dashboard with everyone in the QuickSight account?: (Use arrow keys)
@@ -419,6 +419,104 @@ Create an Analysis from the Dashboard, to edit it and create custom visuals:
 2. Navigate to "Dashboards" and click the `EKS Insights`
 3. On the top right, click the "Save as" icon (refresh the dashboard if you don't see it), name the Analysis, then click "SAVE" - you'll be navigated to the Analysis
 4. You can edit the Analysis as you wish, and save it again as a dashboard, by clicking the "Share" icon on the top right, then click "Publish dashboard"
+
+## Update the Solution
+
+The following steps should be done to update the solution when there's a new version.  
+Notice that not all steps are always necessary - it depends on the changes in the new version. 
+
+1. Build and push the Docker image (follow the same steps as in "Deployment -> Step 1: Build and Push the Container Image").  
+Notice that if no changes were made in the Python data collection script, this step can be skipped.
+2. Run `terraform apply` on the Terraform module.
+Notice that if no changes were made in the Terraform module, this step can be skipped.  
+If you're not sure, run `terraform apply`, and if there are no changes, Terraform will identify it and will make no changes.
+3. If you used Helm separately to deploy the K8s resources, run `helm upgrade` on the new Helm chart.  
+Notice that if no changes were made in the Helm chart, this step can be skipped.
+4. Update the dashboard using the `cid-cmd update --recursive --force --resources eks_insights_dashboard.yaml`.  
+Notice that if you customized the dashboard, make sure to keep a copy of the customized dashboard, update the original one, and customize again.  
+Here's the expected output when there's an updated version:
+
+
+    CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.12 Beta
+    
+    Loading plugins...
+        Core loaded
+    
+    
+    Checking AWS environment...
+        profile name: <your_profile_name>
+        accountId: <your_account_id>
+        AWS userId: <your_user_id>
+        Region: <your_region_code>
+    
+    
+    Discovering deployed dashboards...  [####################################]  100%  "EKS Insights" (eks_insights)
+    
+    ? [dashboard-id] Please select installation(s) from the list: EKS Insights (arn:aws:quicksight:<your_region_code>:<your_account_id>:dashboard/eks_insights, healthy, update available 6->10)
+    
+    Latest template: arn:aws:quicksight:<source_region_code>:<source_account_id>:template/eks_insights/version/10
+    An update is available:
+                       Deployed -> Latest
+      CID Version      v0.1.4      v0.1.7
+      TemplateVersion  6           10
+    
+    Required datasets:
+     - eks_insights
+    
+    Updating dataset: "eks_insights"
+    Detected views:
+    Updated dataset: "eks_insights"
+    Using dataset eks_insights: <dataset_id>
+    
+    Checking for updates...
+    Deployed template: arn:aws:quicksight:<source_region_code>:<source_account_id>:template/eks_insights/version/6
+    Latest template: arn:aws:quicksight:<source_region_code>:<source_account_id>:template/eks_insights/version/10
+    
+    Updating eks_insights
+    Update completed
+    
+    #######
+    ####### EKS Insights is available at: https://<your_region_code>.quicksight.aws.amazon.com/sn/dashboards/eks_insights
+    #######
+    Do you wish to open it in your browser? [y/N]: y
+
+Here's the expected output when update is not required:
+
+    CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.12 Beta
+    
+    Loading plugins...
+        Core loaded
+    
+    
+    Checking AWS environment...
+        profile name: <your_profile_name>
+        accountId: <your_account_id>
+        AWS userId: <your_user_id>
+        Region: <your_region_code>
+    
+    
+    Discovering deployed dashboards...  [####################################]  100%  "EKS Insights" (eks_insights)
+    
+    ? [dashboard-id] Please select installation(s) from the list: EKS Insights (arn:aws:quicksight:<your_region_code>:<your_account_id>:dashboard/eks_insights, healthy, up to date)
+    
+    Latest template: arn:aws:quicksight:<source_region_code>:<source_account_id>:template/eks_insights/version/10
+    You are up to date!
+      CID Version      v0.1.7
+      TemplateVersion  10
+    
+    Required datasets:
+     - eks_insights
+    
+    Updating dataset: "eks_insights"
+    Detected views:
+    Updated dataset: "eks_insights"
+    Using dataset eks_insights: <dataset_id>
+    
+    Checking for updates...
+    Deployed template: arn:aws:quicksight:<your_region_code>:<your_account_id>:template/eks_insights/version/10
+    Latest template: arn:aws:quicksight:<your_region_code>:<your_account_id>:template/eks_insights/version/10
+    
+    ? [confirm-update] No updates available, should I update it anyway?: no
 
 ## Maintenance
 
