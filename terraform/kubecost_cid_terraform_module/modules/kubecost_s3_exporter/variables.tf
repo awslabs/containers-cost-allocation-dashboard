@@ -128,12 +128,12 @@ variable "aggregation" {
 
 variable "kubecost_allocation_api_paginate" {
   type        = string
-  default     = "No"
+  default     = "False"
   description = "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)"
 
   validation {
-    condition     = can(regex("^(?i)(Yes|No|Y|N)$", var.kubecost_allocation_api_paginate))
-    error_message = "The 'kubecost_allocation_api_paginate' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)"
+    condition     = can(regex("^(?i)(Yes|No|Y|N|True|False)$", var.kubecost_allocation_api_paginate))
+    error_message = "The 'kubecost_allocation_api_paginate' input must be one of 'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)"
   }
 }
 
@@ -172,12 +172,12 @@ variable "kubecost_assets_api_read_timeout" {
 
 variable "tls_verify" {
   type        = string
-  default     = "Yes"
+  default     = "True"
   description = "Dictates whether TLS certificate verification is done for HTTPS connections"
 
   validation {
-    condition     = can(regex("^(?i)(Yes|No|Y|N)$", var.tls_verify))
-    error_message = "The 'tls_verify' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)"
+    condition     = can(regex("^(?i)(Yes|No|Y|N|True|False)$", var.tls_verify))
+    error_message = "The 'tls_verify' input must be one of 'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)"
   }
 }
 
