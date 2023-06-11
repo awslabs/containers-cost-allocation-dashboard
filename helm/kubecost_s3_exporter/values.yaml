@@ -33,7 +33,7 @@ env:
   - name: "AGGREGATION"
     value: "container"
   - name: "KUBECOST_ALLOCATION_API_PAGINATE"
-    value: "No"
+    value: "False"
   - name: "CONNECTION_TIMEOUT"
     value: 10
   - name: "KUBECOST_ALLOCATION_API_READ_TIMEOUT"
@@ -41,7 +41,7 @@ env:
   - name: "KUBECOST_ASSETS_API_READ_TIMEOUT"
     value: 30
   - name: "TLS_VERIFY"
-    value: "Yes"
+    value: "True"
   - name: "KUBECOST_CA_CERTIFICATE_SECRET_NAME"
     value: ""
   - name: "KUBECOST_CA_CERTIFICATE_SECRET_REGION"
