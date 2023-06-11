@@ -188,7 +188,7 @@
                 "value": {
                   "type": "string",
                   "default": "No",
-                  "pattern": "^(?i)(Yes|No|Y|N)$"
+                  "pattern": "^(?i)(Yes|No|Y|N|True|False)$"
                 }
               }
             }
@@ -264,7 +264,7 @@
                 "value": {
                   "type": "string",
                   "default": "Yes",
-                  "pattern": "^(?i)(Yes|No|Y|N)$"
+                  "pattern": "^(?i)(Yes|No|Y|N|True|False)$"
                 }
               }
             }
