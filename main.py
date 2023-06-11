@@ -71,10 +71,10 @@ if AGGREGATION not in ["container", "pod", "namespace", "controller", "controlle
                  "'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
     sys.exit(1)
 
-KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "No").lower()
-if KUBECOST_ALLOCATION_API_PAGINATE not in ["yes", "no", "y", "n"]:
+KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "false").lower()
+if KUBECOST_ALLOCATION_API_PAGINATE not in ["yes", "no", "y", "n", "true", "false"]:
     logger.error("The 'KUBECOST_ALLOCATION_API_PAGINATE' input must be one of "
-                 "'Yes', 'No', 'Y' or 'N' (case-insensitive)")
+                 "'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)")
     sys.exit(1)
 
 try:
@@ -104,13 +104,13 @@ except ValueError:
     logger.error("The read timeout must be a float")
     sys.exit(1)
 
-TLS_VERIFY = os.environ.get("TLS_VERIFY", "Yes").lower()
-if TLS_VERIFY in ["yes", "y"]:
+TLS_VERIFY = os.environ.get("TLS_VERIFY", "True").lower()
+if TLS_VERIFY in ["yes", "y", "true"]:
     TLS_VERIFY = True
-elif TLS_VERIFY in ["no", "n"]:
+elif TLS_VERIFY in ["no", "n", "false"]:
     TLS_VERIFY = False
 else:
-    logger.error("The 'TLS_VERIFY' input must be one of 'Yes', 'No', 'Y' or 'N' (case-insensitive)")
+    logger.error("The 'TLS_VERIFY' input must be one of 'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)")
     sys.exit(1)
 
 KUBECOST_CA_CERTIFICATE_SECRET_NAME = os.environ.get("KUBECOST_CA_CERTIFICATE_SECRET_NAME")
@@ -469,7 +469,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
 
         # If the step is "1h" and pagination is true, the API call is executed for each hour in the 24-hour timeframe
         # This is to prevent OOM in the Kubecost/Prometheus containers, and to avoid using high read-timeout value
-        if step == "1h" and paginate in ["yes", "y"]:
+        if step == "1h" and paginate in ["yes", "y", "true"]:
 
             data = []
             for n in range(1, 25):
