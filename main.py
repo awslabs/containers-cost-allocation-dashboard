@@ -71,7 +71,7 @@ if AGGREGATION not in ["container", "pod", "namespace", "controller", "controlle
                  "'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'")
     sys.exit(1)
 
-KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "false").lower()
+KUBECOST_ALLOCATION_API_PAGINATE = os.environ.get("KUBECOST_ALLOCATION_API_PAGINATE", "False").lower()
 if KUBECOST_ALLOCATION_API_PAGINATE not in ["yes", "no", "y", "n", "true", "false"]:
     logger.error("The 'KUBECOST_ALLOCATION_API_PAGINATE' input must be one of "
                  "'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)")
