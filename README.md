@@ -91,7 +91,7 @@ It's within your responsibility to configure Amazon CloudTrail to log these even
 ## Requirements
 
 1. An S3 bucket, which will be used to store the Kubecost data
-2. QuickSight Enterprise with CID deployed
+2. QuickSight Enterprise
 3. Athena Workspace
 4. Terraform and Helm installed
 5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
