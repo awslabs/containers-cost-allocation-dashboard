@@ -86,7 +86,8 @@ You're highly encouraged to do so, as the data collection container logs are ava
 2. The AWS Glue Crawler writes logs to Amazon CloudWatch Logs.  
 It'll create a Log Group and Log Stream the first time it runs, if those aren't available.
 3. All management API made by the data collection container, can be viewed in Amazon CloudTrail (unless aren't supported by CloudTrail).  
-It's within your responsibility to configure Amazon CloudTrail to log these events.
+S3 data events can also be logged in CloudTrail, but it requires configuration.  
+It's within your responsibility to configure Amazon CloudTrail to log events.
 
 ## Requirements
 
