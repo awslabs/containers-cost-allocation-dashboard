@@ -133,7 +133,7 @@ LABELS = os.environ.get("LABELS")
 
 def create_kubecost_labels_to_k8s_labels_mapping(labels):
     """Creates a dict of the K8s labels keys as they're seen in Kubecost API response, to the original K8s labels keys.
-    This is because Kubecost reports K8s labels with underscores replacing dots and forward-slash characters.
+    This is because Kubecost reports K8s labels with underscores replacing dots, forward-slash and hyphen characters.
     In the destination dataset (Athena), we'd like the labels columns to show the original K8s labels keys.
 
     :param labels: A comma-separated list of the original K8s labels keys as they were given by the user input.
@@ -143,7 +143,7 @@ def create_kubecost_labels_to_k8s_labels_mapping(labels):
     kubecost_labels_to_orig_labels = {}
 
     if labels:
-        labels_columns_kubecost = ["properties.labels." + re.sub(r"[./]", "_", x.strip()) for x in labels.split(",")]
+        labels_columns_kubecost = ["properties.labels." + re.sub(r"[./-]", "_", x.strip()) for x in labels.split(",")]
         labels_columns_orig = ["properties.labels." + x.strip() for x in labels.split(",")]
         kubecost_labels_to_orig_labels = dict(zip(labels_columns_kubecost, labels_columns_orig))
 
