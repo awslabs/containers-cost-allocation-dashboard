@@ -30,6 +30,7 @@ try:
 except KeyError:
     logger.error("The 'S3_BUCKET_NAME' input is a required, but it's missing")
     sys.exit(1)
+
 try:
     CLUSTER_ID = os.environ["CLUSTER_ID"]
     if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\d:\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", CLUSTER_ID):
@@ -38,13 +39,13 @@ try:
 except KeyError:
     logger.error("The 'CLUSTER_ID' input is a required, but it's missing")
     sys.exit(1)
+
 try:
     IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
     if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@_-]{1,64}$",
                     IRSA_PARENT_IAM_ROLE_ARN):
         logger.error(f"The 'IRSA_PARENT_IAM_ROLE_ARN' input contains an invalid ARN: {IRSA_PARENT_IAM_ROLE_ARN}")
         sys.exit(1)
-
 except KeyError:
     logger.error("The 'IRSA_PARENT_IAM_ROLE_ARN' input is a required, but it's missing")
     sys.exit(1)
@@ -798,7 +799,7 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
     # Renaming columns of the Kubecost representation of K8s labels to the original K8s labels
     if kubecost_labels_to_orig_labels:
         kubecost_labels_to_orig_labels_only_renamed = {k: v for k, v in kubecost_labels_to_orig_labels.items() if
-                                                       re.search(r"[./]", v.strip("properties.labels."))}
+                                                       re.search(r"[./-]", v.strip("properties.labels."))}
         if kubecost_labels_to_orig_labels_only_renamed:
             df = df.rename(columns=kubecost_labels_to_orig_labels_only_renamed)
 
