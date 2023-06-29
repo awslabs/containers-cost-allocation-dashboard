@@ -110,6 +110,8 @@ Please continue reading the specific sections “S3 Bucket Specific Notes”, �
 
 ### S3 Bucket Specific Notes
 
+#### Using an S3 Buket Policy
+
 You may create an S3 Bucket Policy on the bucket that you create to store the Kubecost data.<br />
 In this case, below is a recommended bucket policy to use.<br />
 This bucket policy, along with the identity-based policies of all the identities in this solution, provide minimum access:
@@ -174,6 +176,13 @@ The reason for using a wildcard here is that multiple principals (multiple EKS c
 Using specific objects for each principal will result in a longer bucket policy that will eventually exceed the bucket policy size limit.<br />
 The identity policy (the parent IAM role) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.<br >
 Considering this, the access to the S3 bucket is more specific than what's specified in the "Resources" part of this bucket policy.
+
+#### Setting Server-Side Encryption
+
+It's highly recommended that server-side encryption is set on your S3 Bucket.  
+See [this documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-encryption.html) for more information.  
+Please note that starting January 5th, 2023, Amazon S3 encrypts new objets by default.  
+See [this announcement](https://aws.amazon.com/blogs/aws/amazon-s3-encrypts-new-objects-by-default/) for more information.
 
 ### Configure Athena Query Results Location
 
