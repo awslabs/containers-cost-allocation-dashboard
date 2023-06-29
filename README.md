@@ -110,7 +110,7 @@ Please continue reading the specific sections “S3 Bucket Specific Notes”, �
 
 ### S3 Bucket Specific Notes
 
-#### Using an S3 Buket Policy
+#### Using an S3 Bucket Policy
 
 You may create an S3 Bucket Policy on the bucket that you create to store the Kubecost data.<br />
 In this case, below is a recommended bucket policy to use.<br />
