@@ -26,16 +26,17 @@ variable "bucket_arn" {
   }
 }
 
-variable "clusters_labels" {
+variable "clusters_metadata" {
 
   type = list(object({
     cluster_id = string
     labels     = optional(list(string))
+    annotations     = optional(list(string))
   }))
 
   default = []
 
-  description = "A list of objects containing clusters and their K8s labels that you wish to include in the dataset"
+  description = "A map of clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset"
 
   # The below validation validates each "cluster_arn" key's value in each object in the "clusters_labels" list.
   # It'll return the specified error if at least one of the "cluster_arn" keys' value fails the validation.
@@ -54,8 +55,8 @@ variable "clusters_labels" {
   # arn:aws:s3:us-east-1:111111111111:cluster/cluster1
   # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
   validation {
-    condition     = length([for cluster_id in var.clusters_labels.*.cluster_id : cluster_id if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_id))]) == length(var.clusters_labels)
-    error_message = "At least one of the 'cluster_id' keys in the 'clusters_labels' list, contains an invalid value"
+    condition     = length([for cluster_id in var.clusters_metadata.*.cluster_id : cluster_id if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_id))]) == length(var.clusters_metadata)
+    error_message = "At least one of the 'cluster_id' keys in the 'clusters_metadata' list, contains an invalid value"
   }
 }
 
