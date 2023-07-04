@@ -5,9 +5,9 @@ output "bucket_arn" {
   description = "The ARN of the S3 Bucket to which the Kubecost data will be uploaded"
 }
 
-output "clusters_labels" {
-  value       = var.clusters_labels
-  description = "A map of clusters and their K8s labels that you wish to include in the dataset"
+output "clusters_metadata" {
+  value       = var.clusters_metadata
+  description = "A map of clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset"
 }
 
 output "kubecost_ca_certificates_list" {
