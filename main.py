@@ -856,7 +856,7 @@ def main():
     # Preparations #
     ################
 
-    # The below set of funcitons are used to prepare things needed to execute other logic, as follows:
+    # The below set of functions are used to prepare things needed to execute other logic, as follows:
     # 1. Define the CSV columns
     # 2. Assume IAM Role to be used in all other AWS API calls
     # 3. Optionally, retrieve Kubecost root CA certificate from AWS Secrets Manager
