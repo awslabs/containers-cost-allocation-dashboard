@@ -547,17 +547,17 @@ Wait for the next schedule of the Kubecost S3 Exporter and QuickSight refresh, s
 Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
 Then, manually run the Glue Crawler and manually refresh the QuickSight dataset.
 
-### Adding/Removing Labels to/from the Dataset
+### Adding/Removing Labels/Annotations to/from the Dataset
 
-After the initial deployment, you might want to add or remove labels for some or all clusters, to/from the dataset.<br />
+After the initial deployment, you might want to add or remove labels or annotations for some or all clusters, to/from the dataset.<br />
 To do this, perform the following:
 
-1. Add/remove the labels to/from the Terraform module and apply it.<br />
-Please follow the "Maintenance -> Adding/Removing Labels to/from the Dataset" part under `terraform/kubecost_cid_terraform_module/README.md`.
-2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels.<br />
+1. Add/remove the labels/annotations to/from the Terraform module and apply it.<br />
+Please follow the "Maintenance -> Adding/Removing Labels/annotations to/from the Dataset" part under `terraform/kubecost_cid_terraform_module/README.md`.
+2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels/annotations.<br />
 Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
 3. Login to QuickSight, navigate to "Datasets", click on the `eks_insights` dataset, click "EDIT DATASET", and click "SAVE & PUBLISH".<br/>
-Wait the full refresh is done, and the new set of labels should be present in the analysis.<br />
+Wait the full refresh is done, and the new set of labels/annotations should be present in the analysis.<br />
 For it to be available in the dashboard, export the analysis to a dashboard.
 
 ### Running the Kubecost S3 Exporter Pod On-Demand
