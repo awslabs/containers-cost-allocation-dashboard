@@ -29,9 +29,9 @@ variable "bucket_arn" {
 variable "clusters_metadata" {
 
   type = list(object({
-    cluster_id = string
-    labels     = optional(list(string))
-    annotations     = optional(list(string))
+    cluster_id  = string
+    labels      = optional(list(string))
+    annotations = optional(list(string))
   }))
 
   default = []
