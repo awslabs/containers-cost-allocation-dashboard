@@ -130,11 +130,12 @@ if KUBECOST_CA_CERTIFICATE_SECRET_REGION:
         sys.exit(1)
 
 LABELS = os.environ.get("LABELS")
+ANNOTATIONS = os.environ.get("ANNOTATIONS")
 
 
 def create_kubecost_labels_to_k8s_labels_mapping(labels):
     """Creates a dict of the K8s labels keys as they're seen in Kubecost API response, to the original K8s labels keys.
-    This is because Kubecost reports K8s labels with underscores replacing dots, forward-slash and hyphen characters.
+    It's because Kubecost reports K8s labels with underscores replacing dot, forward-slash and hyphen characters.
     In the destination dataset (Athena), we'd like the labels columns to show the original K8s labels keys.
 
     :param labels: A comma-separated list of the original K8s labels keys as they were given by the user input.
@@ -151,16 +152,37 @@ def create_kubecost_labels_to_k8s_labels_mapping(labels):
     return kubecost_labels_to_orig_labels
 
 
-def define_csv_columns(kubecost_labels_to_orig_labels):
+def create_kubecost_annotations_to_k8s_annotations_mapping(annotations):
+    """Creates a dict of the K8s annotations as they're seen in Kubecost API response, to the original K8s annotations.
+    It's because Kubecost reports K8s annotations with underscores replacing dot, forward-slash and hyphen characters.
+    In the destination dataset (Athena), we'd like the annotations columns to show the original K8s annotations.
+
+    :param annotations: A comma-separated list of the original K8s annotations as they were given by the user input.
+    :return: A dict mapping the Kubecost representation of K8s annotations, to the original K8s annotations
+    """
+
+    kubecost_annotations_to_orig_annotations = {}
+
+    if annotations:
+        annotations_columns_kubecost = ["properties.annotations." + re.sub(r"[./-]", "_", x.strip()) for x in
+                                        annotations.split(",")]
+        annotations_columns_orig = ["properties.annotations." + x.strip() for x in annotations.split(",")]
+        kubecost_annotations_to_orig_annotations = dict(zip(annotations_columns_kubecost, annotations_columns_orig))
+
+    return kubecost_annotations_to_orig_annotations
+
+
+def define_csv_columns(kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations):
     """Defines the CSV columns and their mapping to default missing value.
 
-    :param kubecost_labels_to_orig_labels: A dict mapping the Kubecost K8s labels keys, to the original K8s labels keys
+    :param kubecost_labels_to_orig_labels: A dict of Kubecost K8s labels keys, to original K8s labels keys
+    :param kubecost_annotations_to_orig_annotations: A dict of Kubecost K8s annotations, to original K8s annotations
     :return: Dictionary of CSV columns mapped to their NA/NaN value.
-    This is including columns for K8s label keys, the way they're represented in Kubecost.
+    This is including columns for K8s label keys and annotations, the way they're represented in Kubecost.
     """
 
     # CSV columns definition
-    csv_columns_to_na_value_mapping_with_kubecost_labels = {
+    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations = {
         "name": "",
         "window.start": "",
         "window.end": "",
@@ -223,9 +245,12 @@ def define_csv_columns(kubecost_labels_to_orig_labels):
 
     if kubecost_labels_to_orig_labels:
         for kubecost_label in kubecost_labels_to_orig_labels.keys():
-            csv_columns_to_na_value_mapping_with_kubecost_labels[kubecost_label] = ""
+            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations[kubecost_label] = ""
+    if kubecost_annotations_to_orig_annotations:
+        for kubecost_annotations in kubecost_annotations_to_orig_annotations.keys():
+            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations[kubecost_annotations] = ""
 
-    return csv_columns_to_na_value_mapping_with_kubecost_labels
+    return csv_columns_to_na_value_mapping_with_kubecost_labels_annotations
 
 
 def iam_assume_role(iam_role_arn, iam_role_session_name):
@@ -294,7 +319,9 @@ def kubecost_backfill_period_window_calc(backfill_period_days):
     """
 
     # Calculating the window for Kubecost Allocation API call to retrieve
-    backfill_start_date = datetime.datetime.now() - datetime.timedelta(days=backfill_period_days)
+    backfill_period_hours = backfill_period_days * 24
+    kubecost_last_datetime = datetime.datetime.now() - datetime.timedelta(hours=backfill_period_hours)
+    backfill_start_date = kubecost_last_datetime + datetime.timedelta(days=1)
     backfill_start_date_midnight = backfill_start_date.replace(microsecond=0, second=0, minute=0, hour=0)
     backfill_end_date = datetime.datetime.now() - datetime.timedelta(days=2)
     backfill_end_date_midnight = backfill_end_date.replace(microsecond=0, second=0, minute=0, hour=0)
@@ -347,7 +374,9 @@ def get_s3_backfill_period_available_dates(s3_bucket_name, cluster_id, backfill_
 
     # Defining the date and time pieces that will be used in the "StartAfter" input
     # This is done so that only the objects relevant for the backfill period will be listed
-    backfill_start_date = datetime.datetime.now() - datetime.timedelta(days=backfill_period_days)
+    backfill_period_hours = backfill_period_days * 24
+    kubecost_last_datetime = datetime.datetime.now() - datetime.timedelta(hours=backfill_period_hours)
+    backfill_start_date = kubecost_last_datetime + datetime.timedelta(days=1)
     start_after_datetime = backfill_start_date - datetime.timedelta(days=1)
     start_after_date = start_after_datetime.strftime("%Y-%m-%d")
     start_after_year = start_after_datetime.strftime("%Y")
@@ -496,9 +525,17 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
                                  timeout=(connection_timeout, read_timeout), verify=tls_verify)
 
                 # Adding the hourly allocation data to the list that'll eventually contain a full 24-hour data
-                if list(filter(None, r.json()["data"])):
-                    data.append(r.json()["data"][0])
-
+                if r.status_code == 200:
+                    if list(filter(None, r.json()["data"])):
+                        data.append(r.json()["data"][0])
+                else:
+                    try:
+                        logger.error("Kubecost API returned non-200 status code, it returned status code \n"
+                                     f'Error message: {r.json()["error"]}')
+                        sys.exit(1)
+                    except KeyError:
+                        logger.error(f"Kubecost API returned non-200 status code, it returned status code "
+                                     f"{r.status_code}\nError message: {r.json()}")
             if data:
                 return data
             else:
@@ -526,13 +563,22 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
             r = requests.get(f"{kubecost_api_endpoint}/model/allocation", params=params,
                              timeout=(connection_timeout, read_timeout), verify=tls_verify)
 
-            if list(filter(None, r.json()["data"])):
-                return list(filter(None, r.json()["data"]))
+            if r.status_code == 200:
+                if list(filter(None, r.json()["data"])):
+                    return list(filter(None, r.json()["data"]))
+                else:
+                    logger.error("API response appears to be empty.\n"
+                                 "This script collects data between 72 hours ago and 48 hours ago.\n"
+                                 "Make sure that you have data at least within this timeframe.")
+                    sys.exit()
             else:
-                logger.error("API response appears to be empty.\n"
-                             "This script collects data between 72 hours ago and 48 hours ago.\n"
-                             "Make sure that you have data at least within this timeframe.")
-                sys.exit()
+                try:
+                    logger.error("Kubecost API returned non-200 status code, it returned status code \n"
+                                 f'Error message: {r.json()["error"]}')
+                    sys.exit(1)
+                except KeyError:
+                    logger.error(f"Kubecost API returned non-200 status code, it returned status code {r.status_code}\n"
+                                 f"Error message: {r.json()}")
 
     except requests.exceptions.ConnectTimeout:
         logger.error(f"Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). "
@@ -588,13 +634,22 @@ def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, c
         params = {"window": window, "accumulate": accumulate, "filterCategories": "Compute", "filterTypes": "Node"}
         r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params,
                          timeout=(connection_timeout, read_timeout), verify=tls_verify)
-        if list(filter(None, r.json()["data"])):
-            return list(filter(None, r.json()["data"]))
+        if r.status_code == 200:
+            if list(filter(None, r.json()["data"])):
+                return list(filter(None, r.json()["data"]))
+            else:
+                logger.error("API response appears to be empty.\n"
+                             "This script collects data between 72 hours ago and 48 hours ago.\n"
+                             "Make sure that you have data at least within this timeframe.")
+                sys.exit()
         else:
-            logger.error("API response appears to be empty.\n"
-                         "This script collects data between 72 hours ago and 48 hours ago.\n"
-                         "Make sure that you have data at least within this timeframe.")
-            sys.exit()
+            try:
+                logger.error("Kubecost API returned non-200 status code, it returned status code \n"
+                             f'Error message: {r.json()["error"]}')
+                sys.exit(1)
+            except KeyError:
+                logger.error(f"Kubecost API returned non-200 status code, it returned status code {r.status_code}\n"
+                             f"Error message: {r.json()}")
 
     except requests.exceptions.ConnectTimeout:
         logger.error(f"Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). "
@@ -746,18 +801,19 @@ def kubecost_allocation_data_timestamp_update(allocation_data):
     return allocation_data_with_updated_timestamps
 
 
-def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_to_na_value_mapping_with_kubecost_labels):
+def kubecost_allocation_data_to_csv(updated_allocation_data,
+                                    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations):
     """Transforms the Kubecost Allocation data to CSV.
 
     :param updated_allocation_data: Kubecost's Allocation data after:
      1. Transforming to a nested list
      2. Updating timestamps
-    :param csv_columns_to_na_value_mapping_with_kubecost_labels: Dictionary of CSV columns mapped to their NA/NaN value.
-    This is including columns for K8s label keys, the way they're represented in Kubecost.
+    :param csv_columns_to_na_value_mapping_with_kubecost_labels_annotations: Dictionary of CSV columns mapped to their NA/NaN value.
+    This is including columns for K8s label keys and annotations, the way they're represented in Kubecost.
     :return:
     """
 
-    csv_columns = list(csv_columns_to_na_value_mapping_with_kubecost_labels.keys())
+    csv_columns = list(csv_columns_to_na_value_mapping_with_kubecost_labels_annotations.keys())
 
     # DataFrame definition, including all time sets from Kubecost Allocation data
     all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
@@ -770,14 +826,17 @@ def kubecost_allocation_data_to_csv(updated_allocation_data, csv_columns_to_na_v
               columns=csv_columns)
 
 
-def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_value_mapping_with_kubecost_labels,
-                                            kubecost_labels_to_orig_labels):
+def kubecost_csv_allocation_data_to_parquet(csv_file_name,
+                                            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations,
+                                            kubecost_labels_to_orig_labels,
+                                            kubecost_annotations_to_orig_annotations):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
     :param csv_file_name: The name of the CSV file
-    :param csv_columns_to_na_value_mapping_with_kubecost_labels: Dictionary of CSV columns mapped to their NA/NaN value.
+    :param csv_columns_to_na_value_mapping_with_kubecost_labels_annotations: Dictionary of CSV columns mapped to their NA/NaN value.
     This is including columns for K8s label keys, the way they're represented in Kubecost.
     :param kubecost_labels_to_orig_labels: A dict mapping the Kubecost K8s labels keys, to the original K8s labels keys
+    :param kubecost_annotations_to_orig_annotations: A dict of Kubecost K8s annotations, to original K8s annotations
     :return:
     """
 
@@ -786,7 +845,7 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
     # Static definitions of data types, to not have them mistakenly set as incorrect data type
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
-    for column, na_value in csv_columns_to_na_value_mapping_with_kubecost_labels.items():
+    for column, na_value in csv_columns_to_na_value_mapping_with_kubecost_labels_annotations.items():
         if column not in ["window.start", "window.end"]:
             if type(na_value) == str:
                 df[column] = df[column].astype("string")
@@ -794,7 +853,7 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
                 df[column] = df[column].astype("float64")
 
     # Converting NA/NaN to values to their respective empty value based on data type
-    df = df.fillna(value=csv_columns_to_na_value_mapping_with_kubecost_labels)
+    df = df.fillna(value=csv_columns_to_na_value_mapping_with_kubecost_labels_annotations)
 
     # Renaming columns of the Kubecost representation of K8s labels to the original K8s labels
     if kubecost_labels_to_orig_labels:
@@ -802,6 +861,15 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name, csv_columns_to_na_val
                                                        re.search(r"[./-]", v.strip("properties.labels."))}
         if kubecost_labels_to_orig_labels_only_renamed:
             df = df.rename(columns=kubecost_labels_to_orig_labels_only_renamed)
+
+    # Renaming columns of the Kubecost representation of K8s annotations to the original K8s annotations
+    if kubecost_annotations_to_orig_annotations:
+        kubecost_annotations_to_orig_annotations_only_renamed = {k: v for k, v in
+                                                                 kubecost_annotations_to_orig_annotations.items() if
+                                                                 re.search(r"[./-]",
+                                                                           v.strip("properties.annotations."))}
+        if kubecost_annotations_to_orig_annotations_only_renamed:
+            df = df.rename(columns=kubecost_annotations_to_orig_annotations_only_renamed)
 
     # Transforming the DataFrame to a Parquet and creating the Parquet file locally
     df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
@@ -861,9 +929,13 @@ def main():
     # 2. Assume IAM Role to be used in all other AWS API calls
     # 3. Optionally, retrieve Kubecost root CA certificate from AWS Secrets Manager
 
-    # Defining a mapping of the CSV columns to their NA/NaN value
+    # Creating a mapping of Kubecost K8s labels and annotations to original K8s labels and annotations
     kubecost_labels_to_orig_labels = create_kubecost_labels_to_k8s_labels_mapping(LABELS)
-    csv_columns_to_na_value_mapping_with_kubecost_labels = define_csv_columns(kubecost_labels_to_orig_labels)
+    kubecost_annotations_to_orig_annotations = create_kubecost_annotations_to_k8s_annotations_mapping(ANNOTATIONS)
+
+    # Defining a mapping of the CSV columns to their NA/NaN value
+    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations = define_csv_columns(
+        kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations)
 
     # Assume IAM Role once, to be used in all other AWS API calls
     assume_role_response = iam_assume_role(IRSA_PARENT_IAM_ROLE_ARN, "kubecost-s3-exporter")
@@ -985,10 +1057,11 @@ def main():
             # Transforming Kubecost's updated allocation data to CSV, then to a Snappy-compressed Parquet.
             # Then, uploading it to S3
             kubecost_allocation_data_to_csv(kubecost_updated_allocation_data,
-                                            csv_columns_to_na_value_mapping_with_kubecost_labels)
+                                            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations)
             kubecost_csv_allocation_data_to_parquet("/tmp/output.csv",
-                                                    csv_columns_to_na_value_mapping_with_kubecost_labels,
-                                                    kubecost_labels_to_orig_labels)
+                                                    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations,
+                                                    kubecost_labels_to_orig_labels,
+                                                    kubecost_annotations_to_orig_annotations)
             upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, date, month,
                                                      year, assume_role_response)
 
