@@ -129,21 +129,22 @@ This is to not repeat these inputs twice in the `main.tf` file.
 
 The below table lists the required and optional common inputs:
 
-| Name                                                                                | Description                                                                                             | Type                                                                                                                                                        | Default                                     | Possible Values                              | Required |
-|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|----------------------------------------------|----------|
-| <a name="input_bucket_arn"></a> bucket\_arn                                         | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                    | `string`                                                                                                                                                    | `""`                                        | An S3 Bucket ARN                             | yes      |
-| <a name="input_clusters_labels"></a> clusters\_labels                               | A list of objects containing clusters and their K8s labels that you wish to include in the dataset      | <pre>list(object({<br>    cluster_id = string<br>    labels = optional(list(string))<br>  }))</pre>                                                         | `[]`                                        |                                              | no       |
-| <a name="input_kubecost_ca_certificates_list"></a> kubecost\_ca\_certificates\_list | A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager | <pre>list(object({<br>    cert_path = string<br>    cert_secret_name = string<br>    cert_secret_allowed_principals = optional(list(string))<br>  }))</pre> | `[]`                                        |                                              | no       |
-| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files             | Paths to the AWS shared config files                                                                    | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/config"<br>]</pre>      | A list of paths to the AWS config file       | no       |
-| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files   | Paths to the AWS shared credentials files                                                               | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/credentials"<br>]</pre> | A list of paths to the AWS credentials file  | no       |
-| <a name="input_aws_common_tags"></a> aws\_common\_tags                              | Common AWS tags to be used on all AWS resources created by Terraform                                    | `map(any)`                                                                                                                                                  | `{}`                                        | A map of tag keys and their values           | no       |
+| Name                                                                                | Description                                                                                                                           | Type                                                                                                                                                        | Default                                     | Possible Values                             | Required |
+|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|---------------------------------------------|----------|
+| <a name="input_bucket_arn"></a> bucket\_arn                                         | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                                                  | `string`                                                                                                                                                    | `""`                                        | An S3 Bucket ARN                            | yes      |
+| <a name="input_clusters_metadata"></a> clusters\_metadata                           | A list of objects containing clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset | <pre>list(object({<br>    cluster_id  = string<br>    labels      = optional(list(string))<br>    annotations = optional(list(string))<br>  }))</pre>       | `[]`                                        |                                             | no       |
+| <a name="input_kubecost_ca_certificates_list"></a> kubecost\_ca\_certificates\_list | A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager                               | <pre>list(object({<br>    cert_path = string<br>    cert_secret_name = string<br>    cert_secret_allowed_principals = optional(list(string))<br>  }))</pre> | `[]`                                        |                                             | no       |
+| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files             | Paths to the AWS shared config files                                                                                                  | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/config"<br>]</pre>      | A list of paths to the AWS config file      | no       |
+| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files   | Paths to the AWS shared credentials files                                                                                             | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/credentials"<br>]</pre> | A list of paths to the AWS credentials file | no       |
+| <a name="input_aws_common_tags"></a> aws\_common\_tags                              | Common AWS tags to be used on all AWS resources created by Terraform                                                                  | `map(any)`                                                                                                                                                  | `{}`                                        | A map of tag keys and their values          | no       |
 
-The below table lists the required inputs of the `clusters_labels` input:
+The below table lists the required inputs of the `clusters_metadata` input:
 
-| Name                                        | Description                                                                   | Type           | Default | Possible Values              | Required |
-|---------------------------------------------|-------------------------------------------------------------------------------|----------------|---------|------------------------------|----------|
-| <a name="input_cluster_id"></a> cluster\_id | The unique ID of the cluster that its labels you'd like to add to the dataset | `string`       | n/a     | An EKS Cluster ARN           | yes      |
-| <a name="input_labels"></a> labels          | A list of labels to include in the dataset                                    | `list(string)` | n/a     | A list of labels, as strings | no       |
+| Name                                         | Description                                                                   | Type           | Default | Possible Values                   | Required |
+|----------------------------------------------|-------------------------------------------------------------------------------|----------------|---------|-----------------------------------|----------|
+| <a name="input_cluster_id"></a> cluster\_id  | The unique ID of the cluster that its labels you'd like to add to the dataset | `string`       | n/a     | An EKS Cluster ARN                | yes      |
+| <a name="input_labels"></a> labels           | A list of labels to include in the dataset                                    | `list(string)` | n/a     | A list of labels, as strings      | no       |
+| <a name="input_annotations"></a> annotations | A list of annotations to include in the dataset                               | `list(string)` | n/a     | A list of annotations, as strings | no       |
 
 The below table lists the required inputs of the `kubecost_ca_certificates_list` input:
 
@@ -169,9 +170,9 @@ See examples in the `examples/modules/common/variables.tf` file.
 
 Notes:
 
-* The `clusters_labels` input is a list of clusters and their labels you wish to include in the dataset.<br />
-If you don't need to include labels for some clusters, don't include those clusters in the list atl all.<br />
-If you don't need to include labels for any cluster, leave the `default` keyword as an empty list (`[]`).
+* The `clusters_metadata` input is a list of clusters and their additional metadata (labels, annotations) you wish to include in the dataset.<br />
+If you don't need to include labels or annotations for some clusters, don't include those clusters in the list at all.<br />
+If you don't need to include annotations for any cluster, leave the `default` keyword as an empty list (`[]`).
 * The `kubecost_ca_certificates_list` is a list of CA certificates used to verify TLS connection with Kubecost.<br />
 This is only required if you enabled TLS in Kubecost.<br />
 In this case, the Kubecost S3 Exporter container will have to verify the Kubecost server certificate with a provided CA certificate.<br />
@@ -433,18 +434,23 @@ This is possible because the prefix we use in the S3 bucket includes the account
 The `deploy` directory has an `outputs.tf` file, used to show useful outputs after deployment.<br />
 Below are explanations on how to use it.
 
-#### The `labels` Output
+#### The `labels` and `annotations` Outputs
 
-During the deployment, you may add labels to the dataset for each cluster.<br />
-When doing so, Terraform calculates the distinct labels from all clusters labels.<br />
-This is done so that Terraform can create a column in the Glue Table, for each distinct label.<br />
-This output is included, so that you can make sure the labels were added to the QuickSight dataset.
+During the deployment, you may add labels or annotations to the dataset for each cluster.<br />
+When doing so, Terraform calculates the distinct labels and annotations from all clusters.<br />
+This is done so that Terraform can create a column in the Glue Table, for each distinct label and annotation.<br />
+This output is included, so that you can make sure the labels and annotations were added to the QuickSight dataset.
 
-The `main.tf` file already has a `labels` output, to show the list of distinct labels:
+The `main.tf` file already has `labels` and `annotations` outputs, to show the list of distinct labels and annotations:
 
     output "labels" {
       value       = module.pipeline.labels
-      description = "A list of the distinct lab of all clusters, that'll be added to the dataset"
+      description = "A list of the distinct labels of all clusters, that'll be added to the dataset"
+    }
+
+    output "annotations" {
+      value       = module.pipeline.annotations
+      description = "A list of the distinct annotations of all clusters, that'll be added to the dataset"
     }
 
 No need to make any changes to it.
@@ -492,7 +498,7 @@ To continue adding additional clusters after the initial deployment, the only re
 1. Create an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html) in the EKS cluster's account and region
 2. Define additional providers for the clusters
 3. Create additional instances of the `kubecost_s3_exporter` module in the `main.tf` file, and provide inputs
-4. If you need to add labels for this cluster, follow the "Maintenance -> Adding/Removing Labels to/from the Dataset" section
+4. If you need to add labels or annotations for this cluster, follow the "Maintenance -> Adding/Removing Labels/Annotations to/from the Dataset" section
 5. Optionally, add cluster output for the IRSA (IAM Role for Service Account) and parent IAM role, for each cluster
 
 Then, from the `deploy` directory, run `terraform init` and `terraform apply`
@@ -510,17 +516,18 @@ To update inputs for existing clusters (all or some), perform the following:
 2. Change the relevant inputs in the module instances of the clusters you wish to update
 3. From the `deploy` directory, run `terraform apply`
 
-### Adding/Removing Labels to/from the Dataset
+### Adding/Removing Labels/Annotations to/from the Dataset
 
-After the initial deployment, you might want to add or remove labels for some or all clusters, to/from the dataset.<br />
+After the initial deployment, you might want to add or remove labels or annotations for some or all clusters, to/from the dataset.<br />
 To do this, perform the following:
 
 1. From the `modules/common` directory, open the `variables.tf` file
-2. If the cluster for which you'd like to add labels to the dataset, isn't in the `clusters_list` list, add it.<br />
+2. If the cluster for which you'd like to add labels or annotations to the dataset, isn't in the `clusters_metadata` list, add it.<br />
 If it's already in the list, and you'd like to update its labels (add/remove), update the `labels` list for this cluster.<br />
-If you'd like to remove labels from the dataset for a cluster, remove the cluster's entry from the `clusters_list` list.
+if you'd like to update its annotations (add/remove), update the `annotations` list for this cluster.<br />
+If you'd like to remove labels or annotations from the dataset for a cluster, remove the cluster's entry from the `clusters_metadata` list.
 3. From the `deploy` directory, run `terraform apply`.<br />
-Terraform will output the new list of labels when the deployment is completed.
+Terraform will output the new list of labels and annotations when the deployment is completed.
 
 ## Cleanup
 
