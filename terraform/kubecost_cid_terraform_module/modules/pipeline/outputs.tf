@@ -5,6 +5,11 @@ output "labels" {
   description = "List of the distinct labels from all clusters"
 }
 
+output "annotations" {
+  value       = length(local.annotations_for_output) > 0 ? local.annotations_for_output : null
+  description = "List of the distinct annotations from all clusters"
+}
+
 output "kubecost_ca_cert_secret" {
   value       = aws_secretsmanager_secret.kubecost_ca_cert_secret
   description = "All AWS Secrets Manager Secrets"
