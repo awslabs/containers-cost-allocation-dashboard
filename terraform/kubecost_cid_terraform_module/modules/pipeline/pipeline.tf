@@ -18,10 +18,12 @@ terraform {
 }
 
 locals {
-  # A set of locals used to gather all labels from all K8s clusters, and create a distinct list of labels
-  # This is used to define those labels as columns in the AWS Glue Table
-  distinct_labels   = distinct(flatten([for labels_list in module.common.clusters_labels.*.labels : labels_list == null ? [] : labels_list]))
-  labels_for_output = join(", ", local.distinct_labels)
+  # A set of locals used to gather all labels and annotations from all K8s clusters, and create a distinct list of labels and annotations
+  # This is used to define those labels and annotations as columns in the AWS Glue Table
+  distinct_labels        = distinct(flatten([for labels_list in module.common.clusters_metadata.*.labels : labels_list == null ? [] : labels_list]))
+  distinct_annotations   = distinct(flatten([for annotations_list in module.common.clusters_metadata.*.annotations : annotations_list == null ? [] : annotations_list]))
+  labels_for_output      = join(", ", local.distinct_labels)
+  annotations_for_output = join(", ", local.distinct_annotations)
 }
 
 resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
@@ -392,6 +394,13 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
         type = "string"
       }
     }
+    dynamic "columns" {
+      for_each = [for k8s_annotation in local.distinct_annotations : k8s_annotation]
+      content {
+        name = "properties.annotations.${columns.value}"
+        type = "string"
+      }
+    }
   }
 }
 
@@ -461,6 +470,7 @@ resource "local_file" "cid_yaml" {
   file_permission      = "0400"
   content = templatefile("../../../cid/eks_insights_dashboard.yaml.tpl", {
     labels                = local.distinct_labels
+    annotations           = local.distinct_annotations
     athena_datasource_arn = "$${athena_datasource_arn}"
     athena_database_name  = "$${athena_database_name}"
   })
