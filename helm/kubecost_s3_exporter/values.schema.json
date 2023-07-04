@@ -12,8 +12,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 15,
-      "maxItems": 15,
+      "minItems": 16,
+      "maxItems": 16,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -39,6 +39,7 @@
               "KUBECOST_CA_CERTIFICATE_SECRET_NAME",
               "KUBECOST_CA_CERTIFICATE_SECRET_REGION",
               "LABELS",
+              "ANNOTATIONS",
               "PYTHONUNBUFFERED"
             ]
           },
