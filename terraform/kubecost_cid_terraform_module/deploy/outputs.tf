@@ -13,7 +13,7 @@ output "annotations" {
 }
 
 # Clusters outputs
-output "cluster1_irsa_iam_role_arn" {
+output "cluster1" {
   value       = module.cluster1
   description = "The outputs for 'cluster1'"
 }
