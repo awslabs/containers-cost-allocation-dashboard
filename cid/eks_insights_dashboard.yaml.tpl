@@ -143,6 +143,10 @@ datasets:
             - Name: properties.labels.${label}
               Type: STRING
 %{ endfor ~}
+%{ for annotation in annotations ~}
+            - Name: properties.annotations.${annotation}
+              Type: STRING
+%{ endfor ~}
             - Name: account_id
               Type: STRING
             - Name: region
@@ -223,6 +227,9 @@ datasets:
               - properties.providerid
 %{ for label in labels ~}
               - properties.labels.${label}
+%{ endfor ~}
+%{ for annotation in annotations ~}
+              - properties.annotations.${annotation}
 %{ endfor ~}
               - account_id
               - region
