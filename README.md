@@ -560,6 +560,11 @@ Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Runn
 Wait the full refresh is done, and the new set of labels/annotations should be present in the analysis.<br />
 For it to be available in the dashboard, export the analysis to a dashboard.
 
+**_Note about annotations:_**
+
+While K8s labels are included by default in Kubecost Allocation API response, K8s annotations aren't.  
+To include K8s annotations in the Kubecost Allocation API response, following [this document](https://docs.kubecost.com/install-and-configure/advanced-configuration/annotations).
+
 ### Running the Kubecost S3 Exporter Pod On-Demand
 
 In some cases, you'd like to run the Kubecost S3 Exporter pod on-demand.<br />
