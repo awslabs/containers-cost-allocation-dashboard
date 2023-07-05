@@ -172,7 +172,8 @@ Notes:
 
 * The `clusters_metadata` input is a list of clusters and their additional metadata (labels, annotations) you wish to include in the dataset.<br />
 If you don't need to include labels or annotations for some clusters, don't include those clusters in the list at all.<br />
-If you don't need to include annotations for any cluster, leave the `default` keyword as an empty list (`[]`).
+If you don't need to include annotations for any cluster, leave the `default` keyword as an empty list (`[]`).  
+To add labels or annotations, please follow the "Maintenance -> Adding/Removing Labels/annotations to/from the Dataset" part of this guide.
 * The `kubecost_ca_certificates_list` is a list of CA certificates used to verify TLS connection with Kubecost.<br />
 This is only required if you enabled TLS in Kubecost.<br />
 In this case, the Kubecost S3 Exporter container will have to verify the Kubecost server certificate with a provided CA certificate.<br />
@@ -528,6 +529,11 @@ if you'd like to update its annotations (add/remove), update the `annotations` l
 If you'd like to remove labels or annotations from the dataset for a cluster, remove the cluster's entry from the `clusters_metadata` list.
 3. From the `deploy` directory, run `terraform apply`.<br />
 Terraform will output the new list of labels and annotations when the deployment is completed.
+
+**_Note about annotations:_**
+
+While K8s labels are included by default in Kubecost Allocation API response, K8s annotations aren't.  
+To include K8s annotations in the Kubecost Allocation API response, following [this document](https://docs.kubecost.com/install-and-configure/advanced-configuration/annotations).
 
 ## Cleanup
 
