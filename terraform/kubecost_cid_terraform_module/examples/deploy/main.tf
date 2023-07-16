@@ -8,6 +8,10 @@ module "pipeline" {
   source = "../modules/pipeline"
 
   glue_crawler_schedule = "0 1 * * ? *"
+  custom_athena_workgroup = {
+    create                             = true
+    query_results_location_bucket_name = "kubecost-query-results"
+  }
 }
 
 #########################################################
