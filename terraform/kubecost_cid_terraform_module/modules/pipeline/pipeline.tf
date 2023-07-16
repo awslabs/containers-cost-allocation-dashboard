@@ -27,7 +27,7 @@ locals {
 }
 
 # This data source is used conditionally, only if the "create" field in the "custom_athena_workgroup" variable is "true"
-data aws_kms_key "s3_kms" {
+data "aws_kms_key" "s3_kms" {
   count = var.custom_athena_workgroup.create ? 1 : 0
 
   key_id = "alias/aws/s3"
@@ -37,15 +37,15 @@ data aws_kms_key "s3_kms" {
 resource "aws_athena_workgroup" "kubecost_athena_workgroup" {
   count = var.custom_athena_workgroup.create ? 1 : 0
 
-  name = "kubecost"
+  name          = "kubecost"
   force_destroy = true
 
   configuration {
     result_configuration {
       output_location = "s3://${var.custom_athena_workgroup.query_results_location_bucket_name}/"
-        encryption_configuration {
-          encryption_option = "SSE_KMS"
-          kms_key_arn = data.aws_kms_key.s3_kms[count.index].arn
+      encryption_configuration {
+        encryption_option = "SSE_KMS"
+        kms_key_arn       = data.aws_kms_key.s3_kms[count.index].arn
       }
     }
   }
