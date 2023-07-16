@@ -6,7 +6,8 @@ module "pipeline" {
 
   glue_crawler_schedule = ""
   custom_athena_workgroup = {
-    query_results_location_bucket_name = "kubecost-query-results"
+    create                             = true # Change to 'false' to not create a custom Athena Workgroup
+    query_results_location_bucket_name = ""   # Add your query results bucket name
   }
 }
 
