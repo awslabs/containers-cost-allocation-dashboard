@@ -286,9 +286,18 @@ You'll provide the module-specific inputs in these instances.
 
 The below table lists the required inputs for the `pipeline` module (there are no optional inputs):
 
-| Name                                                               | Description                                                                                                              | Type     | Default | Possible Values                               | Required |
-|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------|---------|-----------------------------------------------|----------|
-| <a name="input_glue_crawler_schedule"></a> glue\_crawler\_schedule | The schedule for the Glue Crawler, in Cron format. Make sure to set it after the last Kubecost S3 Exporter Cron schedule | `string` | n/a     | A Cron expression. For example, `0 1 * * ? *` | yes      |
+| Name                                                                   | Description                                                                                                                                                                                                         | Type                                                                                                                                                          | Default | Possible Values                               | Required |
+|------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|-----------------------------------------------|----------|
+| <a name="input_glue_crawler_schedule"></a> glue\_crawler\_schedule     | The schedule for the Glue Crawler, in Cron format. Make sure to set it after the last Kubecost S3 Exporter Cron schedule                                                                                            | `string`                                                                                                                                                      | n/a     | A Cron expression. For example, `0 1 * * ? *` | yes      |
+| <a name="input_custom_athena_workgroup"></a> custom\_athena\_workgroup | The settings for the custom Athena Workgroup.<br />This variable can either have `create` field as `true` with `query_results_location_bucket_name` containing a valid S3 bucket name, or `create` field as `false` | <pre>object({<br>    create                             = optional(bool, true)<br>    query_results_location_bucket_name = optional(string, "")<br>  })</pre> | n/a     |                                               | no       |
+
+The below table lists the required inputs of the `custom_athena_workgroup` input:
+
+| Name                                                                                           | Description                                                                                      | Type     | Default | Possible Values        | Required                       |
+|------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|----------|---------|------------------------|--------------------------------|
+| <a name="input_create"></a> create                                                             | Dictates whether to create a custom Athena Workgroup                                             | `bool`   | `true`  | `true` or `false`      | no                             |
+| <a name="input_query_results_location_bucket_name"></a> query\_results\_location\_bucket\_name | If `create` is `true`, used to define the Athena Workgroup query results location S3 bucket name | `string` | ""      | A valid S3 bucket name | Required if `create` is `true` |
+
 
 In the `main.tf` file in the `deploy` directory, you'll find a pre-created `pipeline` module instance:
 
