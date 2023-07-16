@@ -305,6 +305,10 @@ In the `main.tf` file in the `deploy` directory, you'll find a pre-created `pipe
       source   = "../modules/pipeline"
 
       glue_crawler_schedule = ""
+      custom_athena_workgroup = {
+        create                             = true # Change to 'false' to not create a custom Athena Workgroup
+        query_results_location_bucket_name = ""   # Add your query results bucket name
+      }
 
 Provide the module-specific required inputs, as listed in the above table. Example:
 
@@ -312,6 +316,10 @@ Provide the module-specific required inputs, as listed in the above table. Examp
       source = "../modules/pipeline"
 
       glue_crawler_schedule = "0 1 * * ? *"
+      custom_athena_workgroup = {
+        create                             = true
+        query_results_location_bucket_name = "kubecost-query-results"
+      }
     }
 
 #### Create an Instance of the `kubecost_s3_exporter` Module and Provide Module-Specific Inputs
