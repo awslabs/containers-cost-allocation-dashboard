@@ -15,6 +15,11 @@ output "kubecost_ca_certificates_list" {
   description = "A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager"
 }
 
+output "custom_athena_workgroup" {
+  value       = var.custom_athena_workgroup
+  description = "The settings for the custom Athena Workgroup"
+}
+
 output "aws_shared_config_files" {
   value       = var.aws_shared_config_files
   description = "Paths to the AWS shared config files"
