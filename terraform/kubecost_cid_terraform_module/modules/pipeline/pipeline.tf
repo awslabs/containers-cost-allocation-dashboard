@@ -37,7 +37,7 @@ data "aws_kms_key" "s3_kms" {
 resource "aws_athena_workgroup" "kubecost_athena_workgroup" {
   count = module.common.custom_athena_workgroup.create ? 1 : 0
 
-  name          = "kubecost"
+  name          = module.common.custom_athena_workgroup.name
   force_destroy = true
 
   configuration {
