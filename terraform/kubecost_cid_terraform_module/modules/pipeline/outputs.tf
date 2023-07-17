@@ -14,3 +14,8 @@ output "kubecost_ca_cert_secret" {
   value       = aws_secretsmanager_secret.kubecost_ca_cert_secret
   description = "All AWS Secrets Manager Secrets"
 }
+
+output "custom_athena_workgroup" {
+  value = aws_athena_workgroup.kubecost_athena_workgroup
+  description = "Athena Workgroup settings"
+}
