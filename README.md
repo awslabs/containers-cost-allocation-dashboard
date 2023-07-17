@@ -94,8 +94,9 @@ It's within your responsibility to configure Amazon CloudTrail to log events.
 1. An S3 bucket, which will be used to store the Kubecost data
 2. QuickSight Enterprise
 3. Athena Workgroup, if you choose to not create a custom Athena Workgroup using Terraform
-4. Terraform and Helm installed
-5. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
+4. An S3 bucket to be used for the Athena Workgroup query results location 
+5. Terraform and Helm installed
+6. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
 
 For each EKS cluster, have the following:
 
@@ -187,7 +188,7 @@ See [this announcement](https://aws.amazon.com/blogs/aws/amazon-s3-encrypts-new-
 ### Configure Athena Query Results Location
 
 The Terraform module creates a custom Athena Workgroup by default, with the option to choose not to.  
-When choosing to create it, the below requires aren't necessary, as they're created by the Terraform module.  
+When choosing to create it, the below requirements aren't necessary, as they're created by the Terraform module.  
 In this case, you can skip this section.  
 When choosing to not create it, you're required to set the Query Results Location on your Athena Workgroup.  
 In this case, continue with this section.
