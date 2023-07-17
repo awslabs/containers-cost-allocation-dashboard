@@ -5,10 +5,6 @@ module "pipeline" {
   source = "../modules/pipeline"
 
   glue_crawler_schedule = ""
-  custom_athena_workgroup = {
-    create                             = true # Change to 'false' to not create a custom Athena Workgroup
-    query_results_location_bucket_name = ""   # Add your query results bucket name
-  }
 }
 
 # Module instances for the kubecost_s3_exporter module, to create IRSA and deploy the Kubecost S3 Exporter pod
