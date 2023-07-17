@@ -84,6 +84,27 @@ variable "clusters_metadata" {
   }
 }
 
+variable "custom_athena_workgroup" {
+  description = "The settings for the custom Athena Workgroup. This variable can either have 'create' field as 'true' with 'name' field containing a valid Athena Workgroup name and 'query_results_location_bucket_name' containing a valid S3 bucket name, or 'create' field as 'false'"
+
+  type = object({
+    create                             = bool                 # Dictates whether to create a custom Athena Workgroup
+    name                               = optional(string, "") # If "create" is "true", used to define the Athena Workgroup name
+    query_results_location_bucket_name = optional(string, "") # If "create" is "true", used to define the Athena Workgroup query results location S3 bucket name
+  })
+
+  default = {
+    create                             = true
+    name                               = "kubecost"
+    query_results_location_bucket_name = "kubecost-query-results"
+  }
+
+  validation {
+    condition     = (var.custom_athena_workgroup.create && can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.custom_athena_workgroup.query_results_location_bucket_name)) && !startswith(var.custom_athena_workgroup.query_results_location_bucket_name, "xn--") && !endswith(var.custom_athena_workgroup.query_results_location_bucket_name, "-s3alias")) && can(regex("^[A-Za-z0-9_.-]{1,128}$", var.custom_athena_workgroup.name)) || (!var.custom_athena_workgroup.create)
+    error_message = "The 'custom_athena_workgroup' variable must have one of the following combinations:\n 1. When the 'create' field is 'true', the 'name' field must have a valid Athena Workgroup name, and the 'query_results_location_bucket_name' field must have a valid S3 bucket name\n 2. When the 'create' field is 'false', the 'name' and 'query_results_location_bucket_name' can have any value, as they're ignored"
+  }
+}
+
 variable "kubecost_ca_certificates_list" {
   type = list(object({
     cert_path                      = string
