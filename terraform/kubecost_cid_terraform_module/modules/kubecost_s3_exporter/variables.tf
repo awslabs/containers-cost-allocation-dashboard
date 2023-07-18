@@ -1,102 +1,72 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 variable "cluster_arn" {
+  description = "(Required) The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed"
   type        = string
-  description = "The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed"
 
-  # The below validation validates the "cluster_arn" input.
-  # It'll return the specified error if the input fails the validation.
-  # Here are a few examples of a "cluster_arn" input that'll fail validation:
-  # The "cluster_arn" input is empty ("")
-  # The "cluster_arn" input has some unstructured string (e.g. "test")
-  # The "cluster_arn" input has less than 6 ARN fields ("arn:aws:eks")
-  # The "cluster_arn" input has 6 ARN fields, but is missing the "/" before the resource ID ("arn:aws:eks:us-east-1:111111111111:cluster")
-  # The EKS cluster name part of the ARN doesn't match the EKS cluster name rules
-  # The "cluster_arn" input has missing ARN fields or has incorrect value in some ARN fields. A few examples:
-  # arn:aws:eks:us-east-1:111111111111:cluster/
-  # arn:aws:eks:us-east-1:123:cluster/cluster1
-  # arn:aws:eks:us-east-1::cluster/cluster1
-  # arn:aws:eks:aaa:111111111111:cluster/cluster1
-  # arn:aws:eks::111111111111:cluster/cluster1
-  # arn:aws:s3:us-east-1:111111111111:cluster/cluster1
-  # arn:aaa:eks:us-east-1:111111111111:cluster/cluster1
   validation {
     condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", var.cluster_arn))
-    error_message = "The 'cluster_arn' input contains an invalid ARN"
+    error_message = "The 'cluster_arn' variable contains an invalid ARN"
   }
 }
 
 variable "cluster_oidc_provider_arn" {
+  description = "(Required) The IAM OIDC Provider ARN for the EKS cluster"
   type        = string
-  description = "The IAM OIDC Provider ARN for the EKS cluster"
 
-  # The below validation validates the "cluster_oidc_provider_arn" input.
-  # It'll return the specified error if the input fails the validation.
-  # Here are a few examples of a "cluster_arn" input that'll fail validation:
-  # The "cluster_oidc_provider_arn" input is empty ("")
-  # The "cluster_oidc_provider_arn" input has some unstructured string (e.g. "test")
-  # The "cluster_oidc_provider_arn" input has less than 6 ARN fields ("arn:aws:eks")
-  # The "cluster_oidc_provider_arn" input has 6 ARN fields, but is missing the "/" characters and the resource ID path ("arn:aws:iam::333333333333:oidc-provider)
-  # The OIDC Provider ID part of the ARN doesn't match the convention (Hexadecimal ID)
-  # The "cluster_oidc_provider_arn" input has missing ARN fields or has incorrect value in some ARN fields. A few examples:
-  # arn:aws:iam::333333333333:oidc-provider/
-  # arn:aws:iam:us-east-1::oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/123
-  # arn:aws:iam::3333333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/123
-  # arn:aws:s3::333333333333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/123
-  # arn:aaa:iam::333333333333:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/123
   validation {
     condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:oidc-provider\\/oidc\\.eks\\.(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d\\.amazonaws\\.com\\/id\\/[A-F0-9]*$", var.cluster_oidc_provider_arn))
-    error_message = "The 'cluster_oidc_provider_arn' input contains an invalid ARN"
+    error_message = "The 'cluster_oidc_provider_arn' variable contains an invalid ARN"
   }
 }
 
 variable "kubecost_s3_exporter_container_image" {
+  description = "(Required) The Kubecost S3 Exporter container image"
   type        = string
-  description = "The Kubecost S3 Exporter container image"
 
   validation {
     condition     = var.kubecost_s3_exporter_container_image != ""
-    error_message = "The 'kubecost_s3_exporter_container_image' input is empty. It must contain a Docker container image string"
+    error_message = "The 'kubecost_s3_exporter_container_image' variable is empty. It must contain a Docker container image string"
   }
 }
 
 variable "kubecost_s3_exporter_container_image_pull_policy" {
+  description = "(Optional) The image pull policy that'll be used by the Kubecost S3 Exporter pod"
   type        = string
   default     = "Always"
-  description = "The image pull policy that'll be used by the Kubecost S3 Exporter pod"
 
   validation {
     condition     = contains(["Always", "IfNotPresent", "Never"], var.kubecost_s3_exporter_container_image_pull_policy)
-    error_message = "The 'kubecost_s3_exporter_container_image_pull_policy' input includes an invalid value. It should be one of 'Always' or 'IfNotPresent' or 'Never'"
+    error_message = "The 'kubecost_s3_exporter_container_image_pull_policy' variable includes an invalid value. It should be one of 'Always' or 'IfNotPresent' or 'Never'"
   }
 }
 
 variable "kubecost_s3_exporter_cronjob_schedule" {
+  description = "(Optional) The schedule of the Kubecost S3 Exporter CronJob"
   type        = string
   default     = "0 0 * * *"
-  description = "The schedule of the Kubecost S3 Exporter CronJob"
 
   validation {
     condition     = can(regex("(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\\d+(ns|us|µs|ms|s|m|h))+)|((((\\d+,)+\\d+|(\\d+([/\\-])\\d+)|\\d+|\\*) ?){5,7})", var.kubecost_s3_exporter_cronjob_schedule))
-    error_message = "The 'kubecost_s3_exporter_cronjob_schedule' input contains an invalid Cron expression"
+    error_message = "The 'kubecost_s3_exporter_cronjob_schedule' variable contains an invalid Cron expression"
   }
 }
 
 variable "kubecost_s3_exporter_ephemeral_volume_size" {
+  description = "(Optional) The ephemeral volume size for the Kubecost S3 Exporter pod"
   type        = string
   default     = "50Mi"
-  description = "The ephemeral volume size for the Kubecost S3 Exporter pod"
 
   validation {
     condition     = can(regex("^[1-9][0-9]?Mi.*$", var.kubecost_s3_exporter_ephemeral_volume_size))
-    error_message = "The 'kubecost_s3_exporter_ephemeral_volume_size' input must be in format of 'NMi', where N >= 1.\nFor example, 10Mi, 50Mi, 100Mi, 150Mi."
+    error_message = "The 'kubecost_s3_exporter_ephemeral_volume_size' variable must be in format of 'NMi', where N >= 1.\nFor example, 10Mi, 50Mi, 100Mi, 150Mi."
   }
 }
 
 variable "kubecost_api_endpoint" {
+  description = "(Optional) The Kubecost API endpoint in format of 'http://<name_or_ip>:<port>'"
   type        = string
   default     = "http://kubecost-cost-analyzer.kubecost:9090"
-  description = "The Kubecost API endpoint in format of 'http://<name_or_ip>:<port>'"
 
   validation {
     condition     = can(regex("^https?://.+$", var.kubecost_api_endpoint))
@@ -105,42 +75,42 @@ variable "kubecost_api_endpoint" {
 }
 
 variable "backfill_period_days" {
+  description = "(Optional) The number of days to check for backfilling"
   type        = number
   default     = 15
-  description = "The number of days to check for backfilling"
 
   validation {
     condition     = var.backfill_period_days >= 3
-    error_message = "The 'backfill_period_days' input must be a positive integer equal to or larger than 3"
+    error_message = "The 'backfill_period_days' variable must be a positive integer equal to or larger than 3"
   }
 }
 
 variable "aggregation" {
+  description = "(Optional) The aggregation to use for returning the Kubecost Allocation API results"
   type        = string
   default     = "container"
-  description = "The aggregation to use for returning the Kubecost Allocation API results"
 
   validation {
     condition     = contains(["container", "pod", "namespace", "controller", "controllerKind", "node", "cluster"], var.aggregation)
-    error_message = "The 'aggregation' input includes an invalid value. It should be one of 'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'"
+    error_message = "The 'aggregation' variable includes an invalid value. It should be one of 'container', 'pod', 'namespace', 'controller', 'controllerKind', 'node', or 'cluster'"
   }
 }
 
 variable "kubecost_allocation_api_paginate" {
+  description = "(Optional) Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)"
   type        = string
   default     = "False"
-  description = "Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)"
 
   validation {
     condition     = can(regex("^(?i)(Yes|No|Y|N|True|False)$", var.kubecost_allocation_api_paginate))
-    error_message = "The 'kubecost_allocation_api_paginate' input must be one of 'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)"
+    error_message = "The 'kubecost_allocation_api_paginate' variable must be one of 'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)"
   }
 }
 
 variable "connection_timeout" {
+  description = "(Optional) The time (in seconds) to wait for TCP connection establishment"
   type        = number
   default     = 10
-  description = "The time (in seconds) to wait for TCP connection establishment"
 
   validation {
     condition     = var.connection_timeout > 0
@@ -149,9 +119,9 @@ variable "connection_timeout" {
 }
 
 variable "kubecost_allocation_api_read_timeout" {
+  description = "(Optional) The time (in seconds) to wait for the Kubecost Allocation API to send an HTTP response"
   type        = number
   default     = 60
-  description = "The time (in seconds) to wait for the Kubecost Allocation On-Demand API to send an HTTP response"
 
   validation {
     condition     = var.kubecost_allocation_api_read_timeout > 0
@@ -160,9 +130,9 @@ variable "kubecost_allocation_api_read_timeout" {
 }
 
 variable "kubecost_assets_api_read_timeout" {
+  description = "(Optional) The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response"
   type        = number
   default     = 30
-  description = "The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response"
 
   validation {
     condition     = var.kubecost_assets_api_read_timeout > 0
@@ -171,74 +141,74 @@ variable "kubecost_assets_api_read_timeout" {
 }
 
 variable "tls_verify" {
+  description = "(Optional) Dictates whether TLS certificate verification is done for HTTPS connections"
   type        = string
   default     = "True"
-  description = "Dictates whether TLS certificate verification is done for HTTPS connections"
 
   validation {
     condition     = can(regex("^(?i)(Yes|No|Y|N|True|False)$", var.tls_verify))
-    error_message = "The 'tls_verify' input must be one of 'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)"
+    error_message = "The 'tls_verify' variable must be one of 'Yes', 'No', 'Y', 'N', 'True' or 'False' (case-insensitive)"
   }
 }
 
 variable "kubecost_ca_certificate_secret_name" {
+  description = "(Optional) The AWS Secrets Manager secret name, for the CA certificate used for verifying Kubecost's server certificate when using HTTPS"
   type        = string
   default     = ""
-  description = "The AWS Secrets Manager secret name, for the CA certificate used for verifying Kubecost's server certificate when using HTTPS"
 
   validation {
     condition     = can(regex("^$|^[a-z[A-Z0-9/_+=.@-]{1,512}$", var.kubecost_ca_certificate_secret_name))
-    error_message = "The 'kubecost_ca_certificate_secret_name' input contains an invalid secret name"
+    error_message = "The 'kubecost_ca_certificate_secret_name' variable contains an invalid secret name"
   }
 }
 
 variable "k8s_config_path" {
+  description = "(Optional) The K8s config file to be used by Helm"
   type        = string
   default     = "~/.kube/config"
-  description = "The K8s config file to be used by Helm"
 
   validation {
     condition     = var.k8s_config_path != ""
-    error_message = "The 'k8s_config_path' input is empty. It must contain a K8s kubeconfig file"
+    error_message = "The 'k8s_config_path' variable is empty. It must contain a K8s kubeconfig file"
   }
 }
 
 variable "namespace" {
+  description = "(Optional) The namespace in which the Kubecost S3 Exporter pod and service account will be created"
   type        = string
   default     = "kubecost-s3-exporter"
-  description = "The namespace in which the Kubecost S3 Exporter pod and service account will be created"
 
   validation {
     condition     = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.namespace))
-    error_message = "The 'namespace' input contains an invalid Namespace name"
+    error_message = "The 'namespace' variable contains an invalid Namespace name"
   }
 }
 
 variable "create_namespace" {
+  description = "(Optional) Dictates whether to create the namespace as part of the Helm Chart deployment"
   type        = bool
   default     = true
-  description = "Dictates whether to create the namespace as part of the Helm Chart deployment"
 }
 
 variable "service_account" {
+  description = "(Optional) The service account for the Kubecost S3 Exporter pod"
   type        = string
   default     = "kubecost-s3-exporter"
-  description = "The service account for the Kubecost S3 Exporter pod"
 
   validation {
     condition     = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.service_account))
-    error_message = "The 'service_account' input contains an invalid Service Account name"
+    error_message = "The 'service_account' variable contains an invalid Service Account name"
   }
 }
 
 variable "create_service_account" {
+  description = "(Optional) Dictates whether to create the service account as part of the Helm Chart deployment"
   type        = bool
   default     = true
-  description = "Dictates whether to create the service account as part of the Helm Chart deployment"
 }
 
 variable "invoke_helm" {
+  description = "(Optional) Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account)"
   type        = bool
   default     = true
-  description = "Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account)"
 }
