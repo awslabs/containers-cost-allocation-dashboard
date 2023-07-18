@@ -74,7 +74,8 @@ variable "athena_workgroup_configuration" {
   validation {
     condition = (
       (
-        var.athena_workgroup_configuration.create && can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.athena_workgroup_configuration.query_results_location_bucket_name)) &&
+        var.athena_workgroup_configuration.create &&
+        can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.athena_workgroup_configuration.query_results_location_bucket_name)) &&
         !startswith(var.athena_workgroup_configuration.query_results_location_bucket_name, "xn--") &&
         !endswith(var.athena_workgroup_configuration.query_results_location_bucket_name, "-s3alias") &&
         can(regex("^[A-Za-z0-9_.-]{1,128}$", var.athena_workgroup_configuration.name))
