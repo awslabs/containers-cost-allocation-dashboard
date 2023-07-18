@@ -17,5 +17,5 @@ output "kubecost_ca_cert_secret" {
 
 output "custom_athena_workgroup" {
   value       = aws_athena_workgroup.kubecost_athena_workgroup
-  description = "Athena Workgroup settings"
+  description = "The configuration the Athena Workgroup. Used either to create a new Athena Workgroup, or reference configuration of an existing Athena Workgroup"
 }
