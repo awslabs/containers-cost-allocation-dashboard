@@ -7,17 +7,17 @@ output "bucket_arn" {
 
 output "clusters_metadata" {
   value       = var.clusters_metadata
-  description = "A map of clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset"
+  description = "A list of clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset"
+}
+
+output "athena_workgroup_configuration" {
+  value       = var.athena_workgroup_configuration
+  description = "The configuration the Athena Workgroup. Used either to create a new Athena Workgroup, or reference configuration of an existing Athena Workgroup"
 }
 
 output "kubecost_ca_certificates_list" {
   value       = var.kubecost_ca_certificates_list
-  description = "A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager"
-}
-
-output "custom_athena_workgroup" {
-  value       = var.custom_athena_workgroup
-  description = "The settings for the custom Athena Workgroup"
+  description = "A list root CA certificates paths and their configuration for AWS Secrets Manager. Used for TLS communication with Kubecost. This is a consolidated list of all root CA certificates that are needed for all Kubecost endpoints"
 }
 
 output "aws_shared_config_files" {
