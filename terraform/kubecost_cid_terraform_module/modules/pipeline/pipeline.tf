@@ -26,6 +26,8 @@ locals {
   annotations_for_output = join(", ", local.distinct_annotations)
 }
 
+data "aws_caller_identity" "pipeline_caller_identity" {}
+
 # This data source is used conditionally, only if the "create" field in the "custom_athena_workgroup" variable is "true"
 data "aws_kms_key" "s3_kms" {
   count = module.common.athena_workgroup_configuration.create ? 1 : 0
@@ -43,6 +45,7 @@ resource "aws_athena_workgroup" "kubecost_athena_workgroup" {
   configuration {
     result_configuration {
       output_location = "s3://${module.common.athena_workgroup_configuration.query_results_location_bucket_name}/"
+      expected_bucket_owner = data.aws_caller_identity.pipeline_caller_identity.account_id
       encryption_configuration {
         encryption_option = "SSE_KMS"
         kms_key_arn       = data.aws_kms_key.s3_kms[count.index].arn
