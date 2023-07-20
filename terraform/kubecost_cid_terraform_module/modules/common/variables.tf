@@ -14,7 +14,7 @@ variable "bucket_arn" {
       !startswith(element(split(":::", var.bucket_arn), 1), "xn--") &&
       !endswith(element(split(":::", var.bucket_arn), 1), "-s3alias")
     )
-    error_message = "The 'bucket_arn' input contains an invalid ARN"
+    error_message = "The 'bucket_arn' variable contains an invalid ARN"
   }
 }
 
