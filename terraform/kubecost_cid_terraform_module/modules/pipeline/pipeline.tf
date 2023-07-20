@@ -8,11 +8,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "<= 4.63.0"
+      version = ">= 4.63.0"
     }
     local = {
       source  = "hashicorp/local"
-      version = "<= 2.4.0"
+      version = ">= 2.4.0"
     }
   }
 }
@@ -44,7 +44,7 @@ resource "aws_athena_workgroup" "kubecost_athena_workgroup" {
 
   configuration {
     result_configuration {
-      output_location = "s3://${module.common.athena_workgroup_configuration.query_results_location_bucket_name}/"
+      output_location       = "s3://${module.common.athena_workgroup_configuration.query_results_location_bucket_name}/"
       expected_bucket_owner = data.aws_caller_identity.pipeline_caller_identity.account_id
       encryption_configuration {
         encryption_option = "SSE_KMS"
