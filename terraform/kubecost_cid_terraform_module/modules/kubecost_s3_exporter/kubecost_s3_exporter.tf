@@ -8,16 +8,16 @@ terraform {
   required_providers {
     aws = {
       source                = "hashicorp/aws"
-      version               = "<= 4.63.0"
+      version               = ">= 4.63.0"
       configuration_aliases = [aws.pipeline, aws.eks]
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "<= 2.9.0"
+      version = ">= 2.9.0"
     }
     local = {
       source  = "hashicorp/local"
-      version = "<= 2.4.0"
+      version = ">= 2.4.0"
     }
   }
 }
