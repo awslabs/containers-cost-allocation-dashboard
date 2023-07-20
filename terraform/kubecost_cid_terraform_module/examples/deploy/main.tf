@@ -1,5 +1,23 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
+terraform {
+  required_providers {
+    aws = {
+      source                = "hashicorp/aws"
+      version               = "~> 5.8.0"
+      configuration_aliases = [aws.pipeline, aws.eks]
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.9.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.4.0"
+    }
+  }
+}
+
 ######################################
 # Section 1 - AWS Resources Pipeline #
 ######################################
