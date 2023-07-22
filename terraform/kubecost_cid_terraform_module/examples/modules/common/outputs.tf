@@ -10,6 +10,16 @@ output "clusters_metadata" {
   value       = var.clusters_metadata
 }
 
+output "aws_glue_database_name" {
+  description = "The AWS Glue Database name"
+  value       = var.aws_glue_database_name
+}
+
+output "aws_glue_table_name" {
+  description = "The AWS Glue Table name"
+  value       = var.aws_glue_table_name
+}
+
 output "athena_workgroup_configuration" {
   description = "The configuration the Athena Workgroup. Used either to create a new Athena Workgroup, or reference configuration of an existing Athena Workgroup"
   value       = var.athena_workgroup_configuration
@@ -33,4 +43,24 @@ output "aws_shared_credentials_files" {
 output "aws_common_tags" {
   description = "Common AWS tags to be used on all AWS resources created by Terraform"
   value       = var.aws_common_tags
+}
+
+output "distinct_labels" {
+  description = "List of the distinct labels from all clusters"
+  value       = local.distinct_labels
+}
+
+output "distinct_annotations" {
+  description = "List of the distinct annotations from all clusters"
+  value       = local.distinct_annotations
+}
+
+output "static_columns" {
+  description = "A list of the schema's static columns, mapped to their AWS Glue Table types and QuickSight Dataset types"
+  value       = local.static_columns
+}
+
+output "partition_keys" {
+  description = "A list of the schema's partition keys, mapped to their AWS Glue Table types and QuickSight Dataset types"
+  value       = local.partition_keys
 }
