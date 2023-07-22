@@ -17,15 +17,6 @@ terraform {
   }
 }
 
-locals {
-  # A set of locals used to gather all labels and annotations from all K8s clusters, and create a distinct list of labels and annotations
-  # This is used to define those labels and annotations as columns in the AWS Glue Table
-  distinct_labels        = distinct(flatten([for labels_list in module.common.clusters_metadata.*.labels : labels_list == null ? [] : labels_list]))
-  distinct_annotations   = distinct(flatten([for annotations_list in module.common.clusters_metadata.*.annotations : annotations_list == null ? [] : annotations_list]))
-  labels_for_output      = join(", ", local.distinct_labels)
-  annotations_for_output = join(", ", local.distinct_annotations)
-}
-
 data "aws_caller_identity" "pipeline_caller_identity" {}
 
 # This data source is used conditionally, only if the "create" field in the "custom_athena_workgroup" variable is "true"
@@ -137,11 +128,11 @@ resource "aws_iam_role" "kubecost_glue_crawler_role" {
 }
 
 resource "aws_glue_catalog_database" "kubecost_glue_db" {
-  name = "kubecost_db"
+  name = module.common.aws_glue_database_name
 }
 
 resource "aws_glue_catalog_table" "kubecost_glue_table" {
-  name          = "kubecost_table"
+  name          = module.common.aws_glue_table_name
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
   parameters = {
     "classification" = "parquet"
@@ -149,21 +140,12 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
 
   table_type = "EXTERNAL_TABLE"
 
-  partition_keys {
-    name = "account_id"
-    type = "string"
-  }
-  partition_keys {
-    name = "region"
-    type = "string"
-  }
-  partition_keys {
-    name = "year"
-    type = "string"
-  }
-  partition_keys {
-    name = "month"
-    type = "string"
+  dynamic "partition_keys" {
+    for_each = [for partition_key in module.common.partition_keys : partition_key]
+    content {
+      name = partition_keys.value.name
+      type = partition_keys.value.glue_table_type
+    }
   }
 
   storage_descriptor {
@@ -179,251 +161,22 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
     }
 
-    columns {
-      name = "name"
-      type = "string"
-    }
-
-    columns {
-      name = "window.start"
-      type = "timestamp"
-    }
-
-    columns {
-      name = "window.end"
-      type = "timestamp"
-    }
-
-    columns {
-      name = "minutes"
-      type = "double"
-    }
-
-    columns {
-      name = "cpucores"
-      type = "double"
-    }
-    columns {
-      name = "cpucorerequestaverage"
-      type = "double"
-    }
-    columns {
-      name = "cpucoreusageaverage"
-      type = "double"
-    }
-    columns {
-      name = "cpucorehours"
-      type = "double"
-    }
-    columns {
-      name = "cpucost"
-      type = "double"
-    }
-    columns {
-      name = "cpucostadjustment"
-      type = "double"
-    }
-    columns {
-      name = "cpuefficiency"
-      type = "double"
-    }
-    columns {
-      name = "gpucount"
-      type = "double"
-    }
-    columns {
-      name = "gpuhours"
-      type = "double"
-    }
-    columns {
-      name = "gpucost"
-      type = "double"
-    }
-    columns {
-      name = "gpucostadjustment"
-      type = "double"
-    }
-    columns {
-      name = "networktransferbytes"
-      type = "double"
-    }
-    columns {
-      name = "networkreceivebytes"
-      type = "double"
-    }
-    columns {
-      name = "networkcost"
-      type = "double"
-    }
-    columns {
-      name = "networkcrosszonecost"
-      type = "double"
-    }
-    columns {
-      name = "networkcrossregioncost"
-      type = "double"
-    }
-    columns {
-      name = "networkinternetcost"
-      type = "double"
-    }
-    columns {
-      name = "networkcostadjustment"
-      type = "double"
-    }
-    columns {
-      name = "loadbalancercost"
-      type = "double"
-    }
-    columns {
-      name = "loadbalancercostadjustment"
-      type = "double"
-    }
-    columns {
-      name = "pvbytes"
-      type = "double"
-    }
-    columns {
-      name = "pvbytehours"
-      type = "double"
-    }
-    columns {
-      name = "pvcost"
-      type = "double"
-    }
-    columns {
-      name = "pvcostadjustment"
-      type = "double"
-    }
-    columns {
-      name = "rambytes"
-      type = "double"
-    }
-    columns {
-      name = "rambyterequestaverage"
-      type = "double"
-    }
-    columns {
-      name = "rambyteusageaverage"
-      type = "double"
-    }
-    columns {
-      name = "rambytehours"
-      type = "double"
-    }
-    columns {
-      name = "ramcost"
-      type = "double"
-    }
-    columns {
-      name = "ramcostadjustment"
-      type = "double"
-    }
-    columns {
-      name = "ramefficiency"
-      type = "double"
-    }
-    columns {
-      name = "sharedcost"
-      type = "double"
-    }
-    columns {
-      name = "externalcost"
-      type = "double"
-    }
-    columns {
-      name = "totalcost"
-      type = "double"
-    }
-    columns {
-      name = "totalefficiency"
-      type = "double"
-    }
-    columns {
-      name = "properties.provider"
-      type = "string"
-    }
-    columns {
-      name = "properties.region"
-      type = "string"
-    }
-    columns {
-      name = "properties.cluster"
-      type = "string"
-    }
-    columns {
-      name = "properties.clusterid"
-      type = "string"
-    }
-    columns {
-      name = "properties.eksclustername"
-      type = "string"
-    }
-    columns {
-      name = "properties.container"
-      type = "string"
-    }
-    columns {
-      name = "properties.namespace"
-      type = "string"
-    }
-    columns {
-      name = "properties.pod"
-      type = "string"
-    }
-    columns {
-      name = "properties.node"
-      type = "string"
-    }
-    columns {
-      name = "properties.node_instance_type"
-      type = "string"
-    }
-    columns {
-      name = "properties.node_availability_zone"
-      type = "string"
-    }
-    columns {
-      name = "properties.node_capacity_type"
-      type = "string"
-    }
-    columns {
-      name = "properties.node_architecture"
-      type = "string"
-    }
-    columns {
-      name = "properties.node_os"
-      type = "string"
-    }
-    columns {
-      name = "properties.node_nodegroup"
-      type = "string"
-    }
-    columns {
-      name = "properties.node_nodegroup_image"
-      type = "string"
-    }
-    columns {
-      name = "properties.controller"
-      type = "string"
-    }
-    columns {
-      name = "properties.controllerkind"
-      type = "string"
-    }
-    columns {
-      name = "properties.providerid"
-      type = "string"
+    dynamic "columns" {
+      for_each = [for static_column in module.common.static_columns : static_column]
+      content {
+        name = columns.value.name
+        type = columns.value.glue_table_type
+      }
     }
     dynamic "columns" {
-      for_each = [for k8s_label in local.distinct_labels : k8s_label]
+      for_each = [for k8s_label in module.common.distinct_labels : k8s_label]
       content {
         name = "properties.labels.${columns.value}"
         type = "string"
       }
     }
     dynamic "columns" {
-      for_each = [for k8s_annotation in local.distinct_annotations : k8s_annotation]
+      for_each = [for k8s_annotation in module.common.distinct_annotations : k8s_annotation]
       content {
         name = "properties.annotations.${columns.value}"
         type = "string"
@@ -497,8 +250,8 @@ resource "local_file" "cid_yaml" {
   directory_permission = "0400"
   file_permission      = "0400"
   content = templatefile("../../../cid/eks_insights_dashboard.yaml.tpl", {
-    labels                = local.distinct_labels
-    annotations           = local.distinct_annotations
+    labels                = module.common.distinct_labels
+    annotations           = module.common.distinct_annotations
     athena_datasource_arn = "$${athena_datasource_arn}"
     athena_database_name  = "$${athena_database_name}"
   })
