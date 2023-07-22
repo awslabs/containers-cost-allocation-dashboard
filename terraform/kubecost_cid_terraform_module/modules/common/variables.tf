@@ -50,13 +50,33 @@ variable "clusters_metadata" {
   }
 }
 
+variable "aws_glue_database_name" {
+  description = "(Optional) The AWS Glue Database name"
+  type        = string
+  default     = "kubecost_db"
+  validation {
+    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_database_name))
+    error_message = "The 'aws_glue_database_name' variable contains an invalid AWS Glue Database name"
+  }
+}
+
+variable "aws_glue_table_name" {
+  description = "(Optional) The AWS Glue Table name"
+  type        = string
+  default     = "kubecost_table"
+  validation {
+    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_table_name))
+    error_message = "The 'aws_glue_table_name' variable contains an invalid AWS Glue Table name"
+  }
+}
+
 variable "athena_workgroup_configuration" {
   description = <<EOF
     (Optional) The configuration the Athena Workgroup. Used either to create a new Athena Workgroup, or reference configuration of an existing Athena Workgroup.
 
     (Required) create: Dictates whether to create a custom Athena Workgroup
     (Required) name: If "create" is "true", used to define the Athena Workgroup name and reference it in the QuickSight Data Source. If "create" is "false", used only for referencing the Workgroup in the QuickSight Data Source
-    (Required when "create" is "true') query_results_location_bucket_name: If "create" is "true", used to set the Athena Workgroup query results location. If "create" is "false", this field is ignored
+    (Required when "create" is "true") query_results_location_bucket_name: If "create" is "true", used to set the Athena Workgroup query results location. If "create" is "false", this field is ignored
   EOF
 
   type = object({
