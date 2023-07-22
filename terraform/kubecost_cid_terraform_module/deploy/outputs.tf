@@ -2,13 +2,13 @@
 
 # Output for showing the distinct labels from all clusters, collected from the "clusters_metadata" common input
 output "labels" {
-  value       = module.pipeline.labels
+  value       = join(", ", module.common.distinct_labels)
   description = "A list of the distinct labels of all clusters, that'll be added to the dataset"
 }
 
 # Output for showing the distinct annotations from all clusters, collected from the "clusters_metadata" common input
 output "annotations" {
-  value       = module.pipeline.annotations
+  value       = join(", ", module.common.distinct_annotations)
   description = "A list of the distinct annotations of all clusters, that'll be added to the dataset"
 }
 
