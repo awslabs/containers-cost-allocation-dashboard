@@ -155,7 +155,7 @@ If you followed this process but didn't add wildcard in the end of the bucket re
 
 If you choose that Terraform won't create an Athena Workgroup for you, please follow the below requirements for the workgroup you plan to use:
 
-#### Create an S3 bucket that will be used for the Athena Workgroup Query Results Location  
+#### Step 1: Create an S3 bucket that will be used for the Athena Workgroup Query Results Location  
 
 This S3 bucket will be used to write the Athena query results.  
 
