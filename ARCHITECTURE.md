@@ -79,6 +79,8 @@ It's within your responsibility to run a sidecar container to collect the data c
 You're highly encouraged to do so, as the data collection container logs are available for a limited time in the cluster.
 2. The AWS Glue Crawler writes logs to Amazon CloudWatch Logs.  
 It'll create a Log Group and Log Stream the first time it runs, if those aren't available.
-3. All management API made by the data collection container, can be viewed in Amazon CloudTrail (unless aren't supported by CloudTrail).  
+3. All management API made by the data collection container, can be viewed in Amazon CloudTrail if enabled (unless aren't supported by CloudTrail).  
 S3 data events can also be logged in CloudTrail, but it requires configuration.  
 It's within your responsibility to configure Amazon CloudTrail to log events.
+4. Detailed records for the requests that are made to the S3 bucket can be available if S3 server access logs are configured.  
+It's recommended to configure S3 server access logs (see [this document](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html))
