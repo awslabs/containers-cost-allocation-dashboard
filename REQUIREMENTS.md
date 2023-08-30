@@ -96,6 +96,12 @@ See [this documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/b
 Please note that starting January 5th, 2023, Amazon S3 encrypts new objets by default.  
 See [this announcement](https://aws.amazon.com/blogs/aws/amazon-s3-encrypts-new-objects-by-default/) for more information.
 
+### Access to the Bucket
+
+It's advised to block public access to the S3 bucket (see [this document](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html)).  
+The S3 bucket that stores the Kubecost data is meant to be accessed only from the EKS clusters.  
+Also, it's advised to use VPC Endpoints to make sure traffic towards the S3 bucket does not traverse the internet 
+
 ## Configure Athena Query Results Location
 
 An Athena Workgroup can be used by this solution, which also requires setting Athena Query Results Location in the Workgroup.  
