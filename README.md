@@ -1,6 +1,7 @@
 # Containers Cost and Usage Dashboard
-This is an example of integration [Kubecost](https://www.kubecost.com/products/self-hosted) with CID ([Cloud Intelligence Dashboards](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)) Lab.  
-Here we demonstrate how AWS Customers can breakdown cost of the EKS in-cluster in a multi-cluster environment, and visualize in a single-pane-of-glass alongside the other CID dashboards using a [self hosted Kubecost pod](https://www.kubecost.com/products/self-hosted).
+
+This is an example of integrating [Kubecost](https://www.kubecost.com/) with CID ([Cloud Intelligence Dashboards](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)) Lab.  
+Here we demonstrate how AWS Customers can break down EKS in-cluster cost and usage in a multi-cluster environment, and visualize in a single-pane-of-glass alongside the other CID dashboards using a [self-hosted Kubecost pod](https://www.kubecost.com/products/self-hosted).
 
 ## Architecture
 
@@ -21,12 +22,12 @@ There are 3 high-level steps to deploy the solution:
 
 ### Step 1: Build and Push the Container Image
 
-We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.<br />
-For the registry, we recommend using Private Repository in Amazon Elastic Container Registry (ECR).<br />
-You can find instructions on creating a Private Repository in ECR in [this document](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html).<br />
-The name for the repository can be any name you'd like - for example, you can use `kubecost-s3-exporter`.<br />
-If you decided to use Private Repository in ECR, you'll have to configure your Docker client to log in to it first, before pushing the image to it.<br />
-You can find instructions on logging in to a Private Repository in ECR using Docker client, in [this document](https://docs.aws.amazon.com/AmazonECR/latest/userguide/registry_auth.html).<br />
+We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.  
+For the registry, we recommend using Private Repository in Amazon Elastic Container Registry (ECR).  
+You can find instructions on creating a Private Repository in ECR in [this document](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html).  
+The name for the repository can be any name you'd like - for example, you can use `kubecost-s3-exporter`.  
+If you decided to use Private Repository in ECR, you'll have to configure your Docker client to log in to it first, before pushing the image to it.  
+You can find instructions on logging in to a Private Repository in ECR using Docker client, in [this document](https://docs.aws.amazon.com/AmazonECR/latest/userguide/registry_auth.html).  
 
 In this section, choose either "Build and Push for a Single Platform" or "Build and Push for Multiple Platforms".
 
@@ -50,36 +51,36 @@ Push:
 
 ### Step 2: Deploy the AWS and K8s Resources
 
-This solution currently provides a Terraform module for deployment of both the AWS the K8s resources.<br />
+This solution currently provides a Terraform module for deployment of both the AWS the K8s resources.  
 There are 2 options to use it:
 * Deployment Option 1: Deploy both the AWS resources and the K8s resources using Terraform (K8s resources are deployed by invoking Helm)
-* Deployment Option 2: Deploy only the AWS resources using Terraform, and deploy the K8s resources using the `helm` command.<br />
+* Deployment Option 2: Deploy only the AWS resources using Terraform, and deploy the K8s resources using the `helm` command.  
 With this option, Terraform will create a cluster-specific `values.yaml` file (with a unique name) for each cluster, which you can use
 
-You can use a mix of these options.<br />
-On some clusters, you can choose to deploy the K8s resources by having Terraform invoke Helm (the first option).<br />
+You can use a mix of these options.  
+On some clusters, you can choose to deploy the K8s resources by having Terraform invoke Helm (the first option).  
 On other clusters, you can choose to deploy the K8s resources yourself using the `helm` command (the second option).
 
 #### Deployment Option 1
 
 With this deployment option, Terraform deploys both the AWS resources and the K8s resources (by invoking Helm).
 
-Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.<br />
-For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.<br />
+Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.  
+For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.  
 Once you're done with Terraform, continue to step 3 below.
 
 #### Deployment Option 2
 
 With this deployment option, Terraform deploys only the AWS resources, and the K8s resources are deployed using the `helm` command.
 
-1. Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.<br />
-For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.<br />
-When reaching the "Create an Instance of the `kubecost_s3_exporter` Module and Provide Module-Specific Inputs", do the following:<br />
+1. Please follow the instructions under `terraform/kubecost_cid_terraform_module/README.md`.  
+For the initial deployment, you need to go through the "Requirements", "Structure" and "Initial Deployment" sections.  
+When reaching the "Create an Instance of the `kubecost_s3_exporter` Module and Provide Module-Specific Inputs", do the following:  
 Make sure that as part of the optional module-specific inputs, you use the `invoke_helm` input with value of `false`.
 
-2. After successfully executing `terraform apply` (the last step - step 4 - of the "Initial Deployment" section), Terraform will create the following:<br /> 
-Per cluster for which you used the `invoke_helm` input with value of `false`, a YAML file will be created containing the Helm values for this cluster.<br />
-The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.<br />
+2. After successfully executing `terraform apply` (the last step - step 4 - of the "Initial Deployment" section), Terraform will create the following:   
+Per cluster for which you used the `invoke_helm` input with value of `false`, a YAML file will be created containing the Helm values for this cluster.  
+The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.  
 The YAML files will be created in the `helm/kubecost_s3_exporter/clusters_values` directory.
 
 3. For each cluster, deploy the K8s resources by executing Helm
@@ -96,7 +97,7 @@ Once you're done, continue to step 3 below.
 
 ### Step 3: Dashboard Deployment
 
-From the `cid` folder, run `cid-cmd deploy --resources eks_insights_dashboard.yaml`.<br />
+From the `cid` folder, run `cid-cmd deploy --resources eks_insights_dashboard.yaml`.  
 The output should be similar to the below:
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.3 Beta
@@ -123,7 +124,7 @@ The output should be similar to the below:
        [compute-optimizer-dashboard] Compute Optimizer Dashboard
      » [eks_insights] EKS Insights
 
-From the list, choose `[eks_insights] EKS Insights`.<br />
+From the list, choose `[eks_insights] EKS Insights`.  
 After choosing, wait for dashboards discovery to be completed, and then the additional output should be similar to the below:
 
     ? [dashboard-id] Please select dashboard to install: [eks_insights] EKS Insights
@@ -144,7 +145,7 @@ After choosing, wait for dashboards discovery to be completed, and then the addi
      » kubecost_db
        spectrumdb
 
-From the list, choose the Athena database that was created by the Terraform template.<br />
+From the list, choose the Athena database that was created by the Terraform template.  
 If you didn't change the AWS Glue Database name in the Terraform template, then it'll be `kubecost_db` - please choose it.
 After choosing, wait for the dataset to be created, and then the additional output should be similar to the below:
 
@@ -162,10 +163,10 @@ After choosing, wait for the dataset to be created, and then the additional outp
      » yes
        no
 
-Choose whether to share the dashboard with everyone in this account.<br />
-This selection will complete the deployment.<br />
+Choose whether to share the dashboard with everyone in this account.  
+This selection will complete the deployment.  
 
-Note:<br />
+Note:  
 Data won't be available in the dashboard at least until the first time the data collection pod runs and collector data.
 You must have data from at lest 72 hours ago in Kubecost for the data collection pod to collect data.
 
@@ -179,7 +180,7 @@ Share the dataset with users that are authorized to make changes to it:
 2. On the left pane, navigate to "Manage assets", then choose "Datasets"
 3. From the list, choose the `eks_insights` dataset (ID `e88edf48-f2cd-4c23-b6a4-e2b3034e2c41`)
 4. Click "Share", select the desired permissions, start typing your user or group, select it and click "Share"
-5. Navigate back to “Datasets” on the main QuickSight menus on the left, click the eks_insights dataset, and verify that the refresh status shows as “Completed” (It may take a few minutes to complete).<br />
+5. Navigate back to “Datasets” on the main QuickSight menus on the left, click the eks_insights dataset, and verify that the refresh status shows as “Completed” (It may take a few minutes to complete).  
 Once it's completed - the dashboard is ready to be used, and you can navigate to “Dashboards”, click the EKS Insights dashboard, and start using the dashboard.
 
 Please continue to the next steps to set dataset refresh (mandatory), and optionally share the dashboard with users and create an Analysis from the dashboard
@@ -193,17 +194,17 @@ A dataset refresh schedule needs to be set, so that the data from Athena will be
 3. Under "Refresh" tab, click "ADD NEW SCHEDULE"
 4. Select "Incremental refresh", and click "CONFIGURE INCREMENTAL REFRESH"
 5. On "Date column", make sure that "window.start" is selected
-6. Set "Window size (number)" to "4", set "Window size (unit)" to "Days", and click "CONTINUE".<br />
+6. Set "Window size (number)" to "4", set "Window size (unit)" to "Days", and click "CONTINUE".  
 Notice that any value that is less than "4" in the "Window size (number)" will miss some data.
-7. Select "Timezone" and "Start time".<br />
-Notice that these options set the refresh schedule.<br />
-The refresh schedule should be at least 2 hours after the K8s CronJob schedule.<br />
-This is because 1 hour after the CronJob runs, the AWS Glue Crawler runs.<br />
+7. Select "Timezone" and "Start time".  
+Notice that these options set the refresh schedule.  
+The refresh schedule should be at least 2 hours after the K8s CronJob schedule.  
+This is because 1 hour after the CronJob runs, the AWS Glue Crawler runs.  
 8. Set the "Frequency" to "Daily" and click "SAVE"
 
 ### Share the Dashboard with Users
 
-To share the dashboard with users, for them to be able to view it and create Analysis from it, see the following link:<br />
+To share the dashboard with users, for them to be able to view it and create Analysis from it, see the following link:  
 https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/postdeploymentsteps/share/
 
 ### Create an Analysis from the Dashboard
@@ -320,29 +321,29 @@ See sample outputs below. [1][2]
 
 ## Maintenance
 
-After the solution is initially deployed, you might want to make changes.<br />
+After the solution is initially deployed, you might want to make changes.  
 Below are instruction for some common changes that you might do after the initial deployment.
 
 ### Deploying on Additional Clusters
 
-To add additional clusters to the dashboard, you need to add them to the Terraform module and apply it.<br />
-Please follow the "Maintenance -> Deploying on Additional Clusters" part under `terraform/kubecost_cid_terraform_module/README.md`.<br />
-Wait for the next schedule of the Kubecost S3 Exporter and QuickSight refresh, so that it'll collect the new data.<br />
+To add additional clusters to the dashboard, you need to add them to the Terraform module and apply it.  
+Please follow the "Maintenance -> Deploying on Additional Clusters" part under `terraform/kubecost_cid_terraform_module/README.md`.  
+Wait for the next schedule of the Kubecost S3 Exporter and QuickSight refresh, so that it'll collect the new data.  
 
-Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
+Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.  
 Then, manually run the Glue Crawler and manually refresh the QuickSight dataset.
 
 ### Adding/Removing Labels/Annotations to/from the Dataset
 
-After the initial deployment, you might want to add or remove labels or annotations for some or all clusters, to/from the dataset.<br />
+After the initial deployment, you might want to add or remove labels or annotations for some or all clusters, to/from the dataset.  
 To do this, perform the following:
 
-1. Add/remove the labels/annotations to/from the Terraform module and apply it.<br />
+1. Add/remove the labels/annotations to/from the Terraform module and apply it.  
 Please follow the "Maintenance -> Adding/Removing Labels/annotations to/from the Dataset" part under `terraform/kubecost_cid_terraform_module/README.md`.
-2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels/annotations.<br />
-Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.<br />
+2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels/annotations.  
+Alternatively, you can run the Kubecost S3 Exporter on-demand according to "Running the Kubecost S3 Exporter Pod On-Demand" section.  
 3. Login to QuickSight, navigate to "Datasets", click on the `eks_insights` dataset, click "EDIT DATASET", and click "SAVE & PUBLISH".<br/>
-Wait the full refresh is done, and the new set of labels/annotations should be present in the analysis.<br />
+Wait the full refresh is done, and the new set of labels/annotations should be present in the analysis.  
 For it to be available in the dashboard, export the analysis to a dashboard.
 
 **_Note about annotations:_**
@@ -352,8 +353,8 @@ To include K8s annotations in the Kubecost Allocation API response, following [t
 
 ### Running the Kubecost S3 Exporter Pod On-Demand
 
-In some cases, you'd like to run the Kubecost S3 Exporter pod on-demand.<br />
-For example, you may want to test it, or you may have added some data and would like to see it immediately.<br />
+In some cases, you'd like to run the Kubecost S3 Exporter pod on-demand.  
+For example, you may want to test it, or you may have added some data and would like to see it immediately.  
 To run the Kubecost S3 Exporter pod on-demand, run the following command (replace `<namespace>` with your namespace and `<context>` with your cluster ARN:
 
     kubectl create job --from=cronjob/kubecost-s3-exporter kubecost-s3-exporter1 -n <namespace> --context <context>
@@ -381,8 +382,8 @@ This section includes some common issues and possible solutions.
 
 ### The Data Collection Pod is in Status of `Completed`, But There's No Data in the S3 Bucket
 
-The data collection container collects data between 72 hours ago 00:00:00.000 and 48 hours ago 00:00:00.000.<br />
-Your Kubecost server still have missing data in this timeframe.<br />
+The data collection container collects data between 72 hours ago 00:00:00.000 and 48 hours ago 00:00:00.000.  
+Your Kubecost server still have missing data in this timeframe.  
 Please check the data collection container logs, and if you see the below message, it means you still don't have enough data:
 
     <timestamp> ERROR kubecost-s3-exporter: API response appears to be empty.
@@ -393,7 +394,7 @@ In this case, please wait for Kubecost to collect data for 72 hours ago, and the
 
 ### The Data Pod Container is in Status of `Error`
 
-This could be for various reasons.<br />
+This could be for various reasons.  
 Below are a couple of scenarios caught by the data collection container, and their logs you should expect to see.
 
 #### A Connection Establishment Timeout
@@ -405,11 +406,11 @@ In case of a connection establishment timeout, the container logs will show the 
 In this case, please check the following:
 
 1. That you specified the correct Kubecost API endpoint in the `kubecost_api_endpoint` input.
-This should be the Kubecost cost-analyzer service.<br />
+This should be the Kubecost cost-analyzer service.  
 Usually, you should be able to specify `http://<service_name>.<namespace_name>:[port]`, and this DNS name will be resolved.
-The default service name for Kubecost cost-analyzer service is `kubecost-cost-analyzer`, and the default namespace it's created in is `kubecost`.<br />
-The default port the Kubecost cost-analyzer service listens on is TCP 9090.<br />
-Unless you changed the namespace, service name or port, you should be good with the default value of the `kubecost_api_endpoint` input.<br />
+The default service name for Kubecost cost-analyzer service is `kubecost-cost-analyzer`, and the default namespace it's created in is `kubecost`.  
+The default port the Kubecost cost-analyzer service listens on is TCP 9090.  
+Unless you changed the namespace, service name or port, you should be good with the default value of the `kubecost_api_endpoint` input.  
 If you changed any of the above, make sure you change the `kubecost_api_endpoint` input value accordingly.
 2. If the `kubecost_api_endpoint` input has the correct value, try increasing the `connection_timeout` input value
 3. If you still get the same error, check network connectivity between the data collection pod and the Kubecost cost-analyzer service
@@ -422,7 +423,7 @@ In case of HTTP server response timeout, the container logs will show one of the
 
     <timestamp> ERROR kubecost-s3-exporter: Timed out waiting for Kubecost Assets API to send an HTTP response in the given time ({read_timeout}s). Consider increasing the read timeout value.
 
-If this is for the Allocation On-Demand API call, please follow the recommendations in the "Clarifications on the Allocation On-Demand API" part on the Appendix.<br />
+If this is for the Allocation On-Demand API call, please follow the recommendations in the "Clarifications on the Allocation On-Demand API" part on the Appendix.  
 If this is for the Assets API call, please try increasing the `kubecost_assets_api_read_timeout` input value.
 
 ## Cleanup
@@ -496,62 +497,62 @@ Notice that this is possible only up to the Kubecost retention limit (15 days fo
 
 ### Enabling Encryption In-Transit Between the Data Collection Pod and Kubecost Pod
 
-By default, the Kubecost cost-analyzer-frontend service uses HTTP service to serve the UI/API endpoints, over TCP port 9090.<br />
-For secure communication between the data collection pod and the Kubecost service, it's recommended to encrypt the data in-transit.<br />
-To do that, you first need to enable TLS in Kubecost, and then enable communication over HTTPS in the data collection pod.<br />
+By default, the Kubecost cost-analyzer-frontend service uses HTTP service to serve the UI/API endpoints, over TCP port 9090.  
+For secure communication between the data collection pod and the Kubecost service, it's recommended to encrypt the data in-transit.  
+To do that, you first need to enable TLS in Kubecost, and then enable communication over HTTPS in the data collection pod.  
 Below you'll find the necessary steps to take.
 
 #### Enabling TLS in Kubecost
 
-At the time of writing this document, Kubecost doesn't have any public documentation on enabling TLS.<br />
-This section will help you go through enabling TLS in Kubecost.<br />
+At the time of writing this document, Kubecost doesn't have any public documentation on enabling TLS.  
+This section will help you go through enabling TLS in Kubecost.  
 This section does not intend to replace the Kubecost user guide, and if you have any doubts, please contact Kubecost support.
 
 To enable TLS in Kubecost, please take the following steps:
 
-1. Create a TLS Secret in the Kubecost namespace, for the server certificate and private key you intend to use in Kubecost.<br />
-You can use the below `kubectl` command [1] to create the Secret object:<br />
-Note that the private key must have no passphrase, otherwise, you'll get `error: tls: failed to parse private key` error when executing this command.<br />
+1. Create a TLS Secret in the Kubecost namespace, for the server certificate and private key you intend to use in Kubecost.  
+You can use the below `kubectl` command [1] to create the Secret object:  
+Note that the private key must have no passphrase, otherwise, you'll get `error: tls: failed to parse private key` error when executing this command.  
 It's advised that you'll use a server certificate that's signed by a root CA certificate, and not a self-signed certificate.
 
-2. Enable TLS in Kubecost by changing the below values [2] in the Kubecost Helm chart.<br />
-See full `helm` command example below [3].<br />
-Once the Helm upgrade finishes successfully, you should see the Kubecost service listens on port 443.<br />
+2. Enable TLS in Kubecost by changing the below values [2] in the Kubecost Helm chart.  
+See full `helm` command example below [3].  
+Once the Helm upgrade finishes successfully, you should see the Kubecost service listens on port 443.  
 See example of the `kubectl get services` command output below [4].
 
 #### Enabling TLS Communication in the Data Collection Pod
 
-Enabling TLS in the data collection pod is done on per pod basis on each cluster.<br />
-This is because the same is done on per pod basis in Kubecost, and Kubecost is installed separately on each cluster.<br />
+Enabling TLS in the data collection pod is done on per pod basis on each cluster.  
+This is because the same is done on per pod basis in Kubecost, and Kubecost is installed separately on each cluster.  
 Please take the following steps to enable TLS communication in the data collection pod:
 
-1. In the `deploy/main.py` file, add the `kubecost_api_endpoint` variable to the module instance for the cluster.<br /> 
-By default, if you don't add this variable to the module instance, the data collection pod uses `http://kubecost-cost-analyzer.kubecost:9090` to communicate with Kubecost.<br />
-The URL you should to make sure the data collection pod uses TLS and use TCP port 443, must start with `https`.<br />
+1. In the `deploy/main.py` file, add the `kubecost_api_endpoint` variable to the module instance for the cluster.   
+By default, if you don't add this variable to the module instance, the data collection pod uses `http://kubecost-cost-analyzer.kubecost:9090` to communicate with Kubecost.  
+The URL you should to make sure the data collection pod uses TLS and use TCP port 443, must start with `https`.  
 For example, use `https://kubecost-cost-analyzer.kubecost` (not port at the end means TCP port 443).
-2. If you're using a self-signed server certificate in Kubecost (as doe in step 1 above), disable TLS verification in the data collection pod.<br />
+2. If you're using a self-signed server certificate in Kubecost (as doe in step 1 above), disable TLS verification in the data collection pod.  
 Do so by adding `tls_verify` variable with value of `false`, in the module instance in `deploy/main.tf`.
-The default value of `tls_verify` is `true`.<br />
-This means that if the `kubecost_api_endpoint` uses an `https` URL and you're using a self-signed certificate in Kubecost, the data collection pod will fail to connect to Kubecost API.<br />
-So in this case, you must disable TLS verification in the data collection pod.<br />
+The default value of `tls_verify` is `true`.  
+This means that if the `kubecost_api_endpoint` uses an `https` URL and you're using a self-signed certificate in Kubecost, the data collection pod will fail to connect to Kubecost API.  
+So in this case, you must disable TLS verification in the data collection pod.  
 Please note that although at this point, the data in-transit will be encrypted, using a self-signed certificate is insecure.
-3. If you're using a server certificate signed by a CA, in Kubecost, the data collection pod will need to pull the CA certificate, so that it can use it for certificate verification.<br />
+3. If you're using a server certificate signed by a CA, in Kubecost, the data collection pod will need to pull the CA certificate, so that it can use it for certificate verification.  
    1. Add the CA certificate to the `kubecost_ca_certificates_list` variable in `modules/common/variables.tf`.<br >
-   See an example in `examples/modules/common/variables.tf`.<br />
-   This variable will be used by Terraform to create an AWS Secrets Manager Secret in the pipline account.<br />
-   The `cert_path` key is mandatory, and must have the local full path to the CA certificate, including the file name.<br />
-   The `cert_secret_name` is mandatory, and is a name of your choice, that will be used for the AWS Secrets Manager secret.<br />
-   The `cert_secret_allowed_principals` is optional, and can be used to add additional IAM principals to be added to the secret policy.<br />
-   When Terraform creates the secret, it'll also create a secret policy.<br />
+   See an example in `examples/modules/common/variables.tf`.  
+   This variable will be used by Terraform to create an AWS Secrets Manager Secret in the pipline account.  
+   The `cert_path` key is mandatory, and must have the local full path to the CA certificate, including the file name.  
+   The `cert_secret_name` is mandatory, and is a name of your choice, that will be used for the AWS Secrets Manager secret.  
+   The `cert_secret_allowed_principals` is optional, and can be used to add additional IAM principals to be added to the secret policy.  
+   When Terraform creates the secret, it'll also create a secret policy.  
    These principals will be added to the policy, in addition to the principal that will always be added to the policy to allow the cluster.
-   2. Add the `kubecost_ca_certificate_secret_name` variable to the module instance of the cluster in `deploy/main.py`.<br />
-   The value must be the same secret name that you used in the `cert_secret_name` key in the `kubecost_ca_certificates_list` variable.<br />
-   This is used by Terraform to identify the secret to be used for this cluster to communicate with Kubecost, and pass it to Helm.<br />
+   2. Add the `kubecost_ca_certificate_secret_name` variable to the module instance of the cluster in `deploy/main.py`.  
+   The value must be the same secret name that you used in the `cert_secret_name` key in the `kubecost_ca_certificates_list` variable.  
+   This is used by Terraform to identify the secret to be used for this cluster to communicate with Kubecost, and pass it to Helm.  
    3. Make sure that the `tls_verify` variable is `true` (this should be the default).
 
-Once the above procedure is done, the data sent between the data collection pod and Kubecost will be encrypted in-transit.<br />
+Once the above procedure is done, the data sent between the data collection pod and Kubecost will be encrypted in-transit.  
 Please be advised that all your other clients communicating with Kubecost must now use HTTPS too, and use the said CA certificate.<br>
-Please note that Terraform does not create secret rotation configuration.<br />
+Please note that Terraform does not create secret rotation configuration.  
 You need to make sure you update the secret with a new CA certificate before it expires. 
 
 [1] The `kubectl` command to use for creating TLS secret:
