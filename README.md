@@ -1,6 +1,6 @@
 # Containers Cost and Usage Dashboard
 This is an example of integration [Kubecost](https://www.kubecost.com/products/self-hosted) with CID ([Cloud Intelligence Dashboards](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)) Lab.  
-This dashboard is meant to demonstrate how AWS Customers can breakdown cost of the EKS in-cluster in a multi-cluster environment, and visualize in a single-pane-of-glass alongside the other CID dashboards.
+Here we demonstrate how AWS Customers can breakdown cost of the EKS in-cluster in a multi-cluster environment, and visualize in a single-pane-of-glass alongside the other CID dashboards using a [self hosted Kubecost pod](https://www.kubecost.com/products/self-hosted).
 
 ## Architecture
 
