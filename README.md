@@ -1,17 +1,15 @@
-
-# EKS Insights Dashboard
-
-This is an integration of Kubecost with AWS CID (Cloud Intelligence Dashboards) to create the EKS Insights Dashboard.<br />
-This dashboard is meant to provide a breakdown of the EKS in-cluster costs in multi-cluster environment, in a single-pane-of-glass alongside the other CID dashboards.
+# Containers Cost and Usage Dashboard
+This is an example of integration [Kubecost](https://www.kubecost.com/products/self-hosted) with CID ([Cloud Intelligence Dashboards](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)) Lab.  
+This dashboard is meant to provide a breakdown of the K8s in-cluster costs in multi-cluster environment, in a single-pane-of-glass alongside the other CID dashboards.
 
 ## Architecture
 
 Before proceeding to the requirements and deployment of this solution, it's highly recommended to review its architecture.  
-You can review it in the `ARCHITECTURE.md` file.
+You can review it in [`ARCHITECTURE.md`](/ARCHITECTURE.md).
 
 ## Requirements
 
-Before proceeding to the deployment of this solution, please complete the requirements, as outlined in the `REQUIREMENTS.md` file
+Before proceeding to the deployment of this solution, please complete the requirements, as outlined in [`REQUIREMENTS.md`](/REQUIREMENTS.md).
 
 ## Deployment
 
