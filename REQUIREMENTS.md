@@ -1,9 +1,9 @@
-# EKS Insights Dashboard - Requirements
+# Requirements
 
 Following are the requirements before deploying this solution:
 
-1. An S3 bucket, which will be used to store the Kubecost data
-2. QuickSight Enterprise
+1. An S3 bucket, which will be used to store the [Kubecost](https://www.kubecost.com/products/self-hosted) data
+2. QuickSight Enterprise Edition
 3. Athena Workgroup, if you choose to not create a custom Athena Workgroup using Terraform
 4. An S3 bucket to be used for the Athena Workgroup query results location 
 5. Terraform and Helm installed
