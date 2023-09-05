@@ -2,7 +2,7 @@
 
 Following are the requirements before deploying this solution:
 
-1. An S3 bucket, which will be used to store the [Kubecost](https://www.kubecost.com/products/self-hosted) data
+1. An S3 bucket, which will be used to store the [Kubecost](https://www.kubecost.com/) data
 2. QuickSight Enterprise Edition
 3. Athena Workgroup, if you choose to not create a custom Athena Workgroup using Terraform
 4. An S3 bucket to be used for the Athena Workgroup query results location 
@@ -11,11 +11,11 @@ Following are the requirements before deploying this solution:
 
 For each EKS cluster, have the following:
 
-1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).<br />
+1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).  
 The IAM OIDC Provider must be created in the EKS cluster's account and region.
-2. Kubecost deployed in the EKS cluster.<br />
-Currently, only the free tier and the EKS-optimized bundle of Kubecost are supported.<br />
-The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations) and [Spot Data Feed](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations/aws-spot-instances).<br />
+2. Kubecost deployed in the EKS cluster.  
+Currently, only the free tier and the EKS-optimized bundle of Kubecost are supported.  
+The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations) and [Spot Data Feed](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations/aws-spot-instances).  
 To get accurate network costs from Kubecost, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs DaemonSet](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
 
 Please continue reading the below more details instructions for some of the above requirements. 
@@ -24,8 +24,8 @@ Please continue reading the below more details instructions for some of the abov
 
 ### Using an S3 Bucket Policy
 
-You may create an S3 Bucket Policy on the bucket that you create to store the Kubecost data.<br />
-In this case, below is a recommended bucket policy to use.<br />
+You may create an S3 Bucket Policy on the bucket that you create to store the Kubecost data.  
+In this case, below is a recommended bucket policy to use.  
 This bucket policy, along with the identity-based policies of all the identities in this solution, provide minimum access:
 
     {
@@ -59,33 +59,33 @@ This bucket policy, along with the identity-based policies of all the identities
         ]
     }
 
-This S3 bucket denies all principals from performing all S3 actions, except the principals in the `Condition` section.<br />
+This S3 bucket denies all principals from performing all S3 actions, except the principals in the `Condition` section.  
 The list of principals shown in the above bucket policy are as follows:
 
-* The `arn:aws:iam::<account_id>:role/<your_bucket_management_role>` principal:<br />
+* The `arn:aws:iam::<account_id>:role/<your_bucket_management_role>` principal:  
 This principal is an example of an IAM Role you may use to manage the bucket.
 Add the IAM Roles that will allow you to perform administrative tasks on the bucket.
-* The `arn:aws:iam::<account_id>:role/kubecost_glue_crawler_role` principal:<br />
-This principal is the IAM Role that will be attached to the Glue Crawler when it's created by Terraform.<br />
+* The `arn:aws:iam::<account_id>:role/kubecost_glue_crawler_role` principal:  
+This principal is the IAM Role that will be attached to the Glue Crawler when it's created by Terraform.  
 You must add it to the bucket policy, so that the Glue Crawler will be able to crawl the bucket.
-* The `arn:aws:iam::<account_id>:role/service-role/aws-quicksight-service-role-v0` principal:<br />
-This principal is the IAM Role that will be automatically created for QuickSight.<br />
-If you use a different role, please change it in the bucket policy.<br />
+* The `arn:aws:iam::<account_id>:role/service-role/aws-quicksight-service-role-v0` principal:  
+This principal is the IAM Role that will be automatically created for QuickSight.  
+If you use a different role, please change it in the bucket policy.  
 You must add this role to the bucket policy, for proper functionality of the QuickSight dataset that is created as part of this solution.
-* The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"` condition:<br />
-This condition identifies all the EKS clusters from which the Kubecost S3 Exporter pod will communicate with the bucket.<br />
-When Terraform creates the IAM roles for the pod to access the S3 bucket, it tags the parent IAM roles with the above tag.<br />
-This tag is automatically being used in the IAM session when the Kubecost S3 Exporter pod authenticates.<br />
-The reason for using this tag is to easily allow all EKS clusters running the Kubecost S3 Exporter pod, in the bucket policy, without reaching the bucket policy size limit.<br />
-The other alternative is to specify all the parent IAM roles that represent each cluster one-by-one.<br />
+* The `aws:PrincipalTag/irsa-kubecost-s3-exporter": "true"` condition:  
+This condition identifies all the EKS clusters from which the Kubecost S3 Exporter pod will communicate with the bucket.  
+When Terraform creates the IAM roles for the pod to access the S3 bucket, it tags the parent IAM roles with the above tag.  
+This tag is automatically being used in the IAM session when the Kubecost S3 Exporter pod authenticates.  
+The reason for using this tag is to easily allow all EKS clusters running the Kubecost S3 Exporter pod, in the bucket policy, without reaching the bucket policy size limit.  
+The other alternative is to specify all the parent IAM roles that represent each cluster one-by-one.  
 With this approach, the maximum bucket policy size will be quickly reached, and that's why the tag is used.
 
 The resources used in this S3 bucket policy include:
 
 * The bucket name, to allow access to it
-* All objects in the bucket, using the `arn:aws:s3:::kubecost-data-collection-bucket/*` string.<br />
-The reason for using a wildcard here is that multiple principals (multiple EKS clusters) require access to different objects in the bucket.<br />
-Using specific objects for each principal will result in a longer bucket policy that will eventually exceed the bucket policy size limit.<br />
+* All objects in the bucket, using the `arn:aws:s3:::kubecost-data-collection-bucket/*` string.  
+The reason for using a wildcard here is that multiple principals (multiple EKS clusters) require access to different objects in the bucket.  
+Using specific objects for each principal will result in a longer bucket policy that will eventually exceed the bucket policy size limit.  
 The identity policy (the parent IAM role) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.<br >
 Considering this, the access to the S3 bucket is more specific than what's specified in the "Resources" part of this bucket policy.
 
