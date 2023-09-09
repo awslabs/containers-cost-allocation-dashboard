@@ -129,17 +129,6 @@ variable "kubecost_allocation_api_read_timeout" {
   }
 }
 
-variable "kubecost_assets_api_read_timeout" {
-  description = "(Optional) The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response"
-  type        = number
-  default     = 30
-
-  validation {
-    condition     = var.kubecost_assets_api_read_timeout > 0
-    error_message = "The read timeout must be a non-zero positive float"
-  }
-}
-
 variable "tls_verify" {
   description = "(Optional) Dictates whether TLS certificate verification is done for HTTPS connections"
   type        = string
