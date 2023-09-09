@@ -2,23 +2,79 @@
 
 Following are the requirements before deploying this solution:
 
-1. An S3 bucket, which will be used to store the [Kubecost](https://www.kubecost.com/) data
-2. QuickSight Enterprise Edition
-3. Athena Workgroup, if you choose to not create a custom Athena Workgroup using Terraform
-4. An S3 bucket to be used for the Athena Workgroup query results location 
-5. Terraform and Helm installed
-6. The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
+* An S3 bucket, which will be used to store the [Kubecost](https://www.kubecost.com/) data 
+* QuickSight Enterprise Edition 
+* Athena Workgroup, if you choose to not create a custom Athena Workgroup using Terraform 
+* An S3 bucket to be used for the Athena Workgroup query results location 
+* Terraform and Helm installed 
+* The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/)) installed
 
 For each EKS cluster, have the following:
 
-1. An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).  
-The IAM OIDC Provider must be created in the EKS cluster's account and region.
-2. Kubecost deployed in the EKS cluster.  
+* An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).  
+The IAM OIDC Provider must be created in the EKS cluster's account and region. 
+* Kubecost deployed in the EKS cluster.  
 Currently, only the free tier and the EKS-optimized bundle of Kubecost are supported.  
-The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations) and [Spot Data Feed](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations/aws-spot-instances).  
-To get accurate network costs from Kubecost, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs DaemonSet](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).
+  * The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), it's recommended to [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations) and [Spot Data Feed](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations/aws-spot-instances).
+  * To get accurate network costs from Kubecost, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs DaemonSet](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).   
+  * To see K8s annotations in each allocation, you must [enable Annotation Emission in Kubecost](https://docs.kubecost.com/install-and-configure/advanced-configuration/annotations)
+  * To see node-related data for each allocation, [add node labels in Kubecost's values.yaml](https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml#L469-L471).  
+  See more information in the [Adding Node Labels](#adding-node-labels) section
 
 Please continue reading the below more details instructions for some of the above requirements. 
+
+## Kubecost Requirements Notes
+
+### Adding Node Labels
+
+The QuickSight dashboard includes the capability to group and filter allocations by node-related data.  
+This data is based on K8s node labels, which must be available in the Kubecost Allocation API.  
+The following node labels are support by the QuickSight dashboard:
+
+        node.kubernetes.io/instance-type,
+        topology.kubernetes.io/region,
+        topology.kubernetes.io/zone,
+        kubernetes.io/arch,
+        kubernetes.io/os,
+        eks.amazonaws.com/nodegroup,
+        eks.amazonaws.com/nodegroup_image,
+        eks.amazonaws.com/capacityType,
+        karpenter.sh/capacity-type,
+        karpenter.sh/provisioner-name,
+        karpenter.k8s.aws/instance-ami-id
+
+However, by default, the Kubecost Allocation API response only includes a few specific node labels.  
+For the QuickSight dashboard to support all of the above node labels, you must add them to [Kubecost values.yaml](https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml#L469-L471).
+
+Here's an example of adding these node labels using `--set` option when running `helm upgrade -i`:
+
+    helm upgrade kubecost-eks \
+    oci://public.ecr.aws/kubecost/cost-analyzer --version 1.103.4 \
+    --namespace kubecost-eks \
+    -f https://raw.githubusercontent.com/kubecost/cost-analyzer-helm-chart/develop/cost-analyzer/values-eks-cost-monitoring.yaml \
+    --set networkCosts.enabled=true \
+    --set networkCosts.config.services.amazon-web-services=true \
+    --set kubecostModel.allocation.nodeLabels.includeList="node.kubernetes.io\/instance-type\,topology.kubernetes.io\/region\,topology.kubernetes.io\/zone\,kubernetes.io\/arch\,kubernetes.io\/os\,eks.amazonaws.com\/nodegroup\,eks.amazonaws.com\/nodegroup_image\,eks.amazonaws.com\/capacityType\,karpenter.sh\/capacity-type\,karpenter.sh\/provisioner-name\,karpenter.k8s.aws\/instance-ami-id"
+
+Here's an example of adding these node labels in `values.yaml` using `heredoc`:
+
+    allocation = {
+      nodeLabels = {
+        includeList = <<-EOT
+        node.kubernetes.io/instance-type,
+        topology.kubernetes.io/region,
+        topology.kubernetes.io/zone,
+        kubernetes.io/arch,
+        kubernetes.io/os,
+        eks.amazonaws.com/nodegroup,
+        eks.amazonaws.com/nodegroup_image,
+        eks.amazonaws.com/capacityType,
+        karpenter.sh/capacity-type,
+        karpenter.sh/provisioner-name,
+        karpenter.k8s.aws/instance-ami-id
+        EOT
+      }
+    }
 
 ## S3 Bucket Specific Notes - Kubecost Data Bucket
 
