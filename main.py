@@ -172,17 +172,17 @@ def create_kubecost_annotations_to_k8s_annotations_mapping(annotations):
     return kubecost_annotations_to_orig_annotations
 
 
-def define_csv_columns(kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations):
-    """Defines the CSV columns and their mapping to default missing value.
+def define_dataframe_columns(kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations):
+    """Defines the DataFrame columns and their mapping to default missing value.
 
     :param kubecost_labels_to_orig_labels: A dict of Kubecost K8s labels keys, to original K8s labels keys
     :param kubecost_annotations_to_orig_annotations: A dict of Kubecost K8s annotations, to original K8s annotations
-    :return: Dictionary of CSV columns mapped to their NA/NaN value.
+    :return: Dictionary of DataFrame columns mapped to their NA/NaN value.
     This is including columns for K8s label keys and annotations, the way they're represented in Kubecost.
     """
 
-    # CSV columns definition
-    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations = {
+    # DataFrame columns definition
+    dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations = {
         "name": "",
         "window.start": "",
         "window.end": "",
@@ -245,12 +245,12 @@ def define_csv_columns(kubecost_labels_to_orig_labels, kubecost_annotations_to_o
 
     if kubecost_labels_to_orig_labels:
         for kubecost_label in kubecost_labels_to_orig_labels.keys():
-            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations[kubecost_label] = ""
+            dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations[kubecost_label] = ""
     if kubecost_annotations_to_orig_annotations:
         for kubecost_annotations in kubecost_annotations_to_orig_annotations.keys():
-            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations[kubecost_annotations] = ""
+            dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations[kubecost_annotations] = ""
 
-    return csv_columns_to_na_value_mapping_with_kubecost_labels_annotations
+    return dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations
 
 
 def iam_assume_role(iam_role_arn, iam_role_session_name):
@@ -801,51 +801,35 @@ def kubecost_allocation_data_timestamp_update(allocation_data):
     return allocation_data_with_updated_timestamps
 
 
-def kubecost_allocation_data_to_csv(updated_allocation_data,
-                                    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations):
-    """Transforms the Kubecost Allocation data to CSV.
-
-    :param updated_allocation_data: Kubecost's Allocation data after:
-     1. Transforming to a nested list
-     2. Updating timestamps
-    :param csv_columns_to_na_value_mapping_with_kubecost_labels_annotations: Dictionary of CSV columns mapped to their NA/NaN value.
-    This is including columns for K8s label keys and annotations, the way they're represented in Kubecost.
-    :return:
-    """
-
-    csv_columns = list(csv_columns_to_na_value_mapping_with_kubecost_labels_annotations.keys())
-
-    # DataFrame definition, including all time sets from Kubecost Allocation data
-    all_dfs = [pd.json_normalize(x) for x in updated_allocation_data]
-    df = pd.concat(all_dfs)
-
-    # Filling in an empty value for columns missing from the DataFrame (that were missing from the original dataset)
-    # Transforming the DataFrame to a CSV and creating the CSV file locally
-    df = df.reindex(columns=csv_columns, fill_value="")
-    df.to_csv("/tmp/output.csv", sep=",", encoding="utf-8", index=False, quotechar="'", escapechar="\\",
-              columns=csv_columns)
-
-
-def kubecost_csv_allocation_data_to_parquet(csv_file_name,
-                                            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations,
-                                            kubecost_labels_to_orig_labels,
-                                            kubecost_annotations_to_orig_annotations):
+def kubecost_allocation_data_to_parquet(allocation_data,
+                                        dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations,
+                                        kubecost_labels_to_orig_labels,
+                                        kubecost_annotations_to_orig_annotations):
     """Converting Kubecost Allocation data from CSV to Parquet.
 
-    :param csv_file_name: The name of the CSV file
-    :param csv_columns_to_na_value_mapping_with_kubecost_labels_annotations: Dictionary of CSV columns mapped to their NA/NaN value.
+    :param allocation_data: Kubecost's Allocation data after:
+     1. Transforming to a nested list
+     2. Updating timestamps
+    :param dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations: Dictionary of DataFrame columns mapped to their NA/NaN value.
     This is including columns for K8s label keys, the way they're represented in Kubecost.
     :param kubecost_labels_to_orig_labels: A dict mapping the Kubecost K8s labels keys, to the original K8s labels keys
     :param kubecost_annotations_to_orig_annotations: A dict of Kubecost K8s annotations, to original K8s annotations
     :return:
     """
 
-    df = pd.read_csv(csv_file_name, encoding="utf8", sep=",", quotechar="'", escapechar="\\")
+    # Converting Kubecost's Allocation data to Pandas DataFrame
+    all_dfs = [pd.json_normalize(x) for x in allocation_data]
+    df = pd.concat(all_dfs)
+
+    # Filling in an empty value for columns missing from the DataFrame (that were missing from the original dataset)
+    # Filtering the DataFrame to include only the desired columns
+    df = df.reindex(fill_value="")
+    df = df.loc[:, dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations.keys()]
 
     # Static definitions of data types, to not have them mistakenly set as incorrect data type
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
-    for column, na_value in csv_columns_to_na_value_mapping_with_kubecost_labels_annotations.items():
+    for column, na_value in dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations.items():
         if column not in ["window.start", "window.end"]:
             if type(na_value) == str:
                 df[column] = df[column].astype("string")
@@ -853,7 +837,7 @@ def kubecost_csv_allocation_data_to_parquet(csv_file_name,
                 df[column] = df[column].astype("float64")
 
     # Converting NA/NaN to values to their respective empty value based on data type
-    df = df.fillna(value=csv_columns_to_na_value_mapping_with_kubecost_labels_annotations)
+    df = df.fillna(value=dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations)
 
     # Renaming columns of the Kubecost representation of K8s labels to the original K8s labels
     if kubecost_labels_to_orig_labels:
@@ -934,7 +918,7 @@ def main():
     kubecost_annotations_to_orig_annotations = create_kubecost_annotations_to_k8s_annotations_mapping(ANNOTATIONS)
 
     # Defining a mapping of the CSV columns to their NA/NaN value
-    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations = define_csv_columns(
+    dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations = define_dataframe_columns(
         kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations)
 
     # Assume IAM Role once, to be used in all other AWS API calls
@@ -1054,14 +1038,11 @@ def main():
             kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(
                 kubecost_allocation_data_with_assets_data)
 
-            # Transforming Kubecost's updated allocation data to CSV, then to a Snappy-compressed Parquet.
-            # Then, uploading it to S3
-            kubecost_allocation_data_to_csv(kubecost_updated_allocation_data,
-                                            csv_columns_to_na_value_mapping_with_kubecost_labels_annotations)
-            kubecost_csv_allocation_data_to_parquet("/tmp/output.csv",
-                                                    csv_columns_to_na_value_mapping_with_kubecost_labels_annotations,
-                                                    kubecost_labels_to_orig_labels,
-                                                    kubecost_annotations_to_orig_annotations)
+            # Transforming Kubecost's updated allocation data to a Snappy-compressed Parquet, and uploading it to S3
+            kubecost_allocation_data_to_parquet(kubecost_updated_allocation_data,
+                                                dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations,
+                                                kubecost_labels_to_orig_labels,
+                                                kubecost_annotations_to_orig_annotations)
             upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, date, month,
                                                      year, assume_role_response)
 
