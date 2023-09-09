@@ -96,15 +96,6 @@ except ValueError:
     logger.error("The read timeout must be a float")
     sys.exit(1)
 
-try:
-    KUBECOST_ASSETS_API_READ_TIMEOUT = float(os.environ.get("KUBECOST_ASSETS_API_READ_TIMEOUT", 30))
-    if KUBECOST_ASSETS_API_READ_TIMEOUT <= 0:
-        logger.error("The read timeout must be a non-zero positive float")
-        sys.exit(1)
-except ValueError:
-    logger.error("The read timeout must be a float")
-    sys.exit(1)
-
 TLS_VERIFY = os.environ.get("TLS_VERIFY", "True").lower()
 if TLS_VERIFY in ["yes", "y", "true"]:
     TLS_VERIFY = True
@@ -240,7 +231,13 @@ def define_dataframe_columns(kubecost_labels_to_orig_labels, kubecost_annotation
         "properties.node_nodegroup_image": "",
         "properties.controller": "",
         "properties.controllerKind": "",
-        "properties.providerID": ""
+        "properties.providerID": "",
+        "properties.labels.eks_amazonaws_com_capacityType": "",
+        "properties.labels.karpenter_sh_capacity_type": "",
+        "properties.labels.eks_amazonaws_com_nodegroup": "",
+        "properties.labels.karpenter_sh_provisioner_name": "",
+        "properties.labels.eks_amazonaws_com_nodegroup_image": "",
+        "properties.labels.karpenter_k8s_aws_instance_ami_id": ""
     }
 
     if kubecost_labels_to_orig_labels:
@@ -608,72 +605,6 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
         sys.exit(1)
 
 
-def execute_kubecost_assets_api(tls_verify, kubecost_api_endpoint, start, end, connection_timeout, read_timeout,
-                                accumulate=False):
-    """Executes Kubecost Assets API.
-
-    :param tls_verify: Dictates whether TLS certificate verification is done for HTTPS connections
-    :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
-    :param start: The start time for calculating Kubecost Allocation API window
-    :param end: The end time for calculating Kubecost Allocation API window
-    :param connection_timeout: The timeout (in seconds) to wait for TCP connection establishment
-    :param read_timeout: The timeout (in seconds) to wait for the server to send an HTTP response
-    :param accumulate: Dictates whether to return data for the entire window, or divide to time sets
-    :return: The Kubecost Assets API "data" list from the HTTP response
-    """
-
-    if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
-        os.environ["REQUESTS_CA_BUNDLE"] = "/tmp/ca.cert.pem"
-
-    # Calculating the window
-    window = f'{start.strftime("%Y-%m-%dT%H:%M:%SZ")},{end.strftime("%Y-%m-%dT%H:%M:%SZ")}'
-
-    # Executing Kubecost Assets API call
-    try:
-        logger.info(f"Querying Kubecost Assets API for data between {start} and {end}")
-        params = {"window": window, "accumulate": accumulate, "filterCategories": "Compute", "filterTypes": "Node"}
-        r = requests.get(f"{kubecost_api_endpoint}/model/assets", params=params,
-                         timeout=(connection_timeout, read_timeout), verify=tls_verify)
-        if r.status_code == 200:
-            if list(filter(None, r.json()["data"])):
-                return list(filter(None, r.json()["data"]))
-            else:
-                logger.error("API response appears to be empty.\n"
-                             "This script collects data between 72 hours ago and 48 hours ago.\n"
-                             "Make sure that you have data at least within this timeframe.")
-                sys.exit()
-        else:
-            try:
-                logger.error("Kubecost API returned non-200 status code, it returned status code \n"
-                             f'Error message: {r.json()["error"]}')
-                sys.exit(1)
-            except KeyError:
-                logger.error(f"Kubecost API returned non-200 status code, it returned status code {r.status_code}\n"
-                             f"Error message: {r.json()}")
-
-    except requests.exceptions.ConnectTimeout:
-        logger.error(f"Timed out waiting for TCP connection establishment in the given time ({connection_timeout}s). "
-                     "Consider increasing the connection timeout value.")
-        sys.exit(1)
-    except requests.exceptions.SSLError as error:
-        logger.error(error.args[0].reason)
-        sys.exit(1)
-    except OSError as error:
-        logger.error(error)
-        sys.exit(1)
-    except requests.exceptions.ConnectionError as error:
-        error_title = error.args[0].reason.args[0].split(": ")[1]
-        error_reason = error.args[0].reason.args[0].split(": ")[-1].split("] ")[-1]
-        logger.error(f"{error_title}: {error_reason}. Check that the service is listening, "
-                     "and that you're using the correct port in your URL.")
-        sys.exit(1)
-    except requests.exceptions.ReadTimeout:
-        logger.error(f"Timed out waiting for Kubecost Assets API "
-                     f"to send an HTTP response in the given time ({read_timeout}s). "
-                     f"Consider increasing the read timeout value.")
-        sys.exit(1)
-
-
 def kubecost_allocation_data_add_cluster_id_and_name(allocation_data, cluster_id):
     """Adds the cluster unique ID and name from the CLUSTER_ID input, to each allocation.
     The cluster ID is needed in case we'd like to identify the unique cluster ID in the dataset.
@@ -690,87 +621,6 @@ def kubecost_allocation_data_add_cluster_id_and_name(allocation_data, cluster_id
                 if "cluster" in allocation["properties"].keys():
                     allocation["properties"]["eksClusterName"] = cluster_id.split("/")[-1]
                     allocation["properties"]["clusterid"] = cluster_id
-
-    return allocation_data
-
-
-def kubecost_allocation_data_add_assets_data(allocation_data, assets_data):
-    """Adds assets data from the Kubecost Assets API to the Kubecost allocation data.
-
-    :param allocation_data: The allocation "data" list from Kubecost Allocation API
-    :param assets_data: The asset "data" list from the Kubecost Assets API query HTTP response
-    :return: Kubecost allocation data with matching asset data
-    """
-
-    all_assets_ids = assets_data[0].keys()
-
-    for time_set in allocation_data:
-        for allocation in time_set.values():
-            if "properties" in allocation.keys():
-                if "providerID" in allocation["properties"].keys() \
-                        and "cluster" in allocation["properties"].keys() \
-                        and "node" in allocation["properties"].keys():
-
-                    # Identify the asset ID that matches the allocation's instance ID
-                    try:
-                        asset_id = [asset_id_key for asset_id_key in all_assets_ids if
-                                    asset_id_key.split("/")[-2] == allocation["properties"]["providerID"]][0]
-                    # Handle missing asset (such as in cases of short-lived nodes)
-                    except IndexError:
-                        continue
-
-                    # Updating matching asset data from the Assets API, on the allocation properties
-                    # If a certain asset data isn't found, the field is added to the allocation data as an empty string
-                    # This is to keep the dataset with all required fields
-                    # The "KeyError" exception handling is meant to handle field which is missing from the JSON
-                    # The "TypeError" exception handling is meant to handle field with "null" value in dict[key]
-                    # The "AttributeError" exception handling is meant to handle field with "null" value in dict.get()
-                    try:
-                        allocation["properties"]["provider"] = assets_data[0][asset_id]["properties"]["provider"]
-                    except (KeyError, TypeError):
-                        allocation["properties"]["provider"] = ""
-                    try:
-                        allocation["properties"]["region"] = assets_data[0][asset_id]["labels"][
-                            "label_topology_kubernetes_io_region"]
-                    except (KeyError, TypeError):
-                        allocation["properties"]["region"] = ""
-                    try:
-                        allocation["properties"]["node_instance_type"] = assets_data[0][asset_id]["nodeType"]
-                    except (KeyError, TypeError):
-                        allocation["properties"]["node_instance_type"] = ""
-                    try:
-                        allocation["properties"]["node_availability_zone"] = assets_data[0][asset_id]["labels"][
-                            "label_topology_kubernetes_io_zone"]
-                    except (KeyError, TypeError):
-                        allocation["properties"]["node_availability_zone"] = ""
-                    try:
-                        allocation["properties"]["node_capacity_type"] = assets_data[0][asset_id]["labels"].get(
-                            "label_eks_amazonaws_com_capacityType",
-                            assets_data[0][asset_id]["labels"].get("label_karpenter_sh_capacity_type", ""))
-                    except (KeyError, TypeError, AttributeError):
-                        allocation["properties"]["node_capacity_type"] = ""
-                    try:
-                        allocation["properties"]["node_architecture"] = assets_data[0][asset_id]["labels"][
-                            "label_kubernetes_io_arch"]
-                    except (KeyError, TypeError):
-                        allocation["properties"]["node_architecture"] = ""
-                    try:
-                        allocation["properties"]["node_os"] = assets_data[0][asset_id]["labels"][
-                            "label_kubernetes_io_os"]
-                    except (KeyError, TypeError):
-                        allocation["properties"]["node_os"] = ""
-                    try:
-                        allocation["properties"]["node_nodegroup"] = assets_data[0][asset_id]["labels"].get(
-                            "label_eks_amazonaws_com_nodegroup",
-                            assets_data[0][asset_id]["labels"].get("label_karpenter_sh_provisioner_name", ""))
-                    except (KeyError, TypeError, AttributeError):
-                        allocation["properties"]["node_nodegroup"] = ""
-                    try:
-                        allocation["properties"]["node_nodegroup_image"] = assets_data[0][asset_id]["labels"].get(
-                            "label_eks_amazonaws_com_nodegroup_image",
-                            assets_data[0][asset_id]["labels"].get("label_karpenter_k8s_aws_instance_ami_id", ""))
-                    except (KeyError, TypeError, AttributeError):
-                        allocation["properties"]["node_nodegroup_image"] = ""
 
     return allocation_data
 
@@ -805,7 +655,7 @@ def kubecost_allocation_data_to_parquet(allocation_data,
                                         dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations,
                                         kubecost_labels_to_orig_labels,
                                         kubecost_annotations_to_orig_annotations):
-    """Converting Kubecost Allocation data from CSV to Parquet.
+    """Converting Kubecost Allocation data to Parquet.
 
     :param allocation_data: Kubecost's Allocation data after:
      1. Transforming to a nested list
@@ -821,10 +671,30 @@ def kubecost_allocation_data_to_parquet(allocation_data,
     all_dfs = [pd.json_normalize(x) for x in allocation_data]
     df = pd.concat(all_dfs)
 
+    # Renaming all node labels fields from Kubecost Allocation API to "properties." fields
+    # This is to not confuse these fields with labels which aren't on the node
+    df = df.rename(columns={"properties.labels.node_kubernetes_io_instance_type": "properties.node_instance_type",
+                            "properties.labels.topology_kubernetes_io_region": "properties.region",
+                            "properties.labels.topology_kubernetes_io_zone": "properties.node_availability_zone",
+                            "properties.labels.kubernetes_io_arch": "properties.node_architecture",
+                            "properties.labels.kubernetes_io_os": "properties.node_os"
+                            })
+
     # Filling in an empty value for columns missing from the DataFrame (that were missing from the original dataset)
-    # Filtering the DataFrame to include only the desired columns
-    df = df.reindex(fill_value="")
-    df = df.loc[:, dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations.keys()]
+    # Converting NA/NaN to values to their respective empty value based on data type
+    df = df.reindex(columns=dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations, fill_value="")
+    df = df.fillna(value=dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations)
+
+    # Adding common fields for EKS Node Group and Karpenter
+    df["properties.node_capacity_type"] = df["properties.labels.eks_amazonaws_com_capacityType"] + df[
+        "properties.labels.karpenter_sh_capacity_type"]
+    df["properties.node_nodegroup"] = df["properties.labels.eks_amazonaws_com_nodegroup"] + df[
+        "properties.labels.karpenter_sh_provisioner_name"]
+    df["properties.node_nodegroup_image"] = df["properties.labels.eks_amazonaws_com_nodegroup_image"] + df[
+        "properties.labels.karpenter_k8s_aws_instance_ami_id"]
+
+    # Replacing value of "properties.provider" field based on the instance ID
+    df["properties.provider"] = ["AWS" if x.startswith("i-") else "" for x in df["properties.providerID"]]
 
     # Static definitions of data types, to not have them mistakenly set as incorrect data type
     df["window.start"] = pd.to_datetime(df["window.start"], format="%Y-%m-%d %H:%M:%S.%f")
@@ -836,8 +706,17 @@ def kubecost_allocation_data_to_parquet(allocation_data,
             elif type(na_value) == int:
                 df[column] = df[column].astype("float64")
 
-    # Converting NA/NaN to values to their respective empty value based on data type
-    df = df.fillna(value=dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations)
+    # Filtering the DataFrame to include only the desired columns
+    df = df.loc[:, dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations.keys()]
+
+    # Dropping EKS-specific and Karpenter-specific fields (after adding the common fields above)
+    df = df.drop(columns=["properties.labels.eks_amazonaws_com_capacityType",
+                     "properties.labels.karpenter_sh_capacity_type",
+                     "properties.labels.eks_amazonaws_com_nodegroup",
+                     "properties.labels.karpenter_sh_provisioner_name",
+                     "properties.labels.eks_amazonaws_com_nodegroup_image",
+                     "properties.labels.karpenter_k8s_aws_instance_ami_id"])
+
 
     # Renaming columns of the Kubecost representation of K8s labels to the original K8s labels
     if kubecost_labels_to_orig_labels:
@@ -909,7 +788,7 @@ def main():
     ################
 
     # The below set of functions are used to prepare things needed to execute other logic, as follows:
-    # 1. Define the CSV columns
+    # 1. Define the DataFrame columns
     # 2. Assume IAM Role to be used in all other AWS API calls
     # 3. Optionally, retrieve Kubecost root CA certificate from AWS Secrets Manager
 
@@ -917,7 +796,7 @@ def main():
     kubecost_labels_to_orig_labels = create_kubecost_labels_to_k8s_labels_mapping(LABELS)
     kubecost_annotations_to_orig_annotations = create_kubecost_annotations_to_k8s_annotations_mapping(ANNOTATIONS)
 
-    # Defining a mapping of the CSV columns to their NA/NaN value
+    # Defining a mapping of the DataFrame columns to their NA/NaN value
     dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations = define_dataframe_columns(
         kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations)
 
@@ -993,15 +872,18 @@ def main():
     # 3.1 Adding the real cluster ID and name to each allocation properties
     # 3.2 Consolidating the Allocation data and the Assets data to a single JSON
     # 3.3 Updating the timestamps to java.sql.Timestamp format
-    # 4. Converting the JSON to DataFrame, then to CSV.
-    # As part of this transformation, only the defined columns are extracted from the JSON.
-    # Columns that are completely missing from the DataFrame are added with empty value.
-    # 5. Converting the CSV back to DataFrame, then to Snappy-compressed Parquet.
+    # 4. Converting the JSON to DataFrame, then to Snappy-compressed Parquet.
     # As part of this transformation, the following is also done:
-    # 5.1 Any NA/NaN value is converted to a defined value based on the datatype
-    # 5.2 Static data types are set for each column
-    # 5.3 Label keys that were renamed by Kubecost are renamed back to their original label key
-    # 6. Uploading the Snappy-compressed Parquet file to S3
+    # 4.1 All node labels fields are converted to "properties." labels to not confuse them with workloads labels
+    # 4.2 Columns that are completely missing from the DataFrame, are added with an empty value.
+    # 4.3 Any NA/NaN value is converted to a defined value based on the datatype
+    # 4.3 EKS-specific Node Group fields and Karpenter-specific fields are dropped and replaced with common fields
+    # 4.4 Provider field is added based on instance ID
+    # 4.5 Static data types are set for each column
+    # 4.6 Label keys that were renamed by Kubecost are renamed back to their original label key
+    # 4.7 The DataFrame is filtered to include only the required column
+    # 4.8 The Dataframe is converted to Snappy-compressed Parquet
+    # 5. Uploading the Snappy-compressed Parquet file to S3
 
     if kubecost_dates_missing_from_s3:
 
@@ -1021,22 +903,13 @@ def main():
                                                                        KUBECOST_ALLOCATION_API_PAGINATE, True, True,
                                                                        True, True, False)
 
-            # Executing Kubecost Assets API call
-            kubecost_assets_data = execute_kubecost_assets_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start,
-                                                               end, CONNECTION_TIMEOUT,
-                                                               KUBECOST_ASSETS_API_READ_TIMEOUT)
-
             # Adding the real cluster ID and name from the cluster ID input
             kubecost_allocation_data_with_eks_cluster_name = kubecost_allocation_data_add_cluster_id_and_name(
                 kubecost_allocation_data, CLUSTER_ID)
 
-            # Adding assets data from the Kubecost Assets API
-            kubecost_allocation_data_with_assets_data = kubecost_allocation_data_add_assets_data(
-                kubecost_allocation_data_with_eks_cluster_name, kubecost_assets_data)
-
             # Transforming Kubecost's Allocation API data to a list of lists, and updating timestamps
             kubecost_updated_allocation_data = kubecost_allocation_data_timestamp_update(
-                kubecost_allocation_data_with_assets_data)
+                kubecost_allocation_data_with_eks_cluster_name)
 
             # Transforming Kubecost's updated allocation data to a Snappy-compressed Parquet, and uploading it to S3
             kubecost_allocation_data_to_parquet(kubecost_updated_allocation_data,
