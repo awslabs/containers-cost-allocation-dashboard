@@ -53,7 +53,6 @@ module "us-east-1-111111111111-cluster1" {
   kubecost_api_endpoint                = "https://kubecost-eks-cost-analyzer.kubecost-eks"
   connection_timeout                   = 5
   kubecost_allocation_api_read_timeout = 30
-  kubecost_assets_api_read_timeout     = 10
   tls_verify                           = "no"
   kubecost_ca_certificate_secret_name  = "kubecost"
   kubecost_ephemeral_volume_size       = "100Mi"
