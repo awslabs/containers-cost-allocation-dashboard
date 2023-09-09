@@ -12,8 +12,8 @@
   "properties": {
     "env": {
       "type": "array",
-      "minItems": 16,
-      "maxItems": 16,
+      "minItems": 15,
+      "maxItems": 15,
       "description": "List of environment variables to pass to the container",
       "required": [
         "name"
@@ -34,7 +34,6 @@
               "KUBECOST_ALLOCATION_API_PAGINATE",
               "CONNECTION_TIMEOUT",
               "KUBECOST_ALLOCATION_API_READ_TIMEOUT",
-              "KUBECOST_ASSETS_API_READ_TIMEOUT",
               "TLS_VERIFY",
               "KUBECOST_CA_CERTIFICATE_SECRET_NAME",
               "KUBECOST_CA_CERTIFICATE_SECRET_REGION",
@@ -227,25 +226,6 @@
                 "value": {
                   "type": "number",
                   "default": 60,
-                  "exclusiveMinimum": 0
-                }
-              }
-            }
-          },
-          {
-            "if": {
-              "properties": {
-                "name": {
-                  "description": "The time (in seconds) to wait for the Kubecost Assets API to send an HTTP response",
-                  "const": "KUBECOST_ASSETS_API_READ_TIMEOUT"
-                }
-              }
-            },
-            "then": {
-              "properties": {
-                "value": {
-                  "type": "number",
-                  "default": 30,
                   "exclusiveMinimum": 0
                 }
               }
