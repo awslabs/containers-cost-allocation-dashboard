@@ -25,7 +25,7 @@ env:
   - name: "KUBECOST_API_ENDPOINT"
     value: "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
   - name: "BACKFILL_PERIOD_DAYS"
-    value: 15
+    value: "15"
   - name: "CLUSTER_ID"
     value: "<cluster_arn>" # Change to your EKS cluster ARN
   - name: "IRSA_PARENT_IAM_ROLE_ARN"
@@ -35,11 +35,9 @@ env:
   - name: "KUBECOST_ALLOCATION_API_PAGINATE"
     value: "False"
   - name: "CONNECTION_TIMEOUT"
-    value: 10
+    value: "10"
   - name: "KUBECOST_ALLOCATION_API_READ_TIMEOUT"
-    value: 60
-  - name: "KUBECOST_ASSETS_API_READ_TIMEOUT"
-    value: 30
+    value: "60"
   - name: "TLS_VERIFY"
     value: "True"
   - name: "KUBECOST_CA_CERTIFICATE_SECRET_NAME"
