@@ -48,33 +48,13 @@ For the QuickSight dashboard to support all of the above node labels, you must a
 
 Here's an example of adding these node labels using `--set` option when running `helm upgrade -i`:
 
-    helm upgrade kubecost-eks \
+    helm upgrade -i kubecost-eks \
     oci://public.ecr.aws/kubecost/cost-analyzer --version 1.103.4 \
     --namespace kubecost-eks \
     -f https://raw.githubusercontent.com/kubecost/cost-analyzer-helm-chart/develop/cost-analyzer/values-eks-cost-monitoring.yaml \
     --set networkCosts.enabled=true \
     --set networkCosts.config.services.amazon-web-services=true \
     --set kubecostModel.allocation.nodeLabels.includeList="node.kubernetes.io\/instance-type\,topology.kubernetes.io\/region\,topology.kubernetes.io\/zone\,kubernetes.io\/arch\,kubernetes.io\/os\,eks.amazonaws.com\/nodegroup\,eks.amazonaws.com\/nodegroup_image\,eks.amazonaws.com\/capacityType\,karpenter.sh\/capacity-type\,karpenter.sh\/provisioner-name\,karpenter.k8s.aws\/instance-ami-id"
-
-Here's an example of adding these node labels in `values.yaml` using `heredoc`:
-
-    allocation = {
-      nodeLabels = {
-        includeList = <<-EOT
-        node.kubernetes.io/instance-type,
-        topology.kubernetes.io/region,
-        topology.kubernetes.io/zone,
-        kubernetes.io/arch,
-        kubernetes.io/os,
-        eks.amazonaws.com/nodegroup,
-        eks.amazonaws.com/nodegroup_image,
-        eks.amazonaws.com/capacityType,
-        karpenter.sh/capacity-type,
-        karpenter.sh/provisioner-name,
-        karpenter.k8s.aws/instance-ami-id
-        EOT
-      }
-    }
 
 ## S3 Bucket Specific Notes - Kubecost Data Bucket
 
