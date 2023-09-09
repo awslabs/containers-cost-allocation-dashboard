@@ -94,10 +94,6 @@ locals {
           "value" : var.kubecost_allocation_api_read_timeout
         },
         {
-          "name" : "KUBECOST_ASSETS_API_READ_TIMEOUT",
-          "value" : var.kubecost_assets_api_read_timeout
-        },
-        {
           "name" : "TLS_VERIFY",
           "value" : var.tls_verify
         },
