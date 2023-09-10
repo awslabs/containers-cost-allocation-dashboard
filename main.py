@@ -753,7 +753,7 @@ def kubecost_allocation_data_to_parquet(allocation_data,
     df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
 
 
-def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year, assume_role_response=None):
+def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year, assume_role_response):
     """Compresses and uploads the Kubecost Allocation Parquet to an S3 bucket.
 
     :param s3_bucket_name: The S3 bucket name to use
