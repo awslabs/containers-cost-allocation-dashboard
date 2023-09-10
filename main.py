@@ -40,17 +40,16 @@ except KeyError:
     logger.error("The 'CLUSTER_ID' input is a required, but it's missing")
     sys.exit(1)
 
-try:
-    IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
+# Optional environment variables, and input validations
+
+IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
+if IRSA_PARENT_IAM_ROLE_ARN:
     if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@_-]{1,64}$",
                     IRSA_PARENT_IAM_ROLE_ARN):
         logger.error(f"The 'IRSA_PARENT_IAM_ROLE_ARN' input contains an invalid ARN: {IRSA_PARENT_IAM_ROLE_ARN}")
         sys.exit(1)
-except KeyError:
-    logger.error("The 'IRSA_PARENT_IAM_ROLE_ARN' input is a required, but it's missing")
-    sys.exit(1)
 
-# Optional environment variables, and input validations
+
 KUBECOST_API_ENDPOINT = os.environ.get("KUBECOST_API_ENDPOINT", "http://kubecost-cost-analyzer.kubecost:9090")
 if not re.match(r"^https?://.+$", KUBECOST_API_ENDPOINT):
     logger.error("The Kubecost API endpoint is invalid. It must be in the format of "
@@ -268,20 +267,28 @@ def iam_assume_role(iam_role_arn, iam_role_session_name):
         sys.exit(1)
 
 
-def secrets_manager_get_secret_value(secret_name, assume_role_response, region_code):
+def secrets_manager_get_secret_value(secret_name, region_code, assume_role_response):
     """Retrieves secret's value from Secret Manager.
 
     :param secret_name: The AWS Secrets Manager Secret name
-    :param assume_role_response: The response of the sts:AssumeRole API call that was made prior to this API call
     :param region_code: The region-code to be used when making the secretsmanager:GetSecretValue API call
+    :param assume_role_response: The response of the sts:AssumeRole API call that was made prior to this API call
     :return: The secret string from the API call's response
     """
 
     try:
-        client = boto3.client("secretsmanager", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
-                              aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
-                              aws_session_token=assume_role_response["Credentials"]["SessionToken"],
-                              region_name=region_code)
+        # Client definition in case the EKS cluster and AWS Secrets Manager are in different AWS accounts.
+        # This means cross account authentication will be done, so the client contains the parent IAM role credentials
+        if assume_role_response:
+            client = boto3.client("secretsmanager", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+                                  aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
+                                  aws_session_token=assume_role_response["Credentials"]["SessionToken"],
+                                  region_name=region_code)
+
+        # Client definition in case the EKS cluster and AWS Secrets Manager are in the same AWS account.
+        # This means cross account authentication isn't necessary, so IRSA credentials will be used
+        else:
+            client = boto3.client("secretsmanager", region_name=region_code)
         logger.info(f"Retrieving secret '{secret_name}' from AWS Secrets Manager...")
 
         response = client.get_secret_value(SecretId=secret_name)
@@ -389,9 +396,17 @@ def get_s3_backfill_period_available_dates(s3_bucket_name, cluster_id, backfill_
 
     # Executing the s3:ListObjectsV2 API call
     try:
-        client = boto3.client("s3", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
-                              aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
-                              aws_session_token=assume_role_response["Credentials"]["SessionToken"])
+        # Client definition in case the EKS cluster and AWS Secrets Manager are in different AWS accounts.
+        # This means cross account authentication will be done, so the client contains the parent IAM role credentials
+        if assume_role_response:
+            client = boto3.client("s3", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+                                  aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
+                                  aws_session_token=assume_role_response["Credentials"]["SessionToken"])
+
+        # Client definition in case the EKS cluster and AWS Secrets Manager are in the same AWS account.
+        # This means cross account authentication isn't necessary, so IRSA credentials will be used
+        else:
+            client = boto3.client("s3")
         logger.info(f"Retrieving list of objects for cluster '{cluster_id}' in the last {backfill_period_days} "
                     f"days from S3 Bucket '{s3_bucket_name}'...")
         paginator = client.get_paginator("list_objects_v2")
@@ -738,7 +753,7 @@ def kubecost_allocation_data_to_parquet(allocation_data,
     df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
 
 
-def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year, assume_role_response):
+def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year, assume_role_response=None):
     """Compresses and uploads the Kubecost Allocation Parquet to an S3 bucket.
 
     :param s3_bucket_name: The S3 bucket name to use
@@ -765,9 +780,17 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
     s3_file_name = f"{date}_{cluster_name}"
     os.rename("/tmp/output.snappy.parquet", f"/tmp/{s3_file_name}.snappy.parquet")
     try:
-        s3 = boto3.resource("s3", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
-                            aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
-                            aws_session_token=assume_role_response["Credentials"]["SessionToken"])
+        # Client definition in case the EKS cluster and AWS Secrets Manager are in different AWS accounts.
+        # This means cross account authentication will be done, so the client contains the parent IAM role credentials
+        if assume_role_response:
+            s3 = boto3.resource("s3", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+                                aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
+                                aws_session_token=assume_role_response["Credentials"]["SessionToken"])
+
+        # Client definition in case the EKS cluster and AWS Secrets Manager are in the same AWS account.
+        # This means cross account authentication isn't necessary, so IRSA credentials will be used
+        else:
+            s3 = boto3.resource("s3")
         s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
 
         logger.info(f"Uploading file '{s3_file_name}.snappy.parquet' to S3 Bucket '{s3_bucket_name}'...")
@@ -800,16 +823,26 @@ def main():
     dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations = define_dataframe_columns(
         kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations)
 
+    # In case the EKS cluster and target services (AWS Secret Manager and S3) are in different account:
     # Assume IAM Role once, to be used in all other AWS API calls
-    assume_role_response = iam_assume_role(IRSA_PARENT_IAM_ROLE_ARN, "kubecost-s3-exporter")
+    # Content of "assume_role_response" will be the sts:AssumeRole API response
+    # Otherwise:
+    # Sets "assume_role_response" to "None"
+    # Functions executing AWS API calls conditionally set their credentials as follows:
+    # If "assume_role_response" has content, using the assumed role credentials
+    # If "assume_role_response" is "None", they won't pass credentials, but will use the IRSA credentials
+    if IRSA_PARENT_IAM_ROLE_ARN:
+        assume_role_response = iam_assume_role(IRSA_PARENT_IAM_ROLE_ARN, "kubecost-s3-exporter")
+    else:
+        assume_role_response = None
 
     # If the user gave a secret name as an input to the "KUBECOST_CA_CERTIFICATE_SECRET_NAME" environment variable
     # 1. The secret with the given name will be retrieved from AWS Secrets Manager
     # 2. A file will be created from the content of the CA certificate
     # 3. The "REQUESTS_CA_BUNDLE" will be set with the file path
     if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
-        kubecost_ca_cert = secrets_manager_get_secret_value(KUBECOST_CA_CERTIFICATE_SECRET_NAME, assume_role_response,
-                                                            KUBECOST_CA_CERTIFICATE_SECRET_REGION)
+        kubecost_ca_cert = secrets_manager_get_secret_value(KUBECOST_CA_CERTIFICATE_SECRET_NAME,
+                                                            KUBECOST_CA_CERTIFICATE_SECRET_REGION, assume_role_response)
         create_ca_cert_file(kubecost_ca_cert)
 
     ##################
