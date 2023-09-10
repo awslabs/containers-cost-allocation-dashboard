@@ -24,8 +24,7 @@ The data collection pod is referred to as Kubecost S3 Exporter throughout some p
 ## High-Level Logic
 
 1. The CronJob K8s controller runs daily and creates a pod that collects cost allocation data from Kubecost. It runs the following API calls:  
-The [Allocation API](https://docs.kubecost.com/apis/apis-overview/allocation) to retrieve the cost allocation data.  
-The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data.  
+The [Allocation API](https://docs.kubecost.com/apis/apis-overview/allocation) to retrieve the cost allocation data.
 It always collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.  
 2. Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice. This is when the CronJob finishes  
 3. The data is made available in Athena using AWS Glue Database, AWS Glue Table and AWS Glue Crawler.  
@@ -56,7 +55,6 @@ It's up to you to use it on your S3 bucket.
 The Kubecost APIs that are being used are:
 
 * The [Allocation API](https://docs.kubecost.com/apis/apis-overview/allocation) to retrieve the cost allocation data
-* The [Assets API](https://docs.kubecost.com/apis/apis-overview/assets-api) to retrieve the assets' data - specifically for the nodes
 
 ## Encrypting Data In-Transit
 
