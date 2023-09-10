@@ -26,6 +26,10 @@ data "aws_caller_identity" "pipeline_caller_identity" {
   provider = aws.pipeline
 }
 
+data "aws_caller_identity" "eks_caller_identity" {
+  provider = aws.eks
+}
+
 data "aws_secretsmanager_secret" "kubecost_secret" {
   provider = aws.pipeline
   count    = length(var.kubecost_ca_certificate_secret_name) > 0 ? 1 : 0
@@ -54,7 +58,7 @@ locals {
       "serviceAccount" : {
         "name" : var.service_account
         "create" : var.create_service_account
-        "role" : aws_iam_role.kubecost_s3_exporter_irsa_child_role.arn
+        "role" : length(aws_iam_role.kubecost_s3_exporter_irsa_child_role) > 0 ? aws_iam_role.kubecost_s3_exporter_irsa_child_role[0].arn : aws_iam_role.kubecost_s3_exporter_irsa_role[0].arn
       }
       "env" : [
         {
@@ -75,7 +79,7 @@ locals {
         },
         {
           "name" : "IRSA_PARENT_IAM_ROLE_ARN",
-          "value" : aws_iam_role.kubecost_s3_exporter_irsa_parent_role.arn
+          "value" : length(aws_iam_role.kubecost_s3_exporter_irsa_parent_role) > 0 ? aws_iam_role.kubecost_s3_exporter_irsa_parent_role[0].arn : ""
         },
         {
           "name" : "AGGREGATION",
@@ -122,8 +126,102 @@ locals {
   )
 }
 
+# The below resource is created conditionally, if the EKS cluster account ID and the pipeline account ID are the same
+# This means that a single IAM Role (IRSA) is created in the account, as cross-account authentication isn't required
+resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
+  provider = aws.eks
+
+  count = data.aws_caller_identity.eks_caller_identity.account_id == data.aws_caller_identity.pipeline_caller_identity.account_id ? 1 : 0
+
+  name = "kubecost_s3_exporter_irsa_${element(split("/", var.cluster_oidc_provider_arn), 3)}"
+  assume_role_policy = jsonencode(
+    {
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Principal = {
+            Federated = var.cluster_oidc_provider_arn
+          }
+          Action = "sts:AssumeRoleWithWebIdentity"
+          Condition = {
+            StringEquals = {
+              "${element(split(":oidc-provider/", var.cluster_oidc_provider_arn), 1)}:aud" = "sts.amazonaws.com"
+              "${element(split(":oidc-provider/", var.cluster_oidc_provider_arn), 1)}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account}"
+            }
+          }
+        }
+      ]
+    }
+  )
+
+  inline_policy {
+    name = "kubecost_s3_exporter_parent_put_object"
+    policy = jsonencode(
+      {
+        Statement = [
+          {
+            Action   = "s3:PutObject"
+            Effect   = "Allow"
+            Resource = "${module.common.bucket_arn}/account_id=${local.cluster_account_id}/region=${local.cluster_region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+          }
+        ]
+        Version = "2012-10-17"
+      }
+    )
+  }
+
+  inline_policy {
+    name = "kubecost_s3_exporter_parent_list_bucket"
+    policy = jsonencode(
+      {
+        Statement = [
+          {
+            Action   = "s3:ListBucket"
+            Effect   = "Allow"
+            Resource = module.common.bucket_arn
+          }
+        ]
+        Version = "2012-10-17"
+      }
+    )
+  }
+
+  # The below inline policy is conditionally created
+  # If the "kubecost_ca_certificate_secret_name" variable contains a value, the below inline policy is added
+  # Else, it won't be added
+  dynamic "inline_policy" {
+    for_each = length(var.kubecost_ca_certificate_secret_name) > 0 ? [1] : []
+    content {
+      name = "kubecost_s3_exporter_parent_get_secret_value"
+      policy = jsonencode(
+        {
+          Statement = [
+            {
+              Action   = "secretsmanager:GetSecretValue"
+              Effect   = "Allow"
+              Resource = data.aws_secretsmanager_secret.kubecost_secret[0].arn
+            }
+          ]
+          Version = "2012-10-17"
+        }
+      )
+    }
+  }
+
+  tags = {
+    irsa-kubecost-s3-exporter    = "true"
+    irsa-kubecost-s3-exporter-sm = length(var.kubecost_ca_certificate_secret_name) > 0 ? "true" : "false"
+  }
+}
+
+# The below 2 resources are created conditionally, if the EKS cluster account ID and the pipeline account ID are different
+# This means that a child IAM Role (IRSA) is created in the EKS account, and a parent IAM role is created in the pipeline accoubt
+# This is for cross-account authentication using IAM Role Chaining
 resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
   provider = aws.eks
+
+  count = data.aws_caller_identity.eks_caller_identity.account_id != data.aws_caller_identity.pipeline_caller_identity.account_id ? 1 : 0
 
   name = "kubecost_s3_exporter_irsa_${element(split("/", var.cluster_oidc_provider_arn), 3)}"
   assume_role_policy = jsonencode(
@@ -167,6 +265,8 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
 resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
   provider = aws.pipeline
 
+  count = data.aws_caller_identity.eks_caller_identity.account_id != data.aws_caller_identity.pipeline_caller_identity.account_id ? 1 : 0
+
   name = "kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
   assume_role_policy = jsonencode(
     {
@@ -175,7 +275,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
         {
           Effect = "Allow"
           Principal = {
-            AWS = aws_iam_role.kubecost_s3_exporter_irsa_child_role.arn
+            AWS = aws_iam_role.kubecost_s3_exporter_irsa_child_role[0].arn
           }
           Action = "sts:AssumeRole"
         }
