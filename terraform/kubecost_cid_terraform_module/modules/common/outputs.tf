@@ -5,11 +5,6 @@ output "bucket_arn" {
   value       = var.bucket_arn
 }
 
-output "clusters_metadata" {
-  description = "A list of clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset"
-  value       = var.clusters_metadata
-}
-
 output "aws_glue_database_name" {
   description = "The AWS Glue Database name"
   value       = var.aws_glue_database_name
@@ -40,19 +35,19 @@ output "aws_shared_credentials_files" {
   value       = var.aws_shared_credentials_files
 }
 
+output "k8s_labels" {
+  description = "K8s labels common across all clusters, that you wish to include in the dataset"
+  value       = var.k8s_labels
+}
+
+output "k8s_annotations" {
+  description = "K8s annotations common across all clusters, that you wish to include in the dataset"
+  value       = var.k8s_annotations
+}
+
 output "aws_common_tags" {
   description = "Common AWS tags to be used on all AWS resources created by Terraform"
   value       = var.aws_common_tags
-}
-
-output "distinct_labels" {
-  description = "List of the distinct labels from all clusters"
-  value       = local.distinct_labels
-}
-
-output "distinct_annotations" {
-  description = "List of the distinct annotations from all clusters"
-  value       = local.distinct_annotations
 }
 
 output "static_columns" {
