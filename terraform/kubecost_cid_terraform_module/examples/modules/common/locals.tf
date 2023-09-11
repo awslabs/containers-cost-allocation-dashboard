@@ -1,11 +1,6 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 locals {
-  # A below two locals are used to gather all labels and annotations from all K8s clusters, and create a distinct list of labels and annotations
-  # This is used to define those labels and annotations as columns in the AWS Glue Table and in the QuickSight Dataset
-  distinct_labels      = distinct(flatten([for labels_list in var.clusters_metadata.*.labels : labels_list == null ? [] : labels_list]))
-  distinct_annotations = distinct(flatten([for annotations_list in var.clusters_metadata.*.annotations : annotations_list == null ? [] : annotations_list]))
-
   # The below local is used to define the static columns of the schema that is used in both the AWS Glue Table and the QuickSight Dataset
   static_columns = [
     {
