@@ -169,14 +169,14 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       }
     }
     dynamic "columns" {
-      for_each = [for k8s_label in module.common.distinct_labels : k8s_label]
+      for_each = [for k8s_label in distinct(module.common.k8s_labels) : k8s_label]
       content {
         name = "properties.labels.${columns.value}"
         type = "string"
       }
     }
     dynamic "columns" {
-      for_each = [for k8s_annotation in module.common.distinct_annotations : k8s_annotation]
+      for_each = [for k8s_annotation in distinct(module.common.k8s_annotations) : k8s_annotation]
       content {
         name = "properties.annotations.${columns.value}"
         type = "string"
@@ -250,8 +250,8 @@ resource "local_file" "cid_yaml" {
   directory_permission = "0400"
   file_permission      = "0400"
   content = templatefile("../../../cid/eks_insights_dashboard.yaml.tpl", {
-    labels                = module.common.distinct_labels
-    annotations           = module.common.distinct_annotations
+    labels                = distinct(module.common.k8s_labels)
+    annotations           = distinct(module.common.k8s_annotations)
     athena_datasource_arn = "$${athena_datasource_arn}"
     athena_database_name  = "$${athena_database_name}"
   })
