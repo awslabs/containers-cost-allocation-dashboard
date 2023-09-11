@@ -18,38 +18,6 @@ variable "bucket_arn" {
   }
 }
 
-variable "clusters_metadata" {
-  description = <<EOF
-    (Optional) A list of clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset.
-    Each item in the list has the following parameters:
-
-    (Required) cluster_id: The unique ID of the K8s cluster (e.g., ARN for EKS cluster)
-    (Optional) labels: A list of K8s labels you wish to include in the dataset
-    (Optional) annotations: A list of K8s annotations you wish to include in the dataset
-
-    Please note that there's no need to include a "cluster_id" field in the list if you don't need to add labels or annotations to the dataset for it.
-    In other words, when adding a cluster to the list, add it with at least "labels" field or "annotations" field.
-  EOF
-
-  type = list(object({
-    cluster_id  = string
-    labels      = optional(list(string))
-    annotations = optional(list(string))
-  }))
-
-  default = []
-
-  validation {
-    condition = (
-      length([
-        for cluster_id in var.clusters_metadata.*.cluster_id : cluster_id
-        if can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", cluster_id))
-      ]) == length(var.clusters_metadata)
-    )
-    error_message = "At least one of the 'cluster_id' keys in the 'clusters_metadata' list, contains an invalid value"
-  }
-}
-
 variable "aws_glue_database_name" {
   description = "(Optional) The AWS Glue Database name"
   type        = string
@@ -168,6 +136,18 @@ variable "aws_shared_credentials_files" {
     condition     = length(compact(var.aws_shared_credentials_files)) > 0
     error_message = "The 'aws_shared_credentials_files' input is empty. It must contain at least one AWS shared credentials file"
   }
+}
+
+variable "k8s_labels" {
+  description = "K8s labels common across all clusters, that you wish to include in the dataset"
+  type        = list(string)
+  default     = []
+}
+
+variable "k8s_annotations" {
+  description = "K8s annotations common across all clusters, that you wish to include in the dataset"
+  type        = list(string)
+  default     = []
 }
 
 variable "aws_common_tags" {
