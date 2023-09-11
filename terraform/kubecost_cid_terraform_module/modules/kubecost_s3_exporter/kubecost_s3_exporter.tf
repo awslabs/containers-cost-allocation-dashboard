@@ -111,11 +111,11 @@ locals {
         },
         {
           "name" : "LABELS",
-          "value" : try(join(", ", lookup(element(module.common.clusters_metadata, index(module.common.clusters_metadata.*.cluster_id, var.cluster_arn)), "labels", [])), "")
+          "value" : join(", ", distinct(module.common.k8s_labels))
         },
         {
           "name" : "ANNOTATIONS",
-          "value" : try(join(", ", lookup(element(module.common.clusters_metadata, index(module.common.clusters_metadata.*.cluster_id, var.cluster_arn)), "annotations", [])), "")
+          "value" : join(", ", distinct(module.common.k8s_annotations))
         },
         {
           "name" : "PYTHONUNBUFFERED",
