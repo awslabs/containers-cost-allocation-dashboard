@@ -38,50 +38,6 @@ variable "aws_glue_table_name" {
   }
 }
 
-variable "athena_workgroup_configuration" {
-  description = <<EOF
-    (Optional) The configuration the Athena Workgroup. Used either to create a new Athena Workgroup, or reference configuration of an existing Athena Workgroup.
-
-    (Required) create: Dictates whether to create a custom Athena Workgroup
-    (Required) name: If "create" is "true", used to define the Athena Workgroup name and reference it in the QuickSight Data Source. If "create" is "false", used only for referencing the Workgroup in the QuickSight Data Source
-    (Required when "create" is "true") query_results_location_bucket_name: If "create" is "true", used to set the Athena Workgroup query results location. If "create" is "false", this field is ignored
-  EOF
-
-  type = object({
-    create                             = bool
-    name                               = string
-    query_results_location_bucket_name = optional(string, "")
-  })
-
-  default = {
-    create                             = true
-    name                               = "kubecost"
-    query_results_location_bucket_name = "" # Add an S3 bucket name for Athena Workgroup Query Results Location, if "create" is "true"
-  }
-
-  validation {
-    condition = (
-      (
-        var.athena_workgroup_configuration.create &&
-        can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.athena_workgroup_configuration.query_results_location_bucket_name)) &&
-        !startswith(var.athena_workgroup_configuration.query_results_location_bucket_name, "xn--") &&
-        !endswith(var.athena_workgroup_configuration.query_results_location_bucket_name, "-s3alias") &&
-        can(regex("^[A-Za-z0-9_.-]{1,128}$", var.athena_workgroup_configuration.name))
-      )
-      ||
-      (
-        !var.athena_workgroup_configuration.create &&
-        can(regex("^[A-Za-z0-9_.-]{1,128}$", var.athena_workgroup_configuration.name))
-      )
-    )
-    error_message = <<EOF
-      The 'athena_workgroup_configuration' variable must have one of the following combinations:
-1. When the 'create' field is 'true', the 'name' field must have a valid Athena Workgroup name, and the 'query_results_location_bucket_name' field must have a valid S3 bucket name
-2. When the 'create' field is 'false', the 'name' field must have a valid Athena Workgroup name, and 'query_results_location_bucket_name' is ignored (so it can have any value)
-    EOF
-  }
-}
-
 variable "kubecost_ca_certificates_list" {
   description = <<EOF
     (Optional) A list root CA certificates paths and their configuration for AWS Secrets Manager. Used for TLS communication with Kubecost. This is a consolidated list of all root CA certificates that are needed for all Kubecost endpoints.
