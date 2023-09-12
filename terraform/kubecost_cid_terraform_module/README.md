@@ -129,25 +129,17 @@ This is to not repeat these inputs twice in the `main.tf` file.
 
 The below table lists the required and optional common inputs:
 
-| Name                                                                                | Description                                                                                                                                                                                                                                                                   | Type                                                                                                                                                                                                           | Default                                                                                                       | Possible Values                             | Required |
-|-------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|---------------------------------------------|----------|
-| <a name="input_bucket_arn"></a> bucket\_arn                                         | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                                                                                                                                                                                          | `string`                                                                                                                                                                                                       | `""`                                                                                                          | A valid S3 Bucket ARN                       | yes      |
-| <a name="input_clusters_metadata"></a> clusters\_metadata                           | A list of objects containing clusters and their additional metadata (K8s labels, annotations) that you wish to include in the dataset                                                                                                                                         | <pre>list(object({<br>    cluster_id  = string<br>    labels      = optional(list(string))<br>    annotations = optional(list(string))<br>  }))</pre>                                                          | `[]`                                                                                                          |                                             | no       |
-| <a name="input_kubecost_ca_certificates_list"></a> kubecost\_ca\_certificates\_list | A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager                                                                                                                                                                       | <pre>list(object({<br>    cert_path = string<br>    cert_secret_name = string<br>    cert_secret_allowed_principals = optional(list(string))<br>  }))</pre>                                                    | `[]`                                                                                                          |                                             | no       |
-| <a name="input_aws_glue_database_name"></a> aws\_glue\_database\_name               | The AWS Glue Database name                                                                                                                                                                                                                                                    | `string`                                                                                                                                                                                                       | `"kubecost_db"`                                                                                               | A valid AWS Glue Database name              | no       |
-| <a name="input_aws_glue_table_name"></a> aws\_glue\_table\_name                     | The AWS Glue Table name                                                                                                                                                                                                                                                       | `string`                                                                                                                                                                                                       | `"kubecost_table"`                                                                                            | A valid AWS Glue Table name                 | no       |
-| <a name="input_custom_athena_workgroup"></a> custom\_athena\_workgroup              | The settings for the custom Athena Workgroup.<br />This variable can either have `create` field as `true` with `name` field containing a valid Athena Workgroup name and `query_results_location_bucket_name` containing a valid S3 bucket name, or `create` field as `false` | <pre>object({<br>    create                             = bool<br>    name                               = optional(string, "")<br>    query_results_location_bucket_name = optional(string, "")<br>  })</pre> | <pre>{<br>  "create": true,<br>  "name": "kubecost",<br>  "query_results_location_bucket_name": ""<br>}</pre> | n/a                                         | yes      |
-| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files             | Paths to the AWS shared config files                                                                                                                                                                                                                                          | `list(string)`                                                                                                                                                                                                 | <pre>[<br>  "~/.aws/config"<br>]</pre>                                                                        | A list of paths to the AWS config file      | no       |
-| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files   | Paths to the AWS shared credentials files                                                                                                                                                                                                                                     | `list(string)`                                                                                                                                                                                                 | <pre>[<br>  "~/.aws/credentials"<br>]</pre>                                                                   | A list of paths to the AWS credentials file | no       |
-| <a name="input_aws_common_tags"></a> aws\_common\_tags                              | Common AWS tags to be used on all AWS resources created by Terraform                                                                                                                                                                                                          | `map(any)`                                                                                                                                                                                                     | `{}`                                                                                                          | A map of tag keys and their values          | no       |
-
-The below table lists the required inputs of the `clusters_metadata` input:
-
-| Name                                         | Description                                                                   | Type           | Default | Possible Values                   | Required |
-|----------------------------------------------|-------------------------------------------------------------------------------|----------------|---------|-----------------------------------|----------|
-| <a name="input_cluster_id"></a> cluster\_id  | The unique ID of the cluster that its labels you'd like to add to the dataset | `string`       | n/a     | An EKS Cluster ARN                | yes      |
-| <a name="input_labels"></a> labels           | A list of labels to include in the dataset                                    | `list(string)` | n/a     | A list of labels, as strings      | no       |
-| <a name="input_annotations"></a> annotations | A list of annotations to include in the dataset                               | `list(string)` | n/a     | A list of annotations, as strings | no       |
+| Name                                                                                | Description                                                                                                                           | Type                                                                                                                                                        | Default                                     | Possible Values                             | Required |
+|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|---------------------------------------------|----------|
+| <a name="input_bucket_arn"></a> bucket\_arn                                         | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                                                  | `string`                                                                                                                                                    | `""`                                        | A valid S3 Bucket ARN                       | yes      |
+| <a name="input_kubecost_ca_certificates_list"></a> kubecost\_ca\_certificates\_list | A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager                               | <pre>list(object({<br>    cert_path = string<br>    cert_secret_name = string<br>    cert_secret_allowed_principals = optional(list(string))<br>  }))</pre> | `[]`                                        |                                             | no       |
+| <a name="input_aws_glue_database_name"></a> aws\_glue\_database\_name               | The AWS Glue Database name                                                                                                            | `string`                                                                                                                                                    | `"kubecost_db"`                             | A valid AWS Glue Database name              | no       |
+| <a name="input_aws_glue_table_name"></a> aws\_glue\_table\_name                     | The AWS Glue Table name                                                                                                               | `string`                                                                                                                                                    | `"kubecost_table"`                          | A valid AWS Glue Table name                 | no       |
+| <a name="input_aws_shared_config_files"></a> aws\_shared\_config\_files             | Paths to the AWS shared config files                                                                                                  | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/config"<br>]</pre>      | A list of paths to the AWS config file      | no       |
+| <a name="input_aws_shared_credentials_files"></a> aws\_shared\_credentials\_files   | Paths to the AWS shared credentials files                                                                                             | `list(string)`                                                                                                                                              | <pre>[<br>  "~/.aws/credentials"<br>]</pre> | A list of paths to the AWS credentials file | no       |
+| <a name="input_k8s_labels"></a> k8s\_labels                                         | K8s labels common across all clusters, that you wish to include in the dataset                                                        | `list(string)`                                                                                                                                              | `[]`                                        | A list of K8s label keys                    | no       |
+| <a name="input_k8s_annotations"></a> k8s\_annotations                               | K8s annotations common across all clusters, that you wish to include in the dataset                                                   | `list(string)`                                                                                                                                              | `[]`                                        | A list of K8s annotations keys              | no       |
+| <a name="input_aws_common_tags"></a> aws\_common\_tags                              | Common AWS tags to be used on all AWS resources created by Terraform                                                                  | `map(any)`                                                                                                                                                  | `{}`                                        | A map of tag keys and their values          | no       |
 
 The below table lists the required inputs of the `kubecost_ca_certificates_list` input:
 
@@ -157,14 +149,6 @@ The below table lists the required inputs of the `kubecost_ca_certificates_list`
 | <a name="input_cert_secret_name"></a> cert\_secret\_name                              | The AWS Secrets Manager secret name to be used for the CA certificate               | `string`       | n/a     | A valid AWS Secrets Manager secret name | yes      |
 | <a name="input_cert_secret_allowed_principals"></a> cert\_secret\_allowed\_principals | A list of additional principal ARNs to add to the AWS Secrets Manager secret policy | `list(string)` | n/a     | A list of principal ARNs                | no       |
 
-The below table lists the required inputs of the `custom_athena_workgroup` input:
-
-| Name                                                                                           | Description                                                                                      | Type     | Default  | Possible Values                     | Required                       |
-|------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|----------|----------|-------------------------------------|--------------------------------|
-| <a name="input_create"></a> create                                                             | Dictates whether to create a custom Athena Workgroup                                             | `bool`   | `true`   | `true` or `false`                   | yes                            |
-| <a name="input_name"></a> name                                                                 | If `create` is `true`, used to define the Athena Workgroup name                                  | `string` | kubecost | A valid Athena Workgroup name       | Required if `create` is `true` |
-| <a name="input_query_results_location_bucket_name"></a> query\_results\_location\_bucket\_name | If `create` is `true`, used to define the Athena Workgroup query results location S3 bucket name | `string` | ""       | A valid S3 bucket name              | Required if `create` is `true` |
-
 To provide the inputs, open the `modules/common/variables.tf` file, and perform the following:
 
 #### Provide the Common Required Inputs
@@ -172,14 +156,6 @@ To provide the inputs, open the `modules/common/variables.tf` file, and perform 
 Provide the common required inputs, as listed in the above table.<br />
 You must provide the values in the `default` keyword of each variable, by changing the default empty value.<br />
 See examples in the `examples/modules/common/variables.tf` file.
-
-Note:  
-The `custom_athena_workgroup` variable defines the settings for the Athena Workgroup that is created by this Terraform module.  
-By default, the `create` field in this variable is set to `true`, which means an Athena Workgroup will be created.  
-In this case, you must provide an input in the `query_results_location_bucket_name` field.  
-If you don't do so, Terraform will fail the input validation for this field, with an error stating what the expected inputs are.  
-If you don't want to create a custom Athena Workgroup, change the `create` field to `false`.  
-In this case, the rest of the fields in the `custom_athena_workgroup` are ignored.
 
 #### Optionally, Change the Common Optional Inputs
 
@@ -189,10 +165,6 @@ See examples in the `examples/modules/common/variables.tf` file.
 
 Notes:
 
-* The `clusters_metadata` input is a list of clusters and their additional metadata (labels, annotations) you wish to include in the dataset.<br />
-If you don't need to include labels or annotations for some clusters, don't include those clusters in the list at all.<br />
-If you don't need to include annotations for any cluster, leave the `default` keyword as an empty list (`[]`).  
-To add labels or annotations, please follow the "Maintenance -> Adding/Removing Labels/annotations to/from the Dataset" part of this guide.
 * The `kubecost_ca_certificates_list` is a list of CA certificates used to verify TLS connection with Kubecost.<br />
 This is only required if you enabled TLS in Kubecost.<br />
 In this case, the Kubecost S3 Exporter container will have to verify the Kubecost server certificate with a provided CA certificate.<br />
@@ -463,12 +435,12 @@ This output is included, so that you can make sure the labels and annotations we
 The `main.tf` file already has `labels` and `annotations` outputs, to show the list of distinct labels and annotations:
 
     output "labels" {
-      value       = module.pipeline.labels
+      value       = length(module.common.k8s_labels) > 0 ? join(", ", distinct(module.common.k8s_labels)) : null
       description = "A list of the distinct labels of all clusters, that'll be added to the dataset"
     }
 
     output "annotations" {
-      value       = module.pipeline.annotations
+      value       = length(module.common.k8s_annotations) > 0 ? join(", ", distinct(module.common.k8s_annotations)) : null
       description = "A list of the distinct annotations of all clusters, that'll be added to the dataset"
     }
 
@@ -541,10 +513,31 @@ After the initial deployment, you might want to add or remove labels or annotati
 To do this, perform the following:
 
 1. From the `modules/common` directory, open the `variables.tf` file
-2. If the cluster for which you'd like to add labels or annotations to the dataset, isn't in the `clusters_metadata` list, add it.<br />
-If it's already in the list, and you'd like to update its labels (add/remove), update the `labels` list for this cluster.<br />
-if you'd like to update its annotations (add/remove), update the `annotations` list for this cluster.<br />
-If you'd like to remove labels or annotations from the dataset for a cluster, remove the cluster's entry from the `clusters_metadata` list.
+2. In the `k8s_labels` variable, add the K8s labels keys that you want to include in the dataset.  
+This list should include all K8s labels from all clusters, that you wish to include in the dataset.  
+Do the same for `k8s_annotations`, if you want to include annotations in the dataset as well.  
+As an example, see the below table and variables below it:
+
+| Cluster                             | Labels     | Labels Wanted in the Dataset | Annotations  | Annotations Wanted in the Dataset |
+|-------------------------------------|------------|------------------------------|--------------|-----------------------------------|
+| <a name="cluster_a"></a> cluster\_a | a, b, c, d | a, b, c                      | 1, 2, 3, 4   | 1, 2, 3                           |
+| <a name="cluster_b"></a> cluster\_b | a, f, g, h | f, g                         | 1, 6, 7, 8   | 5, 6                              |
+| <a name="cluster_c"></a> cluster\_c | x, y, z, a |                              | 9, 10, 11, 1 |                                   |
+
+In this case, this is how the `k8s_labels` and `k8s_annotations` variables will look like:
+
+    variable "k8s_labels" {
+      description = "K8s labels common across all clusters, that you wish to include in the dataset"
+      type        = list(string)
+      default     = ["a", "b", "c", "f", "g"]
+    }
+    
+    variable "k8s_annotations" {
+      description = "K8s annotations common across all clusters, that you wish to include in the dataset"
+      type        = list(string)
+      default     = ["1", "2", "3", "5", "6"]
+    }
+
 3. From the `deploy` directory, run `terraform apply`.<br />
 Terraform will output the new list of labels and annotations when the deployment is completed.
 
