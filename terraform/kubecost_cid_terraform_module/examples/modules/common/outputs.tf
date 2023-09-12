@@ -15,11 +15,6 @@ output "aws_glue_table_name" {
   value       = var.aws_glue_table_name
 }
 
-output "athena_workgroup_configuration" {
-  description = "The configuration the Athena Workgroup. Used either to create a new Athena Workgroup, or reference configuration of an existing Athena Workgroup"
-  value       = var.athena_workgroup_configuration
-}
-
 output "kubecost_ca_certificates_list" {
   description = "A list root CA certificates paths and their configuration for AWS Secrets Manager. Used for TLS communication with Kubecost. This is a consolidated list of all root CA certificates that are needed for all Kubecost endpoints"
   value       = var.kubecost_ca_certificates_list
