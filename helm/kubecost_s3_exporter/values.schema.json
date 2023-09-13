@@ -290,6 +290,42 @@
             "if": {
               "properties": {
                 "name": {
+                  "description": "K8s labels common across all clusters, that you wish to include in the dataset",
+                  "const": "LABELS"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "pattern": "^((([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)(,\\s*[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)+$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "description": "K8s annotations common across all clusters, that you wish to include in the dataset",
+                  "const": "ANNOTATIONS"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "pattern": "^((([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)(,\\s*[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)+$"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
                   "const": "PYTHONUNBUFFERED"
                 }
               }
@@ -362,7 +398,7 @@
     },
     "cronJob": {
       "type": "object",
-      "description": "The CronJob controller used to deploy the Kubecsot S3 Exporter pod",
+      "description": "The CronJob controller used to deploy the Kubecost S3 Exporter pod",
       "required": [
         "name",
         "schedule"
