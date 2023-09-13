@@ -120,8 +120,19 @@ if KUBECOST_CA_CERTIFICATE_SECRET_REGION:
         sys.exit(1)
 
 LABELS = os.environ.get("LABELS")
+if LABELS:
+    if not re.match(
+            r"^((([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)(,\s*[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)+$",
+            LABELS):
+        logger.error("At least one of the items the 'LABELS' list, contains an invalid K8s label key")
+        sys.exit(1)
 ANNOTATIONS = os.environ.get("ANNOTATIONS")
-
+if ANNOTATIONS:
+    if not re.match(
+            r"^((([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)(,\s*[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]|(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]+)+$",
+            ANNOTATIONS):
+        logger.error("At least one of the items the 'ANNOTATIONS' list, contains an invalid K8s annotation key")
+        sys.exit(1)
 
 def create_kubecost_labels_to_k8s_labels_mapping(labels):
     """Creates a dict of the K8s labels keys as they're seen in Kubecost API response, to the original K8s labels keys.
