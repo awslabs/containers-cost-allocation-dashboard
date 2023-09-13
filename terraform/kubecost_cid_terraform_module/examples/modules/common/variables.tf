@@ -112,7 +112,7 @@ variable "k8s_labels" {
     condition = (
       length([
         for k8s_label in var.k8s_labels : k8s_label
-        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$", k8s_label))
+        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$", k8s_label))
       ]) == length(var.k8s_labels)
     )
     error_message = "At least one of the items the 'k8s_labels' list, contains an invalid K8s label key"
@@ -127,7 +127,7 @@ variable "k8s_annotations" {
     condition = (
       length([
         for k8s_annotation in var.k8s_annotations : k8s_annotation
-        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$", k8s_annotation))
+        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$", k8s_annotation))
       ]) == length(var.k8s_annotations)
     )
     error_message = "At least one of the items the 'k8s_annotations' list, contains an invalid K8s annotation key"
