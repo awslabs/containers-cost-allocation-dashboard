@@ -5,7 +5,7 @@ variable "glue_crawler_schedule" {
   type        = string
 
   validation {
-    condition     = var.glue_crawler_schedule != ""
-    error_message = "The 'glue_crawler_schedule' variable is empty. It must contain a Cron expression"
+    condition     = can(regex("(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\\d+(ns|us|µs|ms|s|m|h))+)|((((\\d+,)+\\d+|(\\d+([/\\-])\\d+)|\\d+|\\*|\\?) ?){5,7})", var.glue_crawler_schedule))
+    error_message = "The 'glue_crawler_schedule' variable contains an invalid Cron expression"
   }
 }
