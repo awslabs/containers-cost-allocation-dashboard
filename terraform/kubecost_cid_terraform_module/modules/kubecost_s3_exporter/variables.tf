@@ -152,13 +152,13 @@ variable "kubecost_ca_certificate_secret_name" {
 }
 
 variable "k8s_config_path" {
-  description = "(Optional) The K8s config file to be used by Helm"
+  description = "(Optional) Full path to the K8s config file, to be used by Helm"
   type        = string
   default     = "~/.kube/config"
 
   validation {
-    condition     = var.k8s_config_path != ""
-    error_message = "The 'k8s_config_path' variable is empty. It must contain a K8s kubeconfig file"
+    condition     = can(regex("^(~|\\/[ \\w.-]+)+$", var.k8s_config_path))
+    error_message = "The 'k8s_config_path' variable contains an invalid full file path"
   }
 }
 
