@@ -67,30 +67,34 @@ variable "kubecost_ca_certificates_list" {
 }
 
 variable "aws_shared_config_files" {
-  description = "(Optional) Paths to the AWS shared config files"
+  description = "(Optional) Full paths to the AWS shared config files"
   type        = list(string)
   default     = ["~/.aws/config"]
 
-  # Here are a few examples of a "aws_shared_config_files" input that'll fail validation:
-  # The "aws_shared_config_files" has an empty list: []
-  # The "aws_shared_config_files" has a single empty item: [""]
   validation {
-    condition     = length(compact(var.aws_shared_config_files)) > 0
-    error_message = "The 'aws_shared_config_files' input is empty. It must contain at least one AWS shared config file"
+    condition = (
+      length([
+        for path in var.aws_shared_config_files : path
+        if can(regex("^(~|\\/[ \\w.-]+)+$", path))
+      ]) == length(var.aws_shared_config_files)
+    )
+    error_message = "At least one of the items the 'aws_shared_config_files' list, contains an invalid full file path"
   }
 }
 
 variable "aws_shared_credentials_files" {
-  description = "(Optional) Paths to the AWS shared credentials files"
+  description = "(Optional) Full paths to the AWS shared credentials files"
   type        = list(string)
   default     = ["~/.aws/credentials"]
 
-  # Here are a few examples of a "aws_shared_credentials_files" input that'll fail validation:
-  # The "aws_shared_credentials_files" has an empty list: []
-  # The "aws_shared_credentials_files" has a single empty item: [""]
   validation {
-    condition     = length(compact(var.aws_shared_credentials_files)) > 0
-    error_message = "The 'aws_shared_credentials_files' input is empty. It must contain at least one AWS shared credentials file"
+    condition = (
+      length([
+        for path in var.aws_shared_credentials_files : path
+        if can(regex("^(~|\\/[ \\w.-]+)+$", path))
+      ]) == length(var.aws_shared_credentials_files)
+    )
+    error_message = "At least one of the items the 'aws_shared_credentials_files' list, contains an invalid full file path"
   }
 }
 
