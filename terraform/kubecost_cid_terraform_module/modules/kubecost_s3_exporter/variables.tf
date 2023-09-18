@@ -25,7 +25,7 @@ variable "kubecost_s3_exporter_container_image" {
   type        = string
 
   validation {
-    condition = can(regex("^((?:((?:(?:localhost|[\\w-]+(?:\\.[\\w-]+)+)(?::\\d+)?)|[\\w]+:\\d+)\\/)?\\/?((?:(?:[a-z0-9]+(?:(?:[._]|__|[-]*)[a-z0-9]+)*)\\/)*)([a-z0-9_-]+))[:@]?(([\\w][\\w.-]{0,127})|([A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,}))?$", var.kubecost_s3_exporter_container_image))
+    condition     = can(regex("^((?:((?:(?:localhost|[\\w-]+(?:\\.[\\w-]+)+)(?::\\d+)?)|[\\w]+:\\d+)\\/)?\\/?((?:(?:[a-z0-9]+(?:(?:[._]|__|[-]*)[a-z0-9]+)*)\\/)*)([a-z0-9_-]+))[:@]?(([\\w][\\w.-]{0,127})|([A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,}))?$", var.kubecost_s3_exporter_container_image))
     error_message = "The 'kubecost_s3_exporter_container_image' variable containers an invalid Docker container image string"
   }
 }
