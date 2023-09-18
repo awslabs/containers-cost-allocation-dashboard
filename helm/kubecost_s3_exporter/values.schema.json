@@ -124,7 +124,7 @@
               "properties": {
                 "value": {
                   "type": "string",
-                  "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$"
+                  "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster/[a-zA-Z0-9][\\w-]{1,99}$"
                 }
               }
             }
@@ -347,7 +347,7 @@
       "type": "string",
       "default": "kubecost-s3-exporter",
       "description": "The namespace in which the Kubecost S3 Exporter pod and service account will be created",
-      "pattern": "^[a-z0-9][a-z0-9-]{1,252}$"
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
     },
     "image": {
       "type": "string",
@@ -368,7 +368,7 @@
       "type": "string",
       "description": "The ephemeral volume size for the Kubecost S3 Exporter pod",
       "default": "50Mi",
-      "pattern": "^[1-9][0-9]?Mi.*$"
+      "pattern": "^[1-9]\\d?Mi.*$"
     },
     "serviceAccount": {
       "type": "object",
@@ -388,7 +388,7 @@
           "type": "string",
           "default": "kubecost-s3-exporter",
           "description": "The name of the service account for the Kubecost S3 Exporter pod",
-          "pattern": "^[a-z0-9][a-z0-9-]{1,252}$"
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
         },
         "role": {
           "type": "string",
@@ -408,7 +408,7 @@
         "name":{
           "type": "string",
           "description": "The name of the CronJob controller",
-          "pattern": "^[a-z0-9][a-z0-9-]{1,252}$"
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
         },
         "schedule": {
           "type": "string",
