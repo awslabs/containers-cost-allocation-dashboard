@@ -74,6 +74,7 @@ variable "k8s_labels" {
   description = "K8s labels common across all clusters, that you wish to include in the dataset"
   type        = list(string)
   default     = ["app", "chart", "component", "app.kubernetes.io/version", "app.kubernetes.io/managed_by", "app.kubernetes.io/part_of"]
+
   validation {
     condition = (
       length([
@@ -89,6 +90,7 @@ variable "k8s_annotations" {
   description = "K8s annotations common across all clusters, that you wish to include in the dataset"
   type        = list(string)
   default     = ["kubernetes.io/psp", "eks.amazonaws.com/compute_type"]
+
   validation {
     condition = (
       length([
