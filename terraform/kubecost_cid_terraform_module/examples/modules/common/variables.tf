@@ -68,11 +68,19 @@ variable "kubecost_ca_certificates_list" {
   validation {
     condition = (
       length([
+        for cert_path in var.kubecost_ca_certificates_list.*.cert_path : cert_path
+        if can(regex("^(~|\\/[ \\w.-]+)+$", cert_path))
+      ]) == length(var.kubecost_ca_certificates_list) &&
+      length([
         for cert_secret_name in var.kubecost_ca_certificates_list.*.cert_secret_name : cert_secret_name
         if can(regex("^[\\w/+=.@-]{1,512}$", cert_secret_name))
       ]) == length(var.kubecost_ca_certificates_list)
     )
-    error_message = "At least one of the 'cert_secret_name' keys in the 'kubecost_ca_certificates_list' list, contains an invalid secret name"
+    error_message = <<-EOF
+      At least one of the below is invalid in one of the items in "kubecost_ca_certificates_list" list:
+      1. One of the "cert_path" values
+      2. One of the "cert_secret_name" values
+    EOF
   }
 }
 
