@@ -347,7 +347,7 @@
       "type": "string",
       "default": "kubecost-s3-exporter",
       "description": "The namespace in which the Kubecost S3 Exporter pod and service account will be created",
-      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+      "pattern": "^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$"
     },
     "image": {
       "type": "string",
@@ -388,7 +388,7 @@
           "type": "string",
           "default": "kubecost-s3-exporter",
           "description": "The name of the service account for the Kubecost S3 Exporter pod",
-          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+          "pattern": "^[a-z0-9]([-a-z0-9]{0,252}[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?){0,252}$"
         },
         "role": {
           "type": "string",
@@ -408,7 +408,7 @@
         "name":{
           "type": "string",
           "description": "The name of the CronJob controller",
-          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+          "pattern": "^[a-z0-9]([-a-z0-9]{0,51}[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]{0,51}[a-z0-9])?)*$"
         },
         "schedule": {
           "type": "string",
