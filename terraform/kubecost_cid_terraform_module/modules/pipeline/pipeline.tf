@@ -203,7 +203,7 @@ resource "aws_secretsmanager_secret" "kubecost_ca_cert_secret" {
 resource "aws_secretsmanager_secret_version" "kubecost_ca_cert_content" {
   count = length(module.common.kubecost_ca_certificates_list) > 0 ? length(module.common.kubecost_ca_certificates_list) : 0
 
-  secret_id     = aws_secretsmanager_secret.kubecost_ca_cert_secret[0].id
+  secret_id     = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].id
   secret_string = file(module.common.kubecost_ca_certificates_list[count.index].cert_path)
 }
 
