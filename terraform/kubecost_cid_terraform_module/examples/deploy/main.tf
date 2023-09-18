@@ -55,10 +55,9 @@ module "us-east-1-111111111111-cluster1" {
   kubecost_allocation_api_read_timeout = 30
   tls_verify                           = "no"
   kubecost_ca_certificate_secret_name  = "kubecost"
+  kubecost_ca_certificate_secrets      = module.pipeline.kubecost_ca_cert_secret
   kubecost_ephemeral_volume_size       = "100Mi"
   backfill_period_days                 = 5
-
-  depends_on = [module.pipeline.kubecost_ca_cert_secret]
 }
 
 module "us-east-1-111111111111-cluster2" {
