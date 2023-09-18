@@ -168,7 +168,7 @@ variable "namespace" {
   default     = "kubecost-s3-exporter"
 
   validation {
-    condition     = can(regex("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", var.namespace))
+    condition     = can(regex("^[a-z0-9]([-a-z0-9]{0,62}[a-z0-9])?$", var.namespace))
     error_message = "The 'namespace' variable contains an invalid Namespace name"
   }
 }
@@ -185,7 +185,7 @@ variable "service_account" {
   default     = "kubecost-s3-exporter"
 
   validation {
-    condition     = can(regex("^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$", var.service_account))
+    condition     = can(regex("^[a-z0-9]([-a-z0-9]{0,252}[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?){0,252}$", var.service_account))
     error_message = "The 'service_account' variable contains an invalid Service Account name"
   }
 }
