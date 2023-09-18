@@ -30,13 +30,6 @@ data "aws_caller_identity" "eks_caller_identity" {
   provider = aws.eks
 }
 
-data "aws_secretsmanager_secret" "kubecost_secret" {
-  provider = aws.pipeline
-  count    = length(var.kubecost_ca_certificate_secret_name) > 0 ? 1 : 0
-
-  name = var.kubecost_ca_certificate_secret_name
-}
-
 locals {
   cluster_region           = element(split(":", var.cluster_arn), 3)
   cluster_account_id       = element(split(":", var.cluster_arn), 4)
@@ -44,6 +37,7 @@ locals {
   cluster_oidc_provider_id = element(split("/", var.cluster_oidc_provider_arn), 3)
   pipeline_partition       = element(split(":", data.aws_caller_identity.pipeline_caller_identity.arn), 1)
   pipeline_account_id      = data.aws_caller_identity.pipeline_caller_identity.account_id
+  kubecost_ca_certificate_secret_arn       = length(var.kubecost_ca_certificate_secret_name) > 0 ? lookup(element(var.kubecost_ca_certificate_secrets, index(var.kubecost_ca_certificate_secrets.*.name, var.kubecost_ca_certificate_secret_name)), "arn", "") : ""
   helm_chart_location      = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
@@ -107,7 +101,7 @@ locals {
         },
         {
           "name" : "KUBECOST_CA_CERTIFICATE_SECRET_REGION",
-          "value" : length(var.kubecost_ca_certificate_secret_name) > 0 ? element(split(":", data.aws_secretsmanager_secret.kubecost_secret[0].arn), 3) : ""
+          "value" : length(local.kubecost_ca_certificate_secret_arn) > 0 ? element(split(":", local.kubecost_ca_certificate_secret_arn), 3) : ""
         },
         {
           "name" : "LABELS",
@@ -188,10 +182,10 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
   }
 
   # The below inline policy is conditionally created
-  # If the "kubecost_ca_certificate_secret_name" variable contains a value, the below inline policy is added
+  # If the "kubecost_ca_certificate_secret_arn" local contains a value, the below inline policy is added
   # Else, it won't be added
   dynamic "inline_policy" {
-    for_each = length(var.kubecost_ca_certificate_secret_name) > 0 ? [1] : []
+    for_each = length(local.kubecost_ca_certificate_secret_arn) > 0 ? [1] : []
     content {
       name = "kubecost_s3_exporter_parent_get_secret_value"
       policy = jsonencode(
@@ -200,7 +194,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
             {
               Action   = "secretsmanager:GetSecretValue"
               Effect   = "Allow"
-              Resource = data.aws_secretsmanager_secret.kubecost_secret[0].arn
+              Resource = local.kubecost_ca_certificate_secret_arn
             }
           ]
           Version = "2012-10-17"
@@ -211,7 +205,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
 
   tags = {
     irsa-kubecost-s3-exporter    = "true"
-    irsa-kubecost-s3-exporter-sm = length(var.kubecost_ca_certificate_secret_name) > 0 ? "true" : "false"
+    irsa-kubecost-s3-exporter-sm = length(local.kubecost_ca_certificate_secret_arn) > 0 ? "true" : "false"
   }
 }
 
@@ -316,10 +310,10 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
   }
 
   # The below inline policy is conditionally created
-  # If the "kubecost_ca_certificate_secret_name" variable contains a value, the below inline policy is added
+  # If the "kubecost_ca_certificate_secret_arn" local contains a value, the below inline policy is added
   # Else, it won't be added
   dynamic "inline_policy" {
-    for_each = length(var.kubecost_ca_certificate_secret_name) > 0 ? [1] : []
+    for_each = length(local.kubecost_ca_certificate_secret_arn) > 0 ? [1] : []
     content {
       name = "kubecost_s3_exporter_parent_get_secret_value"
       policy = jsonencode(
@@ -328,7 +322,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
             {
               Action   = "secretsmanager:GetSecretValue"
               Effect   = "Allow"
-              Resource = data.aws_secretsmanager_secret.kubecost_secret[0].arn
+              Resource = local.kubecost_ca_certificate_secret_arn
             }
           ]
           Version = "2012-10-17"
@@ -339,7 +333,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
 
   tags = {
     irsa-kubecost-s3-exporter    = "true"
-    irsa-kubecost-s3-exporter-sm = length(var.kubecost_ca_certificate_secret_name) > 0 ? "true" : "false"
+    irsa-kubecost-s3-exporter-sm = length(local.kubecost_ca_certificate_secret_arn) > 0 ? "true" : "false"
   }
 }
 
