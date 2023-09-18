@@ -90,11 +90,11 @@ variable "aws_shared_credentials_files" {
   validation {
     condition = (
       length([
-        for path in var.aws_shared_credentials_files : path
-        if can(regex("^(~|\\/[ \\w.-]+)+$", path))
-      ]) == length(var.aws_shared_credentials_files)
+        for cert_secret_name in var.kubecost_ca_certificates_list.*.cert_secret_name : cert_secret_name
+        if can(regex("^[\\w/+=.@-]{1,512}$", cert_secret_name))
+      ]) == length(var.kubecost_ca_certificates_list)
     )
-    error_message = "At least one of the items the 'aws_shared_credentials_files' list, contains an invalid full file path"
+    error_message = "At least one of the 'cert_secret_name' keys in the 'kubecost_ca_certificates_list' list, contains an invalid secret name"
   }
 }
 
@@ -102,11 +102,12 @@ variable "k8s_labels" {
   description = "K8s labels common across all clusters, that you wish to include in the dataset"
   type        = list(string)
   default     = []
+
   validation {
     condition = (
       length([
         for k8s_label in var.k8s_labels : k8s_label
-        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$", k8s_label))
+        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-\\w.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-\\w.]{0,61}[a-zA-Z0-9]$", k8s_label))
       ]) == length(var.k8s_labels)
     )
     error_message = "At least one of the items the 'k8s_labels' list, contains an invalid K8s label key"
@@ -117,11 +118,12 @@ variable "k8s_annotations" {
   description = "K8s annotations common across all clusters, that you wish to include in the dataset"
   type        = list(string)
   default     = []
+
   validation {
     condition = (
       length([
         for k8s_annotation in var.k8s_annotations : k8s_annotation
-        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$", k8s_annotation))
+        if can(regex("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])\\/[a-zA-Z0-9][-\\w.]{0,61}[a-zA-Z0-9]$|^[a-zA-Z0-9][-\\w.]{0,61}[a-zA-Z0-9]$", k8s_annotation))
       ]) == length(var.k8s_annotations)
     )
     error_message = "At least one of the items the 'k8s_annotations' list, contains an invalid K8s annotation key"
