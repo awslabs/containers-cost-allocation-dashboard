@@ -351,7 +351,8 @@
     },
     "image": {
       "type": "string",
-      "description": "The Kubecost S3 Exporter container image"
+      "description": "The Kubecost S3 Exporter container image",
+      "pattern": "^((?:((?:(?:localhost|[\\w-]+(?:\\.[\\w-]+)+)(?::\\d+)?)|[\\w]+:\\d+)\/)?\/?((?:(?:[a-z0-9]+(?:(?:[._]|__|[-]*)[a-z0-9]+)*)\/)*)([a-z0-9_-]+))[:@]?(([\\w][\\w.-]{0,127})|([A-Za-z][A-Za-z0-9]*(?:[-_+.][A-Za-z][A-Za-z0-9]*)*[:][0-9A-Fa-f]{32,}))?$"
     },
     "imagePullPolicy": {
       "type": "string",
