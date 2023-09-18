@@ -38,42 +38,6 @@ variable "aws_glue_table_name" {
   }
 }
 
-variable "kubecost_ca_certificates_list" {
-  description = <<EOF
-    (Optional) A list root CA certificates paths and their configuration for AWS Secrets Manager. Used for TLS communication with Kubecost. This is a consolidated list of all root CA certificates that are needed for all Kubecost endpoints.
-
-    (Required) cert_path: The full local path to the root CA certificate
-    (Required) cert_secret_name: The name to use for the AWS Secrets Manager Secret that will be created for this root CA certificate
-    (Optional) cert_secret_allowed_principals: A list of principals to include in the AWS Secrets Manager Secret policy (in addition to the principal that identify the cluster, which will be automatically added by Terraform)
-  EOF
-
-  type = list(object({
-    cert_path                      = string
-    cert_secret_name               = string
-    cert_secret_allowed_principals = optional(list(string))
-  }))
-
-  default = []
-
-  validation {
-    condition = (
-      length([
-        for cert_path in var.kubecost_ca_certificates_list.*.cert_path : cert_path
-        if can(regex("^(~|\\/[ \\w.-]+)+$", cert_path))
-      ]) == length(var.kubecost_ca_certificates_list) &&
-      length([
-        for cert_secret_name in var.kubecost_ca_certificates_list.*.cert_secret_name : cert_secret_name
-        if can(regex("^[\\w/+=.@-]{1,512}$", cert_secret_name))
-      ]) == length(var.kubecost_ca_certificates_list)
-    )
-    error_message = <<-EOF
-      At least one of the below is invalid in one of the items in "kubecost_ca_certificates_list" list:
-      1. One of the "cert_path" values
-      2. One of the "cert_secret_name" values
-    EOF
-  }
-}
-
 variable "aws_shared_config_files" {
   description = "(Optional) Full paths to the AWS shared config files"
   type        = list(string)
