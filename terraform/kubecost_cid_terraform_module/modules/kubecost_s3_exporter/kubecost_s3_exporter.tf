@@ -37,7 +37,7 @@ locals {
   cluster_oidc_provider_id           = element(split("/", var.cluster_oidc_provider_arn), 3)
   pipeline_partition                 = element(split(":", data.aws_caller_identity.pipeline_caller_identity.arn), 1)
   pipeline_account_id                = data.aws_caller_identity.pipeline_caller_identity.account_id
-  kubecost_ca_certificate_secret_arn = length(var.kubecost_ca_certificate_secret_name) > 0 ? lookup(element(var.kubecost_ca_certificate_secrets, index(var.kubecost_ca_certificate_secrets.*.name, var.kubecost_ca_certificate_secret_name)), "arn", "") : ""
+  kubecost_ca_certificate_secret_arn = length(var.kubecost_ca_certificate_secrets) > 0 ? lookup(element(var.kubecost_ca_certificate_secrets, index(var.kubecost_ca_certificate_secrets.*.name, var.kubecost_ca_certificate_secret_name)), "arn", "") : ""
   helm_chart_location                = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
@@ -97,7 +97,7 @@ locals {
         },
         {
           "name" : "KUBECOST_CA_CERTIFICATE_SECRET_NAME",
-          "value" : var.kubecost_ca_certificate_secret_name
+          "value" : length(local.kubecost_ca_certificate_secret_arn) > 0 ? var.kubecost_ca_certificate_secret_name : ""
         },
         {
           "name" : "KUBECOST_CA_CERTIFICATE_SECRET_REGION",
@@ -344,7 +344,6 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
 # This will NOT invoke Helm to deploy the K8s resources (data collection pod and service account) in the cluster
 # Instead, it'll create a local values.yaml file in the Helm chart's directory, to be used by the user to deploy the K8s using the "helm" command
 # The local file name will be "<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml", so it'll be unique
-
 resource "helm_release" "kubecost_s3_exporter_helm_release" {
   count = var.invoke_helm ? 1 : 0
 
