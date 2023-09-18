@@ -142,8 +142,8 @@ variable "tls_verify" {
 
 variable "kubecost_ca_certificate_secrets" {
   description = "(Optional) A list of AWS Secret Manager secrets created by the pipeline module"
-  type = list(any)
-  default = []
+  type        = list(any)
+  default     = []
 }
 
 variable "kubecost_ca_certificate_secret_name" {
