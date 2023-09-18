@@ -59,7 +59,7 @@ variable "kubecost_ca_certificates_list" {
     condition = (
       length([
         for cert_secret_name in var.kubecost_ca_certificates_list.*.cert_secret_name : cert_secret_name
-        if can(regex("^[a-z[A-Z0-9/_+=.@-]{1,512}$", cert_secret_name))
+        if can(regex("^[\\w/+=.@-]{1,512}$", cert_secret_name))
       ]) == length(var.kubecost_ca_certificates_list)
     )
     error_message = "At least one of the 'cert_secret_name' keys in the 'kubecost_ca_certificates_list' list, contains an invalid secret name"
@@ -90,11 +90,11 @@ variable "aws_shared_credentials_files" {
   validation {
     condition = (
       length([
-        for cert_secret_name in var.kubecost_ca_certificates_list.*.cert_secret_name : cert_secret_name
-        if can(regex("^[\\w/+=.@-]{1,512}$", cert_secret_name))
-      ]) == length(var.kubecost_ca_certificates_list)
+        for path in var.aws_shared_credentials_files : path
+        if can(regex("^(~|\\/[ \\w.-]+)+$", path))
+      ]) == length(var.aws_shared_credentials_files)
     )
-    error_message = "At least one of the 'cert_secret_name' keys in the 'kubecost_ca_certificates_list' list, contains an invalid secret name"
+    error_message = "At least one of the items the 'aws_shared_credentials_files' list, contains an invalid full file path"
   }
 }
 
@@ -102,7 +102,6 @@ variable "k8s_labels" {
   description = "K8s labels common across all clusters, that you wish to include in the dataset"
   type        = list(string)
   default     = []
-
   validation {
     condition = (
       length([
@@ -118,7 +117,6 @@ variable "k8s_annotations" {
   description = "K8s annotations common across all clusters, that you wish to include in the dataset"
   type        = list(string)
   default     = []
-
   validation {
     condition = (
       length([
