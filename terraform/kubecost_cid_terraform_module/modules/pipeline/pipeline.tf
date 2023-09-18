@@ -191,29 +191,29 @@ resource "aws_glue_crawler" "kubecost_glue_crawler" {
 }
 
 # The next 3 resources are conditionally created
-# If the "kubecost_ca_certificate_path" variable contains a value, a secret containing the CA certificate will be created
+# If the "kubecost_ca_certificates_list" variable isn't empty, a secret containing the CA certificate will be created
 # Else, it won't be created
 resource "aws_secretsmanager_secret" "kubecost_ca_cert_secret" {
-  count = length(module.common.kubecost_ca_certificates_list) > 0 ? length(module.common.kubecost_ca_certificates_list) : 0
+  count = length(var.kubecost_ca_certificates_list) > 0 ? length(var.kubecost_ca_certificates_list) : 0
 
-  name                    = module.common.kubecost_ca_certificates_list[count.index].cert_secret_name
+  name                    = var.kubecost_ca_certificates_list[count.index].cert_secret_name
   recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "kubecost_ca_cert_content" {
-  count = length(module.common.kubecost_ca_certificates_list) > 0 ? length(module.common.kubecost_ca_certificates_list) : 0
+  count = length(var.kubecost_ca_certificates_list) > 0 ? length(var.kubecost_ca_certificates_list) : 0
 
   secret_id     = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].id
-  secret_string = file(module.common.kubecost_ca_certificates_list[count.index].cert_path)
+  secret_string = file(var.kubecost_ca_certificates_list[count.index].cert_path)
 }
 
 resource "aws_secretsmanager_secret_policy" "kubecost_ca_cert_secret_policy" {
-  count = length(module.common.kubecost_ca_certificates_list) > 0 ? length(module.common.kubecost_ca_certificates_list) : 0
+  count = length(var.kubecost_ca_certificates_list) > 0 ? length(var.kubecost_ca_certificates_list) : 0
 
   secret_arn = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].arn
   policy = templatefile("../modules/pipeline/secret_policy.tpl", {
     arn        = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].id
-    principals = module.common.kubecost_ca_certificates_list[count.index].cert_secret_allowed_principals
+    principals = var.kubecost_ca_certificates_list[count.index].cert_secret_allowed_principals
   })
 }
 
