@@ -5,7 +5,7 @@ variable "cluster_arn" {
   type        = string
 
   validation {
-    condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][a-zA-Z0-9-_]{1,99}$", var.cluster_arn))
+    condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):eks:(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d:\\d{12}:cluster\\/[a-zA-Z0-9][\\w-]{1,99}$", var.cluster_arn))
     error_message = "The 'cluster_arn' variable contains an invalid ARN"
   }
 }
@@ -58,7 +58,7 @@ variable "kubecost_s3_exporter_ephemeral_volume_size" {
   default     = "50Mi"
 
   validation {
-    condition     = can(regex("^[1-9][0-9]?Mi.*$", var.kubecost_s3_exporter_ephemeral_volume_size))
+    condition     = can(regex("^[1-9]\\d?Mi.*$", var.kubecost_s3_exporter_ephemeral_volume_size))
     error_message = "The 'kubecost_s3_exporter_ephemeral_volume_size' variable must be in format of 'NMi', where N >= 1.\nFor example, 10Mi, 50Mi, 100Mi, 150Mi."
   }
 }
@@ -146,7 +146,7 @@ variable "kubecost_ca_certificate_secret_name" {
   default     = ""
 
   validation {
-    condition     = can(regex("^$|^[a-z[A-Z0-9/_+=.@-]{1,512}$", var.kubecost_ca_certificate_secret_name))
+    condition     = can(regex("^$|^[\\w/+=.@-]{1,512}$", var.kubecost_ca_certificate_secret_name))
     error_message = "The 'kubecost_ca_certificate_secret_name' variable contains an invalid secret name"
   }
 }
@@ -168,7 +168,7 @@ variable "namespace" {
   default     = "kubecost-s3-exporter"
 
   validation {
-    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.namespace))
+    condition     = can(regex("[a-z0-9]([-a-z0-9]*[a-z0-9])?", var.namespace))
     error_message = "The 'namespace' variable contains an invalid Namespace name"
   }
 }
@@ -185,7 +185,7 @@ variable "service_account" {
   default     = "kubecost-s3-exporter"
 
   validation {
-    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,252}$", var.service_account))
+    condition     = can(regex("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*", var.service_account))
     error_message = "The 'service_account' variable contains an invalid Service Account name"
   }
 }
