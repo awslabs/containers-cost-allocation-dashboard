@@ -8,7 +8,7 @@ locals {
   pipeline_partition                 = element(split(":", data.aws_caller_identity.pipeline_caller_identity.arn), 1)
   pipeline_account_id                = data.aws_caller_identity.pipeline_caller_identity.account_id
   kubecost_ca_certificate_secret_arn = length(var.kubecost_ca_certificate_secrets) > 0 ? lookup(element(var.kubecost_ca_certificate_secrets, index(var.kubecost_ca_certificate_secrets.*.name, var.kubecost_ca_certificate_secret_name)), "arn", "") : ""
-  helm_chart_location                = "../../../../helm/my_helm/kubecost_s3_exporter"
+  helm_chart_location                = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
     {
       "namespace" : var.namespace
