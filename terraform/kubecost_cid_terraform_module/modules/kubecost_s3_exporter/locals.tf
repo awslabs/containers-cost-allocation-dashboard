@@ -24,7 +24,7 @@ locals {
       "env" : [
         {
           "name" : "S3_BUCKET_NAME",
-          "value" : element(split(":::", module.common.bucket_arn), 1)
+          "value" : module.common.bucket_name
         },
         {
           "name" : "KUBECOST_API_ENDPOINT",
