@@ -48,7 +48,6 @@ module "us-east-1-111111111111-cluster1" {
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
-  cluster_oidc_provider_arn            = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/1"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_api_endpoint                = "https://kubecost-eks-cost-analyzer.kubecost-eks"
   connection_timeout                   = 5
@@ -70,7 +69,6 @@ module "us-east-1-111111111111-cluster2" {
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster2"
-  cluster_oidc_provider_arn            = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/2"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   namespace                            = "kubecost-s3-exporter-2"
   service_account                      = "kubecost-s3-exporter-2"
@@ -89,7 +87,6 @@ module "us-east-2-111111111111-cluster1" {
   }
 
   cluster_arn                                      = "arn:aws:eks:us-east-2:111111111111:cluster/cluster1"
-  cluster_oidc_provider_arn                        = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/3"
   kubecost_s3_exporter_container_image             = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_s3_exporter_container_image_pull_policy = "IfNotPresent"
   kubecost_s3_exporter_pod_schedule                = "0 0 * * 5"
@@ -105,7 +102,6 @@ module "us-east-2-111111111111-cluster2" {
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-2:111111111111:cluster/cluster2"
-  cluster_oidc_provider_arn            = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/4"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   invoke_helm                          = false
 }
@@ -126,7 +122,6 @@ module "us-east-1-222222222222-cluster1" {
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-1:222222222222:cluster/cluster1"
-  cluster_oidc_provider_arn            = "arn:aws:iam::222222222222:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/5"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_api_endpoint                = "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
   k8s_config_path                      = "~/configs/k8s/config"
@@ -142,7 +137,6 @@ module "us-east-1-222222222222-cluster2" {
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-1:222222222222:cluster/cluster2"
-  cluster_oidc_provider_arn            = "arn:aws:iam::222222222222:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/6"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
 }
 
@@ -158,7 +152,6 @@ module "us-east-2-222222222222-cluster1" {
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-2:222222222222:cluster/cluster1"
-  cluster_oidc_provider_arn            = "arn:aws:iam::222222222222:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/7"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_api_endpoint                = "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
   invoke_helm                          = false
@@ -174,7 +167,6 @@ module "us-east-2-222222222222-cluster2" {
   }
 
   cluster_arn                          = "arn:aws:eks:us-east-2:222222222222:cluster/cluster2"
-  cluster_oidc_provider_arn            = "arn:aws:iam::222222222222:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/8"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   namespace                            = "kubecost-s3-exporter-2"
   create_namespace                     = false
