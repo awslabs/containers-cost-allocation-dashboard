@@ -10,16 +10,6 @@ variable "cluster_arn" {
   }
 }
 
-variable "cluster_oidc_provider_arn" {
-  description = "(Required) The IAM OIDC Provider ARN for the EKS cluster"
-  type        = string
-
-  validation {
-    condition     = can(regex("^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:oidc-provider\\/oidc\\.eks\\.(?:us(?:-gov)?|ap|ca|cn|eu|sa)-(?:central|(?:north|south)?(?:east|west)?)-\\d\\.amazonaws\\.com\\/id\\/[A-F0-9]*$", var.cluster_oidc_provider_arn))
-    error_message = "The 'cluster_oidc_provider_arn' variable contains an invalid ARN"
-  }
-}
-
 variable "kubecost_s3_exporter_container_image" {
   description = "(Required) The Kubecost S3 Exporter container image"
   type        = string
