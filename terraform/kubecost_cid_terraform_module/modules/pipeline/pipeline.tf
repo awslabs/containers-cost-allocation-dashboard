@@ -42,7 +42,7 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
             "arn:${data.aws_partition.pipeline_partition.partition}:glue:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:catalog",
             aws_glue_catalog_database.kubecost_glue_db.arn,
             aws_glue_catalog_table.kubecost_glue_table.arn,
-            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace(element(split(":::", module.common.bucket_arn), 1), "-", "_"))}*"
+            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace(module.common.bucket_name, "-", "_"))}*"
           ]
           Sid = "AllowGlueKubecostTable"
         },
@@ -123,7 +123,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   }
 
   storage_descriptor {
-    location      = "s3://${element(split(":::", module.common.bucket_arn), 1)}/"
+    location      = "s3://${module.common.bucket_name}/"
     input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
     parameters = {
