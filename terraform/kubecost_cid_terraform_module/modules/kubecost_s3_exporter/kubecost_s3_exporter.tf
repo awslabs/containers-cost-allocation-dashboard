@@ -283,7 +283,7 @@ resource "local_file" "kubecost_s3_exporter_helm_values_yaml" {
   directory_permission = "0400"
   file_permission      = "0400"
   content              = <<-EOT
-# Copyright 2022 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
+# Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 ${local.helm_values_yaml}
   EOT
