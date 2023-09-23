@@ -5,6 +5,11 @@ output "bucket_arn" {
   value       = var.bucket_arn
 }
 
+output "bucket_name" {
+  description = "The name of the S3 Bucket to which the Kubecost data will be uploaded"
+  value       = local.bucket_name
+}
+
 output "aws_glue_database_name" {
   description = "The AWS Glue Database name"
   value       = var.aws_glue_database_name
