@@ -17,6 +17,10 @@ terraform {
   }
 }
 
+data "aws_partition" "pipeline_partition" {}
+data "aws_region" "pipeline_region" {}
+data "aws_caller_identity" "pipeline_caller_identity" {}
+
 resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
   name = "kubecost_glue_crawler_policy"
   policy = jsonencode(
@@ -35,10 +39,10 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
           ]
           Effect = "Allow"
           Resource = [
-            "${element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0)}catalog",
+            "arn:${data.aws_partition.pipeline_partition.partition}:glue:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:catalog",
             aws_glue_catalog_database.kubecost_glue_db.arn,
             aws_glue_catalog_table.kubecost_glue_table.arn,
-            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace("${element(split(":::", module.common.bucket_arn), 1)}", "-", "_"))}*"
+            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace(element(split(":::", module.common.bucket_arn), 1), "-", "_"))}*"
           ]
           Sid = "AllowGlueKubecostTable"
         },
@@ -57,19 +61,19 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
         {
           Action   = "logs:CreateLogGroup"
           Effect   = "Allow"
-          Resource = "${replace(element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0), ":glue:", ":logs:")}*"
+          Resource = "arn:${data.aws_partition.pipeline_partition.partition}:logs:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:*"
           Sid      = "AllowCloudWatchLogsCreateLogGroupForGlueCrawlers"
         },
         {
           Action   = "logs:CreateLogStream"
           Effect   = "Allow"
-          Resource = "${replace(element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0), ":glue:", ":logs:")}log-group:/aws-glue/crawlers:*"
+          Resource = "arn:${data.aws_partition.pipeline_partition.partition}:logs:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:log-group:/aws-glue/crawlers:*"
           Sid      = "AllowCloudWatchLogsCreateLogStreamForKubecostCrawler"
         },
         {
           Action   = "logs:PutLogEvents"
           Effect   = "Allow"
-          Resource = "${replace(element(split("database/", aws_glue_catalog_database.kubecost_glue_db.arn), 0), ":glue:", ":logs:")}log-group:/aws-glue/crawlers:log-stream:kubecost_crawler"
+          Resource = "arn:${data.aws_partition.pipeline_partition.partition}:logs:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:log-group:/aws-glue/crawlers:log-stream:kubecost_crawler"
           Sid      = "AllowCloudWatchLogsPutLogs"
         }
       ]
@@ -94,9 +98,7 @@ resource "aws_iam_role" "kubecost_glue_crawler_role" {
       Version = "2012-10-17"
     }
   )
-  managed_policy_arns = [
-    aws_iam_policy.kubecost_glue_crawler_policy.arn,
-  ]
+  managed_policy_arns = [aws_iam_policy.kubecost_glue_crawler_policy.arn]
 }
 
 resource "aws_glue_catalog_database" "kubecost_glue_db" {
