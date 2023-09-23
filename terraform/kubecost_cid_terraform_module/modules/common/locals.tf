@@ -1,6 +1,8 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 locals {
+  bucket_name = element(split(":::", var.bucket_arn), 1)
+
   # The below local is used to define the static columns of the schema that is used in both the AWS Glue Table and the QuickSight Dataset
   static_columns = [
     {
