@@ -30,6 +30,12 @@ data "aws_caller_identity" "eks_caller_identity" {
   provider = aws.eks
 }
 
+data "aws_arn" "eks_cluster_arn_fields" {
+  provider = aws.eks
+
+  arn = var.cluster_arn
+}
+
 data "aws_eks_cluster" "cluster" {
   provider = aws.eks
 
@@ -79,7 +85,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${module.common.bucket_arn}/account_id=${local.cluster_account_id}/region=${local.cluster_region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+            Resource = "${module.common.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -169,7 +175,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
           {
             Action   = "sts:AssumeRole"
             Effect   = "Allow"
-            Resource = "arn:${local.pipeline_partition}:iam::${local.pipeline_account_id}:role/kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
+            Resource = "arn:${local.pipeline_partition}:iam::${data.aws_caller_identity.pipeline_caller_identity.account_id}:role/kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
           }
         ]
         Version = "2012-10-17"
@@ -207,7 +213,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${module.common.bucket_arn}/account_id=${local.cluster_account_id}/region=${local.cluster_region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+            Resource = "${module.common.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -279,7 +285,7 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
 resource "local_file" "kubecost_s3_exporter_helm_values_yaml" {
   count = var.invoke_helm ? 0 : 1
 
-  filename             = "${local.helm_chart_location}/clusters_values/${local.cluster_account_id}_${local.cluster_region}_${local.cluster_name}_values.yaml"
+  filename             = "${local.helm_chart_location}/clusters_values/${data.aws_arn.eks_cluster_arn_fields.account}_${data.aws_arn.eks_cluster_arn_fields.region}_${local.cluster_name}_values.yaml"
   directory_permission = "0400"
   file_permission      = "0400"
   content              = <<-EOT
