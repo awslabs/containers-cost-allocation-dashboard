@@ -1,12 +1,9 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 locals {
-  cluster_region                     = element(split(":", var.cluster_arn), 3)
-  cluster_account_id                 = element(split(":", var.cluster_arn), 4)
-  cluster_name                       = element(split("/", var.cluster_arn), 1)
+  cluster_name                       = element(split("/", data.aws_arn.eks_cluster_arn_fields.resource), 1)
   cluster_oidc_provider_id           = element(split("/", data.aws_iam_openid_connect_provider.oidc.arn), 3)
   pipeline_partition                 = element(split(":", data.aws_caller_identity.pipeline_caller_identity.arn), 1)
-  pipeline_account_id                = data.aws_caller_identity.pipeline_caller_identity.account_id
   kubecost_ca_certificate_secret_arn = length(var.kubecost_ca_certificate_secrets) > 0 ? lookup(element(var.kubecost_ca_certificate_secrets, index(var.kubecost_ca_certificate_secrets.*.name, var.kubecost_ca_certificate_secret_name)), "arn", "") : ""
   helm_chart_location                = "../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
