@@ -41,7 +41,6 @@ module "cluster1" {
   }
 
   cluster_arn                          = ""
-  cluster_oidc_provider_arn            = ""
   kubecost_s3_exporter_container_image = ""
 }
 
@@ -58,6 +57,5 @@ module "cluster2" {
   }
 
   cluster_arn                          = ""
-  cluster_oidc_provider_arn            = ""
   kubecost_s3_exporter_container_image = ""
 }
