@@ -211,7 +211,7 @@ resource "aws_secretsmanager_secret_policy" "kubecost_ca_cert_secret_policy" {
   count = length(var.kubecost_ca_certificates_list) > 0 ? length(var.kubecost_ca_certificates_list) : 0
 
   secret_arn = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].arn
-  policy = templatefile("../modules/pipeline/secret_policy.tpl", {
+  policy = templatefile("${path.module}/secret_policy.tpl", {
     arn        = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].id
     principals = var.kubecost_ca_certificates_list[count.index].cert_secret_allowed_principals
   })
