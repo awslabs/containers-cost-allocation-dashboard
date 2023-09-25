@@ -220,10 +220,10 @@ resource "aws_secretsmanager_secret_policy" "kubecost_ca_cert_secret_policy" {
 }
 
 resource "local_file" "cid_yaml" {
-  filename             = "../../../cid/eks_insights_dashboard.yaml"
+  filename             = "${path.module}../../../../cid/eks_insights_dashboard.yaml"
   directory_permission = "0400"
   file_permission      = "0400"
-  content = templatefile("../../../cid/eks_insights_dashboard.yaml.tpl", {
+  content = templatefile("${path.module}../../../../cid/eks_insights_dashboard.yaml.tpl", {
     labels                = distinct(module.common.k8s_labels)
     annotations           = distinct(module.common.k8s_annotations)
     athena_datasource_arn = "$${athena_datasource_arn}"
