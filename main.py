@@ -134,6 +134,7 @@ if ANNOTATIONS:
         logger.error("At least one of the items the 'ANNOTATIONS' list, contains an invalid K8s annotation key")
         sys.exit(1)
 
+
 def create_kubecost_labels_to_k8s_labels_mapping(labels):
     """Creates a dict of the K8s labels keys as they're seen in Kubecost API response, to the original K8s labels keys.
     It's because Kubecost reports K8s labels with underscores replacing dot, forward-slash and hyphen characters.
@@ -736,13 +737,11 @@ def kubecost_allocation_data_to_parquet(allocation_data,
     df = df.loc[:, dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations.keys()]
 
     # Dropping EKS-specific and Karpenter-specific fields (after adding the common fields above)
-    df = df.drop(columns=["properties.labels.eks_amazonaws_com_capacityType",
-                     "properties.labels.karpenter_sh_capacity_type",
-                     "properties.labels.eks_amazonaws_com_nodegroup",
-                     "properties.labels.karpenter_sh_provisioner_name",
-                     "properties.labels.eks_amazonaws_com_nodegroup_image",
-                     "properties.labels.karpenter_k8s_aws_instance_ami_id"])
-
+    df = df.drop(
+        columns=["properties.labels.eks_amazonaws_com_capacityType", "properties.labels.karpenter_sh_capacity_type",
+                 "properties.labels.eks_amazonaws_com_nodegroup", "properties.labels.karpenter_sh_provisioner_name",
+                 "properties.labels.eks_amazonaws_com_nodegroup_image",
+                 "properties.labels.karpenter_k8s_aws_instance_ami_id"])
 
     # Renaming columns of the Kubecost representation of K8s labels to the original K8s labels
     if kubecost_labels_to_orig_labels:
