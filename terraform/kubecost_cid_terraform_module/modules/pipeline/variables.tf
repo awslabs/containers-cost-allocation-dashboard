@@ -11,7 +11,7 @@ variable "glue_crawler_schedule" {
 }
 
 variable "kubecost_ca_certificates_list" {
-  description = <<EOF
+  description = <<-EOF
     (Optional) A list root CA certificates paths and their configuration for AWS Secrets Manager. Used for TLS communication with Kubecost. This is a consolidated list of all root CA certificates that are needed for all Kubecost endpoints.
 
     (Required) cert_path: The full local path to the root CA certificate
