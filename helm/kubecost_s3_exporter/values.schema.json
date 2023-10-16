@@ -142,7 +142,7 @@
               "properties": {
                 "value": {
                   "type": "string",
-                  "pattern": "^$|^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role/[\\w+=,.@-]{1,64}$"
+                  "pattern": "^$|^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role(\u002F)|(\u002F[\u0021-\u007E]{1,510}\u002F)[\\w+=,.@-]{1,64}$"
                 }
               }
             }
@@ -393,7 +393,7 @@
         "role": {
           "type": "string",
           "description": "The IRSA IAM role to be annotated in the service account",
-          "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role/[\\w+=,.@-]{1,64}$"
+          "pattern": "^arn:(?:aws|aws-cn|aws-us-gov):iam::\\d{12}:role(\u002F)|(\u002F[\u0021-\u007E]{1,510}\u002F)[\\w+=,.@-]{1,64}$"
         }
       }
     },
