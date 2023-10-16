@@ -44,7 +44,7 @@ except KeyError:
 
 IRSA_PARENT_IAM_ROLE_ARN = os.environ["IRSA_PARENT_IAM_ROLE_ARN"]
 if IRSA_PARENT_IAM_ROLE_ARN:
-    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role/[a-zA-Z0-9+=,.@_-]{1,64}$",
+    if not re.match(r"^arn:(?:aws|aws-cn|aws-us-gov):iam::\d{12}:role(/)|(/[!-~]{1,510}/)[\w+=,.@-]{1,64}$",
                     IRSA_PARENT_IAM_ROLE_ARN):
         logger.error(f"The 'IRSA_PARENT_IAM_ROLE_ARN' input contains an invalid ARN: {IRSA_PARENT_IAM_ROLE_ARN}")
         sys.exit(1)
