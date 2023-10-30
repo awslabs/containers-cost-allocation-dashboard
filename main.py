@@ -292,7 +292,8 @@ def secrets_manager_get_secret_value(secret_name, region_code, assume_role_respo
         # Client definition in case the EKS cluster and AWS Secrets Manager are in different AWS accounts.
         # This means cross account authentication will be done, so the client contains the parent IAM role credentials
         if assume_role_response:
-            client = boto3.client("secretsmanager", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+            client = boto3.client("secretsmanager",
+                                  aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
                                   aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
                                   aws_session_token=assume_role_response["Credentials"]["SessionToken"],
                                   region_name=region_code)
