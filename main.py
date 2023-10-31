@@ -7,6 +7,7 @@ import sys
 import logging
 import requests
 import datetime
+import tempfile
 import pandas as pd
 
 import boto3
@@ -317,12 +318,23 @@ def create_ca_cert_file(ca_cert_string):
     """Creates a CA certificate file from the content of a CA certificate.
 
     :param ca_cert_string: The CA certificate string (not file)
-    :return:
+    :return: The full path to the root CA certificate and the saved umask
     """
 
-    cat_cert_file = open("/tmp/ca.cert.pem", "a")
-    cat_cert_file.write(ca_cert_string)
-    cat_cert_file.close()
+    # Creating a temp directory and defining the file name
+    tmpdir = tempfile.mkdtemp()
+    temp_file = tempfile.NamedTemporaryFile(prefix="ca_cert_", suffix=".pem", dir=tmpdir, mode="w", delete=False)
+
+    # Ensure the file is read/write by the creator only
+    saved_umask = os.umask(0o077)
+
+    # Writing the root CA certificate string to the file
+    try:
+        temp_file.write(ca_cert_string)
+        return temp_file.name, saved_umask
+    except IOError as e:
+        logger.error(e)
+        sys.exit(1)
 
 
 def kubecost_backfill_period_window_calc(backfill_period_days):
@@ -491,12 +503,13 @@ def calc_kubecost_dates_missing_from_s3(kubecost_backfill_period_available_dates
         logger.info("All dates for Kubecost data for the backfill period, are available in S3. No collection needed")
 
 
-def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, end, granularity, aggregate,
-                                    connection_timeout, read_timeout, paginate, idle, split_idle, idle_by_node,
-                                    share_tenancy_costs, accumulate):
+def execute_kubecost_allocation_api(tls_verify, root_ca_cert_path, kubecost_api_endpoint, start, end, granularity,
+                                    aggregate, connection_timeout, read_timeout, paginate, idle, split_idle,
+                                    idle_by_node, share_tenancy_costs, accumulate):
     """Executes Kubecost Allocation API.
 
     :param tls_verify: Dictates whether TLS certificate verification is done for HTTPS connections
+    :param root_ca_cert_path: The full path to the root CA certificate file
     :param kubecost_api_endpoint: The Kubecost API endpoint, in format of "http://<ip_or_name>:<port>"
     :param start: The start time for calculating Kubecost Allocation API window
     :param end: The end time for calculating Kubecost Allocation API window
@@ -514,7 +527,7 @@ def execute_kubecost_allocation_api(tls_verify, kubecost_api_endpoint, start, en
     """
 
     if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
-        os.environ["REQUESTS_CA_BUNDLE"] = "/tmp/ca.cert.pem"
+        os.environ["REQUESTS_CA_BUNDLE"] = root_ca_cert_path
 
     # Setting the step
     step = "1h" if granularity == "hourly" else "1d"
@@ -681,18 +694,21 @@ def kubecost_allocation_data_timestamp_update(allocation_data):
 
 def kubecost_allocation_data_to_parquet(allocation_data,
                                         dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations,
-                                        kubecost_labels_to_orig_labels,
-                                        kubecost_annotations_to_orig_annotations):
+                                        kubecost_labels_to_orig_labels, kubecost_annotations_to_orig_annotations,
+                                        date, cluster_id):
     """Converting Kubecost Allocation data to Parquet.
 
     :param allocation_data: Kubecost's Allocation data after:
      1. Transforming to a nested list
      2. Updating timestamps
-    :param dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations: Dictionary of DataFrame columns mapped to their NA/NaN value.
+    :param dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations:
+    Dictionary of DataFrame columns mapped to their NA/NaN value.
     This is including columns for K8s label keys, the way they're represented in Kubecost.
     :param kubecost_labels_to_orig_labels: A dict mapping the Kubecost K8s labels keys, to the original K8s labels keys
     :param kubecost_annotations_to_orig_annotations: A dict of Kubecost K8s annotations, to original K8s annotations
-    :return:
+    :param date: The date to use in the Parquet file name
+    :param cluster_id: The cluster ID to use for the S3 bucket prefix and Parquet file name
+    :return: The path to the parquet file and the saved umask
     """
 
     # Converting Kubecost's Allocation data to Pandas DataFrame
@@ -760,19 +776,41 @@ def kubecost_allocation_data_to_parquet(allocation_data,
         if kubecost_annotations_to_orig_annotations_only_renamed:
             df = df.rename(columns=kubecost_annotations_to_orig_annotations_only_renamed)
 
-    # Transforming the DataFrame to a Parquet and creating the Parquet file locally
-    df.to_parquet("/tmp/output.snappy.parquet", engine="pyarrow")
+    #                      #
+    # DataFrame to Parquet #
+    #                      #
+
+    # Extracting cluster name from the cluster ID
+    cluster_name = cluster_id.split("/")[-1]
+
+    # Creating a temp directory and defining the file name
+    tmpdir = tempfile.mkdtemp()
+    s3_file_name = f"{date}_{cluster_name}.snappy.parquet"
+
+    # Ensure the file is read/write by the creator only
+    saved_umask = os.umask(0o077)
+
+    # Full path definition
+    path = os.path.join(tmpdir, s3_file_name)
+    try:
+        # Transforming the DataFrame to a Parquet and creating the Parquet file locally
+        df.to_parquet(path, engine="pyarrow")
+        return path, saved_umask
+    except IOError as e:
+        logger.error(e)
+        sys.exit(1)
 
 
-def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, month, year, assume_role_response):
+def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, month, year, assume_role_response,
+                                             parquet_file_path):
     """Compresses and uploads the Kubecost Allocation Parquet to an S3 bucket.
 
     :param s3_bucket_name: The S3 bucket name to use
     :param cluster_id: The cluster ID to use for the S3 bucket prefix and Parquet file name
-    :param date: The date to use in the Parquet file name
     :param month: The month to use as part of the S3 bucket prefix
     :param year: The year to use as part of the S3 bucket prefix
     :param assume_role_response: The Assume Role API call response
+    :param parquet_file_path: The full path to the Parquet file
     :return:
     """
 
@@ -783,13 +821,11 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
     except KeyError:
         pass
 
-    cluster_name = cluster_id.split("/")[-1]
     cluster_account_id = cluster_id.split(":")[4]
     cluster_region_code = cluster_id.split(":")[3]
 
     # Compressing and uploading the Parquet file to the S3 bucket
-    s3_file_name = f"{date}_{cluster_name}"
-    os.rename("/tmp/output.snappy.parquet", f"/tmp/{s3_file_name}.snappy.parquet")
+    s3_file_name = parquet_file_path.split("/")[-1]
     try:
         # Client definition in case the EKS cluster and AWS Secrets Manager are in different AWS accounts.
         # This means cross account authentication will be done, so the client contains the parent IAM role credentials
@@ -804,11 +840,11 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, date, m
             s3 = boto3.resource("s3")
         s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
 
-        logger.info(f"Uploading file '{s3_file_name}.snappy.parquet' to S3 Bucket '{s3_bucket_name}'...")
-        s3.Bucket(s3_bucket_name).upload_file(f"/tmp/{s3_file_name}.snappy.parquet",
-                                              f"{s3_bucket_prefix}/{s3_file_name}.snappy.parquet")
+        logger.info(f"Uploading file '{s3_file_name}' to S3 Bucket '{s3_bucket_name}'...")
+        s3.Bucket(s3_bucket_name).upload_file(parquet_file_path,
+                                              f"{s3_bucket_prefix}/{s3_file_name}")
     except boto3.exceptions.S3UploadFailedError as error:
-        logger.error(f"Unable to upload file {s3_file_name}.snappy.parquet to S3 Bucket '{s3_bucket_name}': {error}")
+        logger.error(f"Unable to upload file {s3_file_name} to S3 Bucket '{s3_bucket_name}': {error}")
         sys.exit(1)
     except botocore.exceptions.ClientError as error:
         logger.error(error)
@@ -851,10 +887,12 @@ def main():
     # 1. The secret with the given name will be retrieved from AWS Secrets Manager
     # 2. A file will be created from the content of the CA certificate
     # 3. The "REQUESTS_CA_BUNDLE" will be set with the file path
+    root_ca_cert_path = ""
+    root_ca_cert_saved_umask = ""
     if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
         kubecost_ca_cert = secrets_manager_get_secret_value(KUBECOST_CA_CERTIFICATE_SECRET_NAME,
                                                             KUBECOST_CA_CERTIFICATE_SECRET_REGION, assume_role_response)
-        create_ca_cert_file(kubecost_ca_cert)
+        root_ca_cert_path, root_ca_cert_saved_umask = create_ca_cert_file(kubecost_ca_cert)
 
     ##################
     # Backfill logic #
@@ -883,7 +921,8 @@ def main():
     # Define the Kubecost window, execute Kubecost API call and extract the dates and window for each timeset
     kubecost_backfill_start_date_midnight, kubecost_backfill_end_date_midnight = kubecost_backfill_period_window_calc(
         BACKFILL_PERIOD_DAYS)
-    kubecost_backfill_period_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT,
+    kubecost_backfill_period_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, root_ca_cert_path,
+                                                                               KUBECOST_API_ENDPOINT,
                                                                                kubecost_backfill_start_date_midnight,
                                                                                kubecost_backfill_end_date_midnight,
                                                                                "daily", "cluster", CONNECTION_TIMEOUT,
@@ -941,8 +980,9 @@ def main():
             month = date.split("-")[1]
 
             # Executing Kubecost Allocation API call
-            kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, KUBECOST_API_ENDPOINT, start, end,
-                                                                       "daily", AGGREGATION, CONNECTION_TIMEOUT,
+            kubecost_allocation_data = execute_kubecost_allocation_api(TLS_VERIFY, root_ca_cert_path,
+                                                                       KUBECOST_API_ENDPOINT, start, end, "daily",
+                                                                       AGGREGATION, CONNECTION_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_READ_TIMEOUT,
                                                                        KUBECOST_ALLOCATION_API_PAGINATE, True, True,
                                                                        True, True, False)
@@ -956,14 +996,25 @@ def main():
                 kubecost_allocation_data_with_eks_cluster_name)
 
             # Transforming Kubecost's updated allocation data to a Snappy-compressed Parquet, and uploading it to S3
-            kubecost_allocation_data_to_parquet(kubecost_updated_allocation_data,
-                                                dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations,
-                                                kubecost_labels_to_orig_labels,
-                                                kubecost_annotations_to_orig_annotations)
-            upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, date, month,
-                                                     year, assume_role_response)
+            parquet_file_path, parquet_file_umask = kubecost_allocation_data_to_parquet(
+                kubecost_updated_allocation_data,
+                dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations, kubecost_labels_to_orig_labels,
+                kubecost_annotations_to_orig_annotations, date, CLUSTER_ID)
+            upload_kubecost_allocation_parquet_to_s3(S3_BUCKET_NAME, CLUSTER_ID, month,
+                                                     year, assume_role_response, parquet_file_path)
+
+            # Parquet cleanup
+            os.remove(parquet_file_path)
+            os.umask(parquet_file_umask)
+            os.rmdir(parquet_file_path.rsplit("/", 1)[0])
 
         logger.info("### Data Collection Logic End ###")
+
+    # Root CA certificate cleanup
+    if KUBECOST_CA_CERTIFICATE_SECRET_NAME:
+        os.remove(root_ca_cert_path)
+        os.umask(root_ca_cert_saved_umask)
+        os.rmdir(root_ca_cert_path.rsplit("/", 1)[0])
 
 
 if __name__ == "__main__":
