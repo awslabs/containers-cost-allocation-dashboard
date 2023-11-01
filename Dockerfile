@@ -2,6 +2,13 @@
 
 FROM --platform=$TARGETPLATFORM python:3.11.6-slim-bookworm AS build
 
+RUN set -ex \
+    && apt-get update \
+    && apt-get -y install libssl3=3.0.11-1~deb12u2 openssl=3.0.11-1~deb12u2 \
+    && apt-get -y autoremove \
+    && apt-get -y clean \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip3 uninstall -y pip
 
 RUN useradd -u 10001 worker -m
