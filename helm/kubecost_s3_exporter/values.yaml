@@ -6,7 +6,7 @@
 
 namespace: "kubecost-s3-exporter"
 
-image: "<registry_url>/<repo>:<tag>"
+image: "" # Add the Docker container image in the format of <registry_url>/<repo>:<tag>
 imagePullPolicy: Always
 ephemeralVolumeSize: "50Mi"
 
