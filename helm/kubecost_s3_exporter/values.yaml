@@ -21,13 +21,13 @@ serviceAccount:
 
 env:
   - name: "S3_BUCKET_NAME"
-    value: "kubecost-data"
+    value: "" # Add S3 bucket name
   - name: "KUBECOST_API_ENDPOINT"
     value: "http://kubecost-cost-analyzer.kubecost:9090" # Change to your Kubecost endpoint if necessary
   - name: "BACKFILL_PERIOD_DAYS"
     value: 15
   - name: "CLUSTER_ID"
-    value: "<cluster_arn>" # Change to your EKS cluster ARN
+    value: "" # Change to your EKS cluster ARN
   - name: "IRSA_PARENT_IAM_ROLE_ARN"
     value: ""
   - name: "AGGREGATION"
