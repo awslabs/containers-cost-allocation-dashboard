@@ -23,6 +23,23 @@ Currently, only the free tier and the EKS-optimized bundle of Kubecost are suppo
 
 Please continue reading the below more details instructions for some of the above requirements. 
 
+## Kubecost S3 Exporter Container
+
+### Setting Requests and Limits 
+
+As explained in [`ARCHITECTURE.md`](/ARCHITECTURE.md), this solution deploys a container that collects data from Kubecost.  
+This container currently doesn't have requests and limits set.  
+It's highly advised that you first test it in a dev/QA environment that is similar to your production environment.  
+During testing, monitor the CPU and RAM usage of the container, and set the requests and limit accordingly 
+
+### Disabling Exec Into the Container 
+
+The Kubecost S3 Exporter container doesn't require you to exec into it for it to function.  
+Hence, it's advised to disable exec into it to keep it safe.  
+You can do so using [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).  
+Create a custom Role & RoleBinding that removes the `create` verb for the `pods/exec` resource.  
+Attach the Role using RoleBinding to the relevant users
+
 ## Kubecost Requirements Notes
 
 ### Adding Node Labels
@@ -137,6 +154,12 @@ See [this announcement](https://aws.amazon.com/blogs/aws/amazon-s3-encrypts-new-
 It's advised to block public access to the S3 bucket (see [this document](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html)).  
 The S3 bucket that stores the Kubecost data is meant to be accessed only from the EKS clusters.  
 Also, it's advised to use VPC Endpoints to make sure traffic towards the S3 bucket does not traverse the internet 
+
+## AWS Glue Crawler Security Configuration
+
+It's recommended that you create a security configuration for the AWS Glue Crawler.  
+In it, it's advised you enable Amazon CloudWatch logs encryption with your CMK.  
+See [Working with security configurations on the AWS Glue console](https://docs.aws.amazon.com/glue/latest/dg/console-security-configurations.html)
 
 ## Configure Athena Query Results Location
 
