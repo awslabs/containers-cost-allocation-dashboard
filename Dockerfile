@@ -13,16 +13,16 @@ RUN pip3 uninstall -y pip
 
 RUN useradd -u 10001 worker -m
 USER worker
-WORKDIR /home/worker
 ENV PATH="/home/worker/.local/bin:${PATH}"
 
 RUN python3 -m ensurepip --user
 RUN pip3 install --user --upgrade pip==23.3.1
 
 COPY --chown=worker:worker requirements.txt .
+RUN pip3 install -r requirements.txt --target /home/worker/app
+RUN pip3 uninstall -y pip
 
-RUN pip3 install --user -r requirements.txt
-
+WORKDIR /home/worker/app
 COPY --chown=worker:worker main.py .
 
 CMD ["python3", "./main.py"]
