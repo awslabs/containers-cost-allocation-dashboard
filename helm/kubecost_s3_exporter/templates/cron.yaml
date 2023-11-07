@@ -15,7 +15,7 @@ spec:
           automountServiceAccountToken: false
           securityContext:
             runAsNonRoot: true
-            runAsUser: 10001
+            runAsUser: 65532
             seccompProfile:
               type: RuntimeDefault
           serviceAccountName: {{ .Values.serviceAccount.name }}
