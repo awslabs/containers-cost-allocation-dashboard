@@ -8,7 +8,7 @@
 ###############
 
 # Using Debian image as a source to build the app binary with the required libraries and a specific Python version
-FROM python:3.11.6-slim-bookworm AS build
+FROM python:3.12.0-slim-bookworm AS build
 
 # Fetching binutils which is required for building the Python binary using PyInstaller
 RUN set -ex \
@@ -35,6 +35,9 @@ COPY --chown=nonroot:nonroot requirements.txt .
 RUN pip3 install -r requirements.txt
 RUN pip3 install pyinstaller==6.1.0
 
+# PIP cleanup
+RUN pip3 uninstall -y pip
+
 # Creating the binary
 ## Creating "app" directory and switching to it. This directory is used to host the application files
 ## Copying the main Python script
@@ -42,9 +45,6 @@ RUN pip3 install pyinstaller==6.1.0
 WORKDIR /home/nonroot/app
 COPY --chown=nonroot:nonroot main.py .
 RUN pyinstaller -F main.py --specpath . --hidden-import pyarrow.vendored.version --collect-all dateutil
-
-# PIP cleanup
-RUN pip3 uninstall -y pip
 
 ################################
 # Non-Root User Creation Stage #
@@ -75,18 +75,18 @@ USER nonroot
 # Starting the Copy Shared Objects stage from the create_non_root_user stage, for amd64 architecture
 FROM create_non_root_user AS copy_so_amd64
 
-# Copying Python's Shared Objects from the build stage, for amd64 architecture
-ONBUILD COPY --from=build --chown=nonroot:nonroot /usr/local/bin/../lib/libpython3.11.so.1.0 /usr/local/bin/../lib/libpython3.11.so.1.0
+# Copying Shared Objects which are common to both Python and the app's binary
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
-ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/x86_64-linux-gnu/libm.so.6 /lib/x86_64-linux-gnu/libm.so.6
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+
+# Copying Python's Shared Objects from the build stage, for amd64 architecture
+ONBUILD COPY --from=build --chown=nonroot:nonroot /usr/local/bin/../lib/libpython3.12.so.1.0 /usr/local/bin/../lib/libpython3.12.so.1.0
+ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/x86_64-linux-gnu/libm.so.6 /lib/x86_64-linux-gnu/libm.so.6
 
 # Copying the app binary's Shared Objects from the build stage, for amd64 architecture
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/x86_64-linux-gnu/libdl.so.2 /lib/x86_64-linux-gnu/libdl.so.2
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/x86_64-linux-gnu/libz.so.1 /lib/x86_64-linux-gnu/libz.so.1
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/x86_64-linux-gnu/libpthread.so.0 /lib/x86_64-linux-gnu/libpthread.so.0
-ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/x86_64-linux-gnu/libc.so.6 /lib/x86_64-linux-gnu/libc.so.6
-ONBUILD COPY --from=build --chown=nonroot:nonroot /lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
 
 # Copying PyArrow's Shared Objects from the build stage, for amd64 architecture
 ONBUILD COPY --from=build --chown=nonroot:nonroot /usr/lib/x86_64-linux-gnu/librt.so.1 /usr/lib/x86_64-linux-gnu/librt.so.1
@@ -98,18 +98,18 @@ ONBUILD COPY --from=build --chown=nonroot:nonroot /usr/lib/x86_64-linux-gnu/libr
 # Starting the Copy Shared Objects stage from the create_non_root_user stage, for arm64 architecture
 FROM create_non_root_user AS copy_so_arm64
 
-# Copying Python's Shared Objects from the build stage, for arm64 architecture
-ONBUILD COPY --from=build --chown=nonroot:nonroot /usr/local/bin/../lib/libpython3.11.so.1.0 /usr/local/bin/../lib/libpython3.11.so.1.0
+# Copying Shared Objects which are common to both Python and the app's binary
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/aarch64-linux-gnu/libc.so.6 /lib/aarch64-linux-gnu/libc.so.6
-ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/aarch64-linux-gnu/libm.so.6 /lib/aarch64-linux-gnu/libm.so.6
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
+
+# Copying Python's Shared Objects from the build stage, for arm64 architecture
+ONBUILD COPY --from=build --chown=nonroot:nonroot /usr/local/bin/../lib/libpython3.12.so.1.0 /usr/local/bin/../lib/libpython3.12.so.1.0
+ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/aarch64-linux-gnu/libm.so.6 /lib/aarch64-linux-gnu/libm.so.6
 
 # Copying the app binary's Shared Objects from the build stage, for arm64 architecture
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/aarch64-linux-gnu/libdl.so.2 /lib/aarch64-linux-gnu/libdl.so.2
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/aarch64-linux-gnu/libz.so.1 /lib/aarch64-linux-gnu/libz.so.1
 ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/aarch64-linux-gnu/libpthread.so.0 /lib/aarch64-linux-gnu/libpthread.so.0
-ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/aarch64-linux-gnu/libc.so.6 /lib/aarch64-linux-gnu/libc.so.6
-ONBUILD COPY --from=build --chown=nonroot:nonroot /lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1
 
 # Copying PyArrow's Shared Objects from the build stage, for arm64 architecture
 ONBUILD COPY --from=build --chown=nonroot:nonroot /usr/lib/aarch64-linux-gnu/librt.so.1 /usr/lib/aarch64-linux-gnu/librt.so.1
