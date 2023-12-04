@@ -38,6 +38,26 @@ variable "aws_glue_table_name" {
   }
 }
 
+variable "aws_glue_view_name" {
+  description = "(Optional) The AWS Glue Table name for the Athena view"
+  type        = string
+  default     = "kubecost_view"
+  validation {
+    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_view_name))
+    error_message = "The 'aws_glue_view_name' variable contains an invalid AWS Glue Table name"
+  }
+}
+
+variable "aws_glue_crawler_name" {
+  description = "(Optional) The AWS Glue Crawler name"
+  type        = string
+  default     = "kubecost_crawler"
+  validation {
+    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_crawler_name))
+    error_message = "The 'aws_glue_crawler_name' variable contains an invalid AWS Crawler Table name"
+  }
+}
+
 variable "aws_shared_config_files" {
   description = "(Optional) Full paths to the AWS shared config files"
   type        = list(string)
