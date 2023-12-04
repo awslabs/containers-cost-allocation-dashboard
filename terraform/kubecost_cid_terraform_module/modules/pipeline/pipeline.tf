@@ -118,7 +118,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
     for_each = [for partition_key in module.common.partition_keys : partition_key]
     content {
       name = partition_keys.value.name
-      type = partition_keys.value.glue_table_type
+      type = partition_keys.value.hive_type
     }
   }
 
@@ -139,7 +139,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
       for_each = [for static_column in module.common.static_columns : static_column]
       content {
         name = columns.value.name
-        type = columns.value.glue_table_type
+        type = columns.value.hive_type
       }
     }
     dynamic "columns" {
@@ -159,8 +159,50 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   }
 }
 
+resource "aws_glue_catalog_table" "kubecost_glue_view" {
+  name          = module.common.aws_glue_view_name
+  database_name = aws_glue_catalog_database.kubecost_glue_db.name
+  parameters = {
+    presto_view = "true"
+  }
+
+  table_type = "VIRTUAL_VIEW"
+  view_original_text = "/* Presto View: ${base64encode(local.presto_view)} */"
+
+  storage_descriptor {
+    dynamic "columns" {
+      for_each = [for static_column in module.common.static_columns : static_column]
+      content {
+        name = columns.value.name
+        type = columns.value.hive_type
+      }
+    }
+    dynamic "columns" {
+      for_each = [for k8s_label in distinct(module.common.k8s_labels) : k8s_label]
+      content {
+        name = "properties.labels.${columns.value}"
+        type = "string"
+      }
+    }
+    dynamic "columns" {
+      for_each = [for k8s_annotation in distinct(module.common.k8s_annotations) : k8s_annotation]
+      content {
+        name = "properties.annotations.${columns.value}"
+        type = "string"
+      }
+    }
+    dynamic "columns" {
+      for_each = [for partition_key in module.common.partition_keys : partition_key]
+      content {
+        name = columns.value.name
+        type = columns.value.hive_type
+      }
+    }
+  }
+}
+
 resource "aws_glue_crawler" "kubecost_glue_crawler" {
-  name          = "kubecost_crawler"
+  name          = module.common.aws_glue_crawler_name
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
   schedule      = "cron(${var.glue_crawler_schedule})"
   role          = aws_iam_role.kubecost_glue_crawler_role.name
