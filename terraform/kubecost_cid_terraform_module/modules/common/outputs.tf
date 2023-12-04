@@ -20,6 +20,16 @@ output "aws_glue_table_name" {
   value       = var.aws_glue_table_name
 }
 
+output "aws_glue_view_name" {
+  description = "The AWS Glue Table name for the Athena view"
+  value       = var.aws_glue_view_name
+}
+
+output "aws_glue_crawler_name" {
+  description = "The AWS Glue Crawler name"
+  value       = var.aws_glue_crawler_name
+}
+
 output "aws_shared_config_files" {
   description = "Paths to the AWS shared config files"
   value       = var.aws_shared_config_files
