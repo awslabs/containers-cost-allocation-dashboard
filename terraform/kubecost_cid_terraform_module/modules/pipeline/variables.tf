@@ -10,6 +10,16 @@ variable "glue_crawler_schedule" {
   }
 }
 
+variable "athena_view_data_retention_months" {
+  description = "(Optional) The amount of months back to keep data in the Athena view"
+  type        = string
+  default     = 6
+  validation {
+    condition     = can(regex("^[1-9][0-9]*$", var.athena_view_data_retention_months))
+    error_message = "The 'athena_view_data_retention_months' variable can take only a non-zero positive integer"
+  }
+}
+
 variable "kubecost_ca_certificates_list" {
   description = <<-EOF
     (Optional) A list root CA certificates paths and their configuration for AWS Secrets Manager. Used for TLS communication with Kubecost. This is a consolidated list of all root CA certificates that are needed for all Kubecost endpoints.
