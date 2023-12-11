@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source                = "hashicorp/aws"
-      version               = "~> 5.8.0"
+      version               = "~> 5.26.0"
       configuration_aliases = [aws.pipeline, aws.eks]
     }
     helm = {
@@ -15,17 +15,19 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.4.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9.1"
+    }
   }
 }
 
 ######################################
-# Section 1 - AWS Resources Pipeline #
+# Section 1 - AWS Pipeline Resources #
 ######################################
 
 module "pipeline" {
   source = "../modules/pipeline"
-
-  glue_crawler_schedule = "0 1 * * ? *"
 }
 
 #########################################################
@@ -172,4 +174,66 @@ module "us-east-2-222222222222-cluster2" {
   create_namespace                     = false
   service_account                      = "kubecost-s3-exporter-2"
   create_service_account               = false
+}
+
+####################################
+# Section 3 - Quicksight Resources #
+####################################
+
+module "quicksight" {
+  source = "../modules/quicksight"
+
+  providers = {
+    aws = aws.quicksight
+  }
+
+  aws_glue_database_name = module.pipeline.aws_glue_database_name
+  aws_glue_view_name     = module.pipeline.aws_glue_view_name
+
+  # Add an S3 bucket name for Athena Workgroup Query Results Location, if var.athena_workgroup_configuration.create is "true"
+  # Otherwise, remove the below field
+  athena_workgroup_configuration = {
+    query_results_location_bucket_name = "query-result-bucket"
+  }
+
+  qs_common_users = [
+    {
+      username = "Admin"
+    },
+    {
+      username = "Admin2"
+    }
+  ]
+
+  qs_data_source_settings = {
+    users = [
+      {
+        username    = "Admin"
+        permissions = "Viewer"
+      },
+      {
+        username    = "Admin3"
+        permissions = "Viewer"
+      },
+      {
+        username = "Admin4"
+      }
+    ]
+  }
+
+  qs_data_set_settings = {
+    timezone = "Asia/Jerusalem"
+    users = [
+      {
+        username = "Admin4/udid-Isengard"
+      },
+      {
+        username = "Admin/udid-Isengard"
+      },
+      {
+        username    = "Admin3/udid-Isengard"
+        permissions = "Viewer"
+      }
+    ]
+  }
 }
