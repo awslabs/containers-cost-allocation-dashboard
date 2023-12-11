@@ -1,7 +1,7 @@
 
-# Container Cost Allocation (CCA) Dashboard Terraform Module
+# Containers Cost Allocation (CCA) Dashboard Terraform Module
 
-This Terraform Module is used to deploy the resources required for the Container Cost Allocation (CCA) dashboard.  
+This Terraform Module is used to deploy the resources required for the Containers Cost Allocation (CCA) dashboard.  
 It's suitable to deploy the resources in multi-account, multi-region, multi-cluster environments.  
 It's used to deploy the following:
 
