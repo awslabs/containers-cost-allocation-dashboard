@@ -1,0 +1,16 @@
+# The `common` Module
+
+The `common` reusable module is used to provide common variables.  
+These are used by other modules, so that the user won't have to repeat them in the root module.  
+The values for the variables must be given in the `default` keyword in the varible definition itself.
+
+## Variables
+
+The below table lists the `common` module's variables:
+
+| Name                                                                                | Description                                                                                                                           | Type                                                                                                                                                        | Default                                   | Possible Values                             | Required |
+|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|---------------------------------------------|----------|
+| <a name="input_bucket_arn"></a> bucket\_arn                                         | The ARN of the S3 Bucket to which the Kubecost data will be uploaded                                                                  | `string`                                                                                                                                                    | ""                                        | A valid S3 Bucket ARN                       | yes      |
+| <a name="input_k8s_labels"></a> k8s\_labels                                         | K8s labels common across all clusters, that you wish to include in the dataset                                                        | `list(string)`                                                                                                                                              | `[]`                                      | A list of K8s label keys                    | no       |
+| <a name="input_k8s_annotations"></a> k8s\_annotations                               | K8s annotations common across all clusters, that you wish to include in the dataset                                                   | `list(string)`                                                                                                                                              | `[]`                                      | A list of K8s annotations keys              | no       |
+| <a name="input_aws_common_tags"></a> aws\_common\_tags                              | Common AWS tags to be used on all AWS resources created by Terraform                                                                  | `map(any)`                                                                                                                                                  | `{}`                                      | A map of tag keys and their values          | no       |
