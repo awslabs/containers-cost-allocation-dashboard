@@ -102,11 +102,11 @@ resource "aws_iam_role" "kubecost_glue_crawler_role" {
 }
 
 resource "aws_glue_catalog_database" "kubecost_glue_db" {
-  name = module.common.aws_glue_database_name
+  name = var.glue_database_name
 }
 
 resource "aws_glue_catalog_table" "kubecost_glue_table" {
-  name          = module.common.aws_glue_table_name
+  name          = var.glue_table_name
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
   parameters = {
     "classification" = "parquet"
@@ -160,13 +160,13 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
 }
 
 resource "aws_glue_catalog_table" "kubecost_glue_view" {
-  name          = module.common.aws_glue_view_name
+  name          = var.glue_view_name
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
   parameters = {
     presto_view = "true"
   }
 
-  table_type = "VIRTUAL_VIEW"
+  table_type         = "VIRTUAL_VIEW"
   view_original_text = "/* Presto View: ${base64encode(local.presto_view)} */"
 
   storage_descriptor {
@@ -202,7 +202,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_view" {
 }
 
 resource "aws_glue_crawler" "kubecost_glue_crawler" {
-  name          = module.common.aws_glue_crawler_name
+  name          = var.glue_crawler_name
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
   schedule      = "cron(${var.glue_crawler_schedule})"
   role          = aws_iam_role.kubecost_glue_crawler_role.name
@@ -258,17 +258,5 @@ resource "aws_secretsmanager_secret_policy" "kubecost_ca_cert_secret_policy" {
   policy = templatefile("${path.module}/secret_policy.tpl", {
     arn        = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].id
     principals = var.kubecost_ca_certificates_list[count.index].cert_secret_allowed_principals
-  })
-}
-
-resource "local_file" "cid_yaml" {
-  filename             = "${path.module}../../../../cid/eks_insights_dashboard.yaml"
-  directory_permission = "0400"
-  file_permission      = "0400"
-  content = templatefile("${path.module}../../../../cid/eks_insights_dashboard.yaml.tpl", {
-    labels                = distinct(module.common.k8s_labels)
-    annotations           = distinct(module.common.k8s_annotations)
-    athena_datasource_arn = "$${athena_datasource_arn}"
-    athena_database_name  = "$${athena_database_name}"
   })
 }
