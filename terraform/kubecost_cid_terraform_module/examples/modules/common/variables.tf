@@ -1,9 +1,14 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 variable "bucket_arn" {
-  description = "(Required) The ARN of the S3 Bucket to which the Kubecost data will be uploaded"
-  type        = string
-  default     = "arn:aws:s3:::kubecost-data-collection-bucket"
+  description = <<-EOF
+    (Required) The ARN of the S3 Bucket to which the Kubecost data will be uploaded.
+               Possible values: A valid S3 bucket ARN.
+               Default value: empty string ("").
+  EOF
+
+  type    = string
+  default = "arn:aws:s3:::kubecost-data-collection-bucket"
 
   # Note - the full regex should have been "^arn:(?:aws|aws-cn|aws-us-gov):s3:::(?!(xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
   # The "(?!(xn--|.+-s3alias$))" part has been omitted because Terraform regex engine doesn't support negative lookahead (the "?!" part)
@@ -18,82 +23,15 @@ variable "bucket_arn" {
   }
 }
 
-variable "aws_glue_database_name" {
-  description = "(Optional) The AWS Glue Database name"
-  type        = string
-  default     = "kubecost_db"
-  validation {
-    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_database_name))
-    error_message = "The 'aws_glue_database_name' variable contains an invalid AWS Glue Database name"
-  }
-}
-
-variable "aws_glue_table_name" {
-  description = "(Optional) The AWS Glue Table name"
-  type        = string
-  default     = "kubecost_table"
-  validation {
-    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_table_name))
-    error_message = "The 'aws_glue_table_name' variable contains an invalid AWS Glue Table name"
-  }
-}
-
-variable "aws_glue_view_name" {
-  description = "(Optional) The AWS Glue Table name for the Athena view"
-  type        = string
-  default     = "kubecost_view"
-  validation {
-    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_view_name))
-    error_message = "The 'aws_glue_view_name' variable contains an invalid AWS Glue Table name"
-  }
-}
-
-variable "aws_glue_crawler_name" {
-  description = "(Optional) The AWS Glue Crawler name"
-  type        = string
-  default     = "kubecost_crawler"
-  validation {
-    condition     = can(regex("^[a-z0-9_]{1,255}$", var.aws_glue_crawler_name))
-    error_message = "The 'aws_glue_crawler_name' variable contains an invalid AWS Crawler Table name"
-  }
-}
-
-variable "aws_shared_config_files" {
-  description = "(Optional) Full paths to the AWS shared config files"
-  type        = list(string)
-  default     = ["~/.aws/config"]
-
-  validation {
-    condition = (
-      length([
-        for path in var.aws_shared_config_files : path
-        if can(regex("^(~|\\/[ \\w.-]+)+$", path))
-      ]) == length(var.aws_shared_config_files)
-    )
-    error_message = "At least one of the items the 'aws_shared_config_files' list, contains an invalid full file path"
-  }
-}
-
-variable "aws_shared_credentials_files" {
-  description = "(Optional) Full paths to the AWS shared credentials files"
-  type        = list(string)
-  default     = ["~/.aws/credentials"]
-
-  validation {
-    condition = (
-      length([
-        for path in var.aws_shared_credentials_files : path
-        if can(regex("^(~|\\/[ \\w.-]+)+$", path))
-      ]) == length(var.aws_shared_credentials_files)
-    )
-    error_message = "At least one of the items the 'aws_shared_credentials_files' list, contains an invalid full file path"
-  }
-}
-
 variable "k8s_labels" {
-  description = "K8s labels common across all clusters, that you wish to include in the dataset"
-  type        = list(string)
-  default     = ["app", "chart", "component", "app.kubernetes.io/version", "app.kubernetes.io/managed_by", "app.kubernetes.io/part_of"]
+  description = <<-EOF
+    (Optional) K8s labels common across all clusters, that you wish to include in the dataset.
+               Possible values: A list of strings, each one should be a valid K8s label key.
+               Default value: empty list ([]).
+  EOF
+
+  type    = list(string)
+  default = ["app", "chart", "component", "app.kubernetes.io/version", "app.kubernetes.io/managed_by", "app.kubernetes.io/part_of"]
 
   validation {
     condition = (
@@ -107,9 +45,14 @@ variable "k8s_labels" {
 }
 
 variable "k8s_annotations" {
-  description = "K8s annotations common across all clusters, that you wish to include in the dataset"
-  type        = list(string)
-  default     = ["kubernetes.io/psp", "eks.amazonaws.com/compute_type"]
+  description = <<-EOF
+    (Optional) K8s annotations common across all clusters, that you wish to include in the dataset.
+               Possible values: A list of strings, each one should be a valid K8s annotation key.
+               Default value: empty list ([]).
+  EOF
+
+  type    = list(string)
+  default = ["kubernetes.io/psp", "eks.amazonaws.com/compute_type"]
 
   validation {
     condition = (
@@ -123,8 +66,13 @@ variable "k8s_annotations" {
 }
 
 variable "aws_common_tags" {
-  description = "(Optional) Common AWS tags to be used on all AWS resources created by Terraform"
-  type        = map(any)
+  description = <<-EOF
+    (Optional) Common AWS tags to be used on all AWS resources created by Terraform.
+               Possible values: Each field in the map must have a valid AWS tag key and an optional value.
+               Default value: empty map ({}).
+  EOF
+
+  type = map(any)
   default = {
     test-tag1 = "test-value1"
     test-tag2 = "test-value2"
