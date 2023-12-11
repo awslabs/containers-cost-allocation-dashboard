@@ -14,7 +14,7 @@ Then, manually run the Glue Crawler and manually refresh the QuickSight dataset.
 
 ## Removing Kubecost S3 Exporter from Specific Clusters
 
-Please follow the ["Cleanup -> Removing Kubecost S3 Exporter from Specific Clusters" part in the Terraform module README](terraform/cca_terraform_module/README.md/.#removing-the-kubecost-s3-exporter-from-specific-clusters) file.
+Please follow the ["Cleanup -> Removing Kubecost S3 Exporter from Specific Clusters" part in the Terraform module README](terraform/cca_terraform_module/README.md/.#removing-kubecost-s3-exporter-from-specific-clusters) file.
 
 ## Adding/Removing Labels/Annotations to/from the Dataset
 
