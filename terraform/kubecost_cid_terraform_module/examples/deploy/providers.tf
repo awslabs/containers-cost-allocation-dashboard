@@ -4,24 +4,23 @@ module "common" {
   source = "../modules/common"
 }
 
-
 ######################################
-# Section 1 - AWS Resources Pipeline #
+# Section 1 - Pipeline AWS Provider  #
 ######################################
 
 provider "aws" {
   region                   = "us-east-1"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "pipeline_profile"
   default_tags {
     tags = module.common.aws_common_tags
   }
 }
 
-#########################################################
-# Section 2 - Data Collection Pod Deployment using Helm #
-#########################################################
+###########################################################
+# Section 2 - Kubecost S3 Exporter AWS and Helm Providers #
+###########################################################
 
 #                                  #
 # Clusters in Account 111111111111 #
@@ -33,8 +32,8 @@ provider "aws" {
   alias = "us-east-1-111111111111-cluster1"
 
   region                   = "us-east-1"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
     tags = module.common.aws_common_tags
@@ -54,8 +53,8 @@ provider "aws" {
   alias = "us-east-1-111111111111-cluster2"
 
   region                   = "us-east-1"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
     tags = module.common.aws_common_tags
@@ -77,8 +76,8 @@ provider "aws" {
   alias = "us-east-2-111111111111-cluster1"
 
   region                   = "us-east-2"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
     tags = module.common.aws_common_tags
@@ -98,8 +97,8 @@ provider "aws" {
   alias = "us-east-2-111111111111-cluster2"
 
   region                   = "us-east-2"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
     tags = module.common.aws_common_tags
@@ -116,8 +115,8 @@ provider "aws" {
   alias = "us-east-1-222222222222-cluster1"
 
   region                   = "us-east-1"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
     tags = module.common.aws_common_tags
@@ -137,8 +136,8 @@ provider "aws" {
   alias = "us-east-1-222222222222-cluster2"
 
   region                   = "us-east-1"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
     tags = module.common.aws_common_tags
@@ -160,8 +159,8 @@ provider "aws" {
   alias = "us-east-2-222222222222-cluster1"
 
   region                   = "us-east-2"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
     tags = module.common.aws_common_tags
@@ -172,8 +171,8 @@ provider "aws" {
   alias = "us-east-2-222222222222-cluster2"
 
   region                   = "us-east-2"
-  shared_config_files      = module.common.aws_shared_config_files
-  shared_credentials_files = module.common.aws_shared_credentials_files
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
     tags = module.common.aws_common_tags
@@ -186,5 +185,21 @@ provider "helm" {
   kubernetes {
     config_context = "arn:aws:eks:us-east-1:222222222222:cluster/cluster2"
     config_path    = "~/.kube/config"
+  }
+}
+
+#######################################
+# Section 3 - Quicksight AWS Provider #
+#######################################
+
+provider "aws" {
+  alias = "quicksight"
+
+  region                   = "us-east-1"
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
+  profile                  = "quicksight_profile"
+  default_tags {
+    tags = module.common.aws_common_tags
   }
 }
