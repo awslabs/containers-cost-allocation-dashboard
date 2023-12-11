@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source                = "hashicorp/aws"
-      version               = "~> 5.8.0"
+      version               = "~> 5.26.0"
       configuration_aliases = [aws.pipeline, aws.eks]
     }
     helm = {
@@ -15,17 +15,27 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.4.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9.1"
+    }
   }
 }
+
+######################################
+# Section 1 - AWS Pipeline Resources #
+######################################
 
 # Module instance for the pipeline module, to create the AWS pipeline resources
 module "pipeline" {
   source = "../modules/pipeline"
-
-  glue_crawler_schedule = ""
 }
 
-# Module instances for the kubecost_s3_exporter module, to create IRSA and deploy the Kubecost S3 Exporter pod
+#########################################################
+# Section 2 - Data Collection Pod Deployment using Helm #
+#########################################################
+
+# Module instances for the kubecost_s3_exporter module, to create IRSA and deploy the K8s resources
 
 # Example module instance for cluster with Helm invocation
 module "cluster1" {
@@ -58,4 +68,25 @@ module "cluster2" {
 
   cluster_arn                          = ""
   kubecost_s3_exporter_container_image = ""
+}
+
+####################################
+# Section 3 - Quicksight Resources #
+####################################
+
+module "quicksight" {
+  source = "../modules/quicksight"
+
+  providers = {
+    aws = aws.quicksight
+  }
+
+  glue_database_name = module.pipeline.glue_database_name
+  glue_view_name     = module.pipeline.glue_view_name
+
+  # Add an S3 bucket name for Athena Workgroup Query Results Location, if var.athena_workgroup_configuration.create is "true"
+  # Otherwise, remove the below field
+  athena_workgroup_configuration = {
+    query_results_location_bucket_name = ""
+  }
 }
