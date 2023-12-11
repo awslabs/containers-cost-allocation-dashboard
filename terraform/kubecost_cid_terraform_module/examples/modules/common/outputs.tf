@@ -10,36 +10,6 @@ output "bucket_name" {
   value       = local.bucket_name
 }
 
-output "aws_glue_database_name" {
-  description = "The AWS Glue Database name"
-  value       = var.aws_glue_database_name
-}
-
-output "aws_glue_table_name" {
-  description = "The AWS Glue Table name"
-  value       = var.aws_glue_table_name
-}
-
-output "aws_glue_view_name" {
-  description = "The AWS Glue Table name for the Athena view"
-  value       = var.aws_glue_view_name
-}
-
-output "aws_glue_crawler_name" {
-  description = "The AWS Glue Crawler name"
-  value       = var.aws_glue_crawler_name
-}
-
-output "aws_shared_config_files" {
-  description = "Paths to the AWS shared config files"
-  value       = var.aws_shared_config_files
-}
-
-output "aws_shared_credentials_files" {
-  description = "Paths to the AWS shared credentials files"
-  value       = var.aws_shared_credentials_files
-}
-
 output "k8s_labels" {
   description = "K8s labels common across all clusters, that you wish to include in the dataset"
   value       = var.k8s_labels
