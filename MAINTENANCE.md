@@ -6,7 +6,7 @@ Below are instruction for some common changes that you might do after the initia
 ## Deploying on Additional Clusters
 
 To add additional clusters to the dashboard, you need to add them to the Terraform module and apply it.  
-Please follow the [Maintenance -> Deploying on Additional Clusters part in the Terraform module README](/terraform/kubecost_cid_terraform_module/README.md/.#deploying-on-additional-clusters) file.  
+Please follow the [Maintenance -> Deploying on Additional Clusters part in the Terraform module README](terraform/cca_terraform_module/README.md/.#deploying-on-additional-clusters) file.  
 Wait for the next schedule of the Kubecost S3 Exporter and QuickSight refresh, so that it'll collect the new data.  
 
 Alternatively, you can run the Kubecost S3 Exporter on-demand according to [Running the Kubecost S3 Exporter Pod On-Demand](#running-the-kubecost-s3-exporter-pod-on-demand) section.  
