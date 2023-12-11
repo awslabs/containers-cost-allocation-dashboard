@@ -6,7 +6,7 @@ metadata:
   name: {{ .Values.cronJob.name }}
   namespace: {{ .Values.cronJob.namespace }}
 spec:
-  schedule: "{{ .Values.cronJob.schedule }}"
+  schedule: {{ .Values.cronJob.schedule }}
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
@@ -37,8 +37,8 @@ spec:
                 {{- end }}
               volumeMounts:
                 - mountPath: /tmp
-                  name: kubecost
+                  name: kubecost-s3-exporter
           volumes:
-          - name: kubecost
+          - name: kubecost-s3-exporter
             emptyDir:
               sizeLimit: {{ .Values.ephemeralVolumeSize }}
