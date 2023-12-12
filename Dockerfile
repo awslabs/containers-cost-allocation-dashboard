@@ -8,7 +8,7 @@
 ###############
 
 # Using Debian image as a source to build the app binary with the required libraries and a specific Python version
-FROM python:3.12.0-slim-bookworm AS build
+FROM python:3.12.1-slim-bookworm AS build
 
 # Fetching binutils which is required for building the Python binary using PyInstaller
 RUN set -ex \
@@ -33,7 +33,7 @@ RUN pip3 install --user --upgrade pip==23.3.1
 # Installing Kubecost S3 Exporter requirements and PyInstaller
 COPY --chown=nonroot:nonroot requirements.txt .
 RUN pip3 install -r requirements.txt
-RUN pip3 install pyinstaller==6.1.0
+RUN pip3 install pyinstaller==6.3.0
 
 # PIP cleanup
 RUN pip3 uninstall -y pip
