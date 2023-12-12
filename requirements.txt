@@ -1,7 +1,7 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
-boto3==1.28.79
-botocore==1.31.79
-pandas==2.1.2
-pyarrow==14.0.0
+boto3==1.33.12
+botocore==1.33.12
+pandas==2.1.4
+pyarrow==14.0.1
 requests==2.31.0
