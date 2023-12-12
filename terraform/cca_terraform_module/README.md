@@ -579,7 +579,7 @@ To remove the Kubecost S3 Exporter from a specific cluster, perform the followin
 3. Run `terraform apply`
 4. From the `providers.tf` file in the `deploy` directory, remove the providers of the cluster  
 You must remove the providers only after you did step 1-3 above, otherwise the above steps will fail
-5. If Kubecost S3 Exporter was deployed on this cluster using `invoke_helm=false`, you also need to uninstall the chart:  
+5. If Kubecost S3 Exporter was deployed on this cluster using `invoke_helm=false`, you also need to uninstall the chart:
 
 
     helm uninstall kubecost-s3-exporter -n <namespace> --kube-context <cluster_context>
