@@ -583,6 +583,7 @@ You must remove the providers only after you did step 1-3 above, otherwise the a
 You also need to uninstall the chart as follows:  
 
 
+
     helm uninstall kubecost-s3-exporter -n <namespace> --kube-context <cluster_context>
 
 ### Complete Cleanup
