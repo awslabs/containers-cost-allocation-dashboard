@@ -824,25 +824,28 @@ def upload_kubecost_allocation_parquet_to_s3(s3_bucket_name, cluster_id, month, 
     cluster_account_id = cluster_id.split(":")[4]
     cluster_region_code = cluster_id.split(":")[3]
 
-    # Compressing and uploading the Parquet file to the S3 bucket
+    # S3 file name and prefix definition
     s3_file_name = parquet_file_path.split("/")[-1]
+    s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
+
+    # Uploading the Parquet file to the S3 bucket
     try:
-        # Client definition in case the EKS cluster and AWS Secrets Manager are in different AWS accounts.
+        # Client definition in case the EKS cluster and S3 bucket are in different AWS accounts.
         # This means cross account authentication will be done, so the client contains the parent IAM role credentials
         if assume_role_response:
-            s3 = boto3.resource("s3", aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
-                                aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
-                                aws_session_token=assume_role_response["Credentials"]["SessionToken"])
+            session = boto3.Session(aws_access_key_id=assume_role_response["Credentials"]["AccessKeyId"],
+                                    aws_secret_access_key=assume_role_response["Credentials"]["SecretAccessKey"],
+                                    aws_session_token=assume_role_response["Credentials"]["SessionToken"])
+            s3 = session.client("s3")
 
-        # Client definition in case the EKS cluster and AWS Secrets Manager are in the same AWS account.
+        # Client definition in case the EKS cluster and S3 bucket are in the same AWS account.
         # This means cross account authentication isn't necessary, so IRSA credentials will be used
         else:
-            s3 = boto3.resource("s3")
-        s3_bucket_prefix = f"account_id={cluster_account_id}/region={cluster_region_code}/year={year}/month={month}"
+            session = boto3.Session()
+            s3 = session.client("s3")
 
         logger.info(f"Uploading file '{s3_file_name}' to S3 Bucket '{s3_bucket_name}'...")
-        s3.Bucket(s3_bucket_name).upload_file(parquet_file_path,
-                                              f"{s3_bucket_prefix}/{s3_file_name}")
+        s3.upload_file(parquet_file_path, s3_bucket_name, f"{s3_bucket_prefix}/{s3_file_name}")
     except boto3.exceptions.S3UploadFailedError as error:
         logger.error(f"Unable to upload file {s3_file_name} to S3 Bucket '{s3_bucket_name}': {error}")
         sys.exit(1)
