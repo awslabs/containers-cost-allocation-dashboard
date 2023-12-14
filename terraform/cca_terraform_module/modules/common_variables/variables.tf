@@ -4,11 +4,9 @@ variable "bucket_arn" {
   description = <<-EOF
     (Required) The ARN of the S3 Bucket to which the Kubecost data will be uploaded.
                Possible values: A valid S3 bucket ARN.
-               Default value: empty string ("").
   EOF
 
-  type    = string
-  default = "" # Add an S3 Bucket ARN
+  type = string
 
   # Note - the full regex should have been "^arn:(?:aws|aws-cn|aws-us-gov):s3:::(?!(xn--|.+-s3alias$))[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
   # The "(?!(xn--|.+-s3alias$))" part has been omitted because Terraform regex engine doesn't support negative lookahead (the "?!" part)
