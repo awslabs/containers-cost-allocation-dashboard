@@ -1,9 +1,5 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
-module "common" {
-  source = "../common"
-}
-
 terraform {
   required_providers {
     aws = {
@@ -85,7 +81,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${module.common.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+            Resource = "${var.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -101,7 +97,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
           {
             Action   = "s3:ListBucket"
             Effect   = "Allow"
-            Resource = module.common.bucket_arn
+            Resource = var.bucket_arn
           }
         ]
         Version = "2012-10-17"
@@ -213,7 +209,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${module.common.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+            Resource = "${var.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -229,7 +225,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
           {
             Action   = "s3:ListBucket"
             Effect   = "Allow"
-            Resource = module.common.bucket_arn
+            Resource = var.bucket_arn
           }
         ]
         Version = "2012-10-17"
