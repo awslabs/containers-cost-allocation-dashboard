@@ -2,6 +2,8 @@
 
 locals {
 
+  bucket_name = element(split(":::", var.bucket_arn), 1)
+
   athena_view_sql = <<-EOF
     SELECT
       *
@@ -13,10 +15,10 @@ locals {
       )
     EOF
 
-  static_columns         = [for column in module.common.static_columns : { name = column.name, type = column.persto_type }]
-  labels_columns         = [for column in module.common.k8s_labels : { name = "properties.labels.${column}", type = "varchar" }]
-  annotations_columns    = [for column in module.common.k8s_annotations : { name = "properties.annotations.${column}", type = "varchar" }]
-  partition_keys_columns = [for column in module.common.partition_keys : { name = column.name, type = column.persto_type }]
+  static_columns         = [for column in module.common_locals.static_columns : { name = column.name, type = column.persto_type }]
+  labels_columns         = [for column in var.k8s_labels : { name = "properties.labels.${column}", type = "varchar" }]
+  annotations_columns    = [for column in var.k8s_annotations : { name = "properties.annotations.${column}", type = "varchar" }]
+  partition_keys_columns = [for column in module.common_locals.partition_keys : { name = column.name, type = column.persto_type }]
 
   presto_view = jsonencode({
     originalSql = local.athena_view_sql,
