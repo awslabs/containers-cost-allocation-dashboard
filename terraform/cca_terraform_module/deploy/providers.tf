@@ -1,12 +1,8 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
-module "common" {
-  source = "../modules/common"
-}
-
-######################################
-# Section 1 - Pipeline AWS Provider  #
-######################################
+#####################################
+# Section 1 - Pipeline AWS Provider #
+#####################################
 
 # Example provider for the pipeline
 provider "aws" {
@@ -18,7 +14,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "pipeline_profile"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -41,7 +37,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -57,9 +53,9 @@ provider "helm" {
   }
 }
 
-#                                                        #
-# Example providers for cluster without Helm invocation  #
-#                                                        #
+#                                                       #
+# Example provider for cluster without Helm invocation  #
+#                                                       #
 
 provider "aws" {
 
@@ -72,7 +68,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -80,6 +76,7 @@ provider "aws" {
 # Section 3 - Quicksight AWS Provider #
 #######################################
 
+# Example provider for QuickSight
 provider "aws" {
 
   # This is an example, to help you get started
@@ -91,6 +88,6 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "quicksight_profile"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
