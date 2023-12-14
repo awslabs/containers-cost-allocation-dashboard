@@ -4,6 +4,19 @@ The `pipeline` reusable module is used deploy the pipeline AWS resources for thi
 
 ## Variables
 
+### Variables from the `common_variables` Module
+
+The below table lists variables that are meant to only take references from the `common_variables` module:
+
+| Name                                                                                                                         | Description                                                                                                                                                                | Type           | Default                                     | Possible Values                                                                                               | Required |
+|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
+| <a name="input_bucket_arn"></a> bucket\_arn                                                                                  | The ARN of the S3 Bucket to which the Kubecost data will be uploaded. Meant to only take a reference to the "bucket_arn" output from the common module                     | `string`       | n/a                                         | Only `module.common_variables.bucket_arn`                                                                     | yes      |
+| <a name="input_k8s_labels"></a> k8s\_labels                                                                                  | K8s labels common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_labels" output from the common module           | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_labels`                                                                     | no       |
+| <a name="input_k8s_annotations"></a> k8s\_annotations                                                                        | K8s annotations common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_annotations" output from the common module | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_annotations`                                                                | no       |
+| <a name="input_aws_common_tags"></a> aws\_common\_tags                                                                       | Common AWS tags to be used on all AWS resources created by Terraform. Meant to only take a reference to the "aws_common_tags" output from the common module                | `map(any)`     | `{}`                                        | Only `module.common_variables.aws_common_tags`                                                                | no       |
+
+### This Module's Variables
+
 The below table lists the `pipeline` module's variables:
 
 | Name                                                                                         | Description                                                                                                              | Type                                                                                                                                                        | Default          | Possible Values                                     | Required |
