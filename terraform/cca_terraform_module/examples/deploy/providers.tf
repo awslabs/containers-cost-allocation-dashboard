@@ -1,12 +1,8 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
-module "common" {
-  source = "../modules/common"
-}
-
-######################################
-# Section 1 - Pipeline AWS Provider  #
-######################################
+#####################################
+# Section 1 - Pipeline AWS Provider #
+#####################################
 
 provider "aws" {
   region                   = "us-east-1"
@@ -14,7 +10,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "pipeline_profile"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -36,7 +32,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -57,7 +53,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -80,7 +76,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -101,7 +97,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -119,7 +115,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -140,7 +136,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -163,7 +159,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -175,7 +171,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
 
@@ -200,6 +196,6 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "quicksight_profile"
   default_tags {
-    tags = module.common.aws_common_tags
+    tags = module.common_variables.aws_common_tags
   }
 }
