@@ -22,16 +22,52 @@ terraform {
   }
 }
 
+################################
+# Section 1 - Common Variables #
+################################
+
+# Calling module for the common module, to provide common variables values
+module "common_variables" {
+  source = "../modules/common_variables"
+
+  bucket_arn      = "arn:aws:s3:::udid-data-collection-kubecost-data"
+  k8s_labels      = ["app", "chart", "component", "app.kubernetes.io/version", "app.kubernetes.io/managed_by", "app.kubernetes.io/part_of"]
+  k8s_annotations = ["kubernetes.io/psp", "eks.amazonaws.com/compute_type"]
+  aws_common_tags = {
+    tag_key1 = "tag_value1"
+    tak_key2 = "tag_value2"
+  }
+}
+
 ######################################
-# Section 1 - AWS Pipeline Resources #
+# Section 2 - AWS Pipeline Resources #
 ######################################
 
 module "pipeline" {
   source = "../modules/pipeline"
+
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module, do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                           #
+  # Pipeline Module Variables #
+  #                           #
+
+  # Provide pipeline module variables values here
+
+
 }
 
 #########################################################
-# Section 2 - Data Collection Pod Deployment using Helm #
+# Section 3 - Data Collection Pod Deployment using Helm #
 #########################################################
 
 #                                  #
@@ -48,6 +84,24 @@ module "us-east-1-111111111111-cluster1" {
     aws.eks      = aws.us-east-1-111111111111-cluster1
     helm         = helm.us-east-1-111111111111-cluster1
   }
+
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
 
   cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
@@ -70,6 +124,24 @@ module "us-east-1-111111111111-cluster2" {
     helm         = helm.us-east-1-111111111111-cluster2
   }
 
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
+
   cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster2"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   namespace                            = "kubecost-s3-exporter-2"
@@ -88,6 +160,24 @@ module "us-east-2-111111111111-cluster1" {
     helm         = helm.us-east-2-111111111111-cluster1
   }
 
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
+
   cluster_arn                                      = "arn:aws:eks:us-east-2:111111111111:cluster/cluster1"
   kubecost_s3_exporter_container_image             = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_s3_exporter_container_image_pull_policy = "IfNotPresent"
@@ -102,6 +192,24 @@ module "us-east-2-111111111111-cluster2" {
     aws.pipeline = aws
     aws.eks      = aws.us-east-2-111111111111-cluster2
   }
+
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
 
   cluster_arn                          = "arn:aws:eks:us-east-2:111111111111:cluster/cluster2"
   kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
@@ -123,6 +231,24 @@ module "us-east-1-222222222222-cluster1" {
     helm         = helm.us-east-1-222222222222-cluster1
   }
 
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
+
   cluster_arn                          = "arn:aws:eks:us-east-1:222222222222:cluster/cluster1"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_api_endpoint                = "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
@@ -137,6 +263,24 @@ module "us-east-1-222222222222-cluster2" {
     aws.eks      = aws.us-east-1-222222222222-cluster2
     helm         = helm.us-east-1-222222222222-cluster2
   }
+
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
 
   cluster_arn                          = "arn:aws:eks:us-east-1:222222222222:cluster/cluster2"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
@@ -153,6 +297,24 @@ module "us-east-2-222222222222-cluster1" {
     helm         = helm.us-east-2-222222222222-cluster1
   }
 
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
+
   cluster_arn                          = "arn:aws:eks:us-east-2:222222222222:cluster/cluster1"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   kubecost_api_endpoint                = "http://kubecost-eks-cost-analyzer.kubecost-eks:9090"
@@ -168,6 +330,24 @@ module "us-east-2-222222222222-cluster2" {
     helm         = helm.us-east-2-222222222222-cluster2
   }
 
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                                       #
+  # Kubecost S3 Exporter Module Variables #
+  #                                       #
+
+  # Provide kubecost_s3_exporter module variables values here
+
   cluster_arn                          = "arn:aws:eks:us-east-2:222222222222:cluster/cluster2"
   kubecost_s3_exporter_container_image = "222222222222.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
   namespace                            = "kubecost-s3-exporter-2"
@@ -177,7 +357,7 @@ module "us-east-2-222222222222-cluster2" {
 }
 
 ####################################
-# Section 3 - Quicksight Resources #
+# Section 4 - Quicksight Resources #
 ####################################
 
 module "quicksight" {
@@ -187,8 +367,32 @@ module "quicksight" {
     aws = aws.quicksight
   }
 
+  #                         #
+  # Common Module Variables #
+  #                         #
+
+  # References to variables outputs from the common module
+  # Always include when creating new calling module, and do not remove
+
+  bucket_arn      = module.common_variables.bucket_arn
+  k8s_labels      = module.common_variables.k8s_labels
+  k8s_annotations = module.common_variables.k8s_annotations
+  aws_common_tags = module.common_variables.aws_common_tags
+
+  #                           #
+  # Pipeline Module Variables #
+  #                           #
+
+  # References to variables outputs from the pipeline module, do not remove
+
   aws_glue_database_name = module.pipeline.aws_glue_database_name
   aws_glue_view_name     = module.pipeline.aws_glue_view_name
+
+  #                             #
+  # QuickSight Module Variables #
+  #                             #
+
+  # Provide quicksight module variables values here
 
   # Add an S3 bucket name for Athena Workgroup Query Results Location, if var.athena_workgroup_configuration.create is "true"
   # Otherwise, remove the below field
