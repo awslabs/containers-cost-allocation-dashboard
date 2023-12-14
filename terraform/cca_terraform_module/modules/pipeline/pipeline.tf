@@ -1,7 +1,7 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
-module "common" {
-  source = "../common"
+module "common_locals" {
+  source = "../common_locals"
 }
 
 terraform {
@@ -42,7 +42,7 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
             "arn:${data.aws_partition.pipeline_partition.partition}:glue:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:catalog",
             aws_glue_catalog_database.kubecost_glue_db.arn,
             aws_glue_catalog_table.kubecost_glue_table.arn,
-            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace(module.common.bucket_name, "-", "_"))}*"
+            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace(local.bucket_name, "-", "_"))}*"
           ]
           Sid = "AllowGlueKubecostTable"
         },
@@ -53,8 +53,8 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
           ]
           Effect = "Allow"
           Resource = [
-            "${module.common.bucket_arn}/*",
-            module.common.bucket_arn,
+            "${var.bucket_arn}/*",
+            var.bucket_arn,
           ]
           Sid = "AllowS3KubecostBucket"
         },
@@ -115,7 +115,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   table_type = "EXTERNAL_TABLE"
 
   dynamic "partition_keys" {
-    for_each = [for partition_key in module.common.partition_keys : partition_key]
+    for_each = [for partition_key in module.common_locals.partition_keys : partition_key]
     content {
       name = partition_keys.value.name
       type = partition_keys.value.hive_type
@@ -123,7 +123,7 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   }
 
   storage_descriptor {
-    location      = "s3://${module.common.bucket_name}/"
+    location      = "s3://${local.bucket_name}/"
     input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
     output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
     parameters = {
@@ -136,21 +136,21 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
     }
 
     dynamic "columns" {
-      for_each = [for static_column in module.common.static_columns : static_column]
+      for_each = [for static_column in module.common_locals.static_columns : static_column]
       content {
         name = columns.value.name
         type = columns.value.hive_type
       }
     }
     dynamic "columns" {
-      for_each = [for k8s_label in distinct(module.common.k8s_labels) : k8s_label]
+      for_each = [for k8s_label in distinct(var.k8s_labels) : k8s_label]
       content {
         name = "properties.labels.${columns.value}"
         type = "string"
       }
     }
     dynamic "columns" {
-      for_each = [for k8s_annotation in distinct(module.common.k8s_annotations) : k8s_annotation]
+      for_each = [for k8s_annotation in distinct(var.k8s_annotations) : k8s_annotation]
       content {
         name = "properties.annotations.${columns.value}"
         type = "string"
@@ -171,28 +171,28 @@ resource "aws_glue_catalog_table" "kubecost_glue_view" {
 
   storage_descriptor {
     dynamic "columns" {
-      for_each = [for static_column in module.common.static_columns : static_column]
+      for_each = [for static_column in module.common_locals.static_columns : static_column]
       content {
         name = columns.value.name
         type = columns.value.hive_type
       }
     }
     dynamic "columns" {
-      for_each = [for k8s_label in distinct(module.common.k8s_labels) : k8s_label]
+      for_each = [for k8s_label in distinct(var.k8s_labels) : k8s_label]
       content {
         name = "properties.labels.${columns.value}"
         type = "string"
       }
     }
     dynamic "columns" {
-      for_each = [for k8s_annotation in distinct(module.common.k8s_annotations) : k8s_annotation]
+      for_each = [for k8s_annotation in distinct(var.k8s_annotations) : k8s_annotation]
       content {
         name = "properties.annotations.${columns.value}"
         type = "string"
       }
     }
     dynamic "columns" {
-      for_each = [for partition_key in module.common.partition_keys : partition_key]
+      for_each = [for partition_key in module.common_locals.partition_keys : partition_key]
       content {
         name = columns.value.name
         type = columns.value.hive_type
