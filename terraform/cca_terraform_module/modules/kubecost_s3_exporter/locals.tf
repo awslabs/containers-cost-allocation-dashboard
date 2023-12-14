@@ -1,6 +1,7 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 locals {
+  bucket_name                        = element(split(":::", var.bucket_arn), 1)
   cluster_name                       = element(split("/", data.aws_arn.eks_cluster_arn_fields.resource), 1)
   cluster_oidc_provider_id           = element(split("/", data.aws_iam_openid_connect_provider.oidc.arn), 3)
   pipeline_partition                 = element(split(":", data.aws_caller_identity.pipeline_caller_identity.arn), 1)
@@ -24,7 +25,7 @@ locals {
       "env" : [
         {
           "name" : "S3_BUCKET_NAME",
-          "value" : module.common.bucket_name
+          "value" : local.bucket_name
         },
         {
           "name" : "KUBECOST_API_ENDPOINT",
@@ -72,11 +73,11 @@ locals {
         },
         {
           "name" : "LABELS",
-          "value" : join(", ", distinct(module.common.k8s_labels))
+          "value" : join(", ", distinct(var.k8s_labels))
         },
         {
           "name" : "ANNOTATIONS",
-          "value" : join(", ", distinct(module.common.k8s_annotations))
+          "value" : join(", ", distinct(var.k8s_annotations))
         },
         {
           "name" : "PYTHONUNBUFFERED",
