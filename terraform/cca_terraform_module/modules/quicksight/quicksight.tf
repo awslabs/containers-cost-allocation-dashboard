@@ -1,7 +1,7 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
-module "common" {
-  source = "../common"
+module "common_locals" {
+  source = "../common_locals"
 }
 
 terraform {
@@ -231,28 +231,28 @@ resource "aws_quicksight_data_set" "cca" {
       schema          = var.glue_database_name
 
       dynamic "input_columns" {
-        for_each = [for static_column in module.common.static_columns : static_column]
+        for_each = [for static_column in module.common_locals.static_columns : static_column]
         content {
           name = input_columns.value.name
           type = input_columns.value.qs_data_set_type
         }
       }
       dynamic "input_columns" {
-        for_each = [for k8s_label in distinct(module.common.k8s_labels) : k8s_label]
+        for_each = [for k8s_label in distinct(var.k8s_labels) : k8s_label]
         content {
           name = "properties.labels.${input_columns.value}"
           type = "STRING"
         }
       }
       dynamic "input_columns" {
-        for_each = [for k8s_annotation in distinct(module.common.k8s_annotations) : k8s_annotation]
+        for_each = [for k8s_annotation in distinct(var.k8s_annotations) : k8s_annotation]
         content {
           name = "properties.annotations.${input_columns.value}"
           type = "STRING"
         }
       }
       dynamic "input_columns" {
-        for_each = [for partition_key in module.common.partition_keys : partition_key]
+        for_each = [for partition_key in module.common_locals.partition_keys : partition_key]
         content {
           name = input_columns.value.name
           type = input_columns.value.qs_data_set_type
