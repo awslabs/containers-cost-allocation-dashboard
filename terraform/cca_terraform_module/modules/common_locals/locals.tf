@@ -1,7 +1,6 @@
 # Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 
 locals {
-  bucket_name = element(split(":::", var.bucket_arn), 1)
 
   # The below local variable is used to define the static columns of the schema
   # It maps each column to hive, presto and QuickSight dataset data types
