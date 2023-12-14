@@ -25,10 +25,10 @@ locals {
   ]
 
   qs_data_set_logical_table_map_projected_columns = concat(
-    module.common.static_columns.*.name,
-    formatlist("properties.labels.%s", distinct(module.common.k8s_labels)),
-    formatlist("properties.annotations.%s", distinct(module.common.k8s_annotations)),
-    module.common.partition_keys.*.name,
+    module.common_locals.static_columns.*.name,
+    formatlist("properties.labels.%s", distinct(var.k8s_labels)),
+    formatlist("properties.annotations.%s", distinct(var.k8s_annotations)),
+    module.common_locals.partition_keys.*.name,
     local.qs_data_set_custom_columns
   )
 
