@@ -274,7 +274,7 @@ variable "qs_data_set_settings" {
                                                         Default value: "Owner"
   EOF
   type = object({
-    name                     = "cca_kubecost_view"
+    name                     = optional(string, "cca_kubecost_view")
     dataset_refresh_schedule = optional(string, "05:00")
     timezone                 = optional(string, "")
     users = optional(list(object({
