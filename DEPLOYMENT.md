@@ -58,7 +58,7 @@ With this deployment option, Terraform deploys both the AWS resources and the K8
 
 Please follow the instructions in the [Terraform module README](terraform/cca_terraform_module/README.md) file.  
 For the initial deployment, you need to go through the [Requirements](terraform/cca_terraform_module/README.md/.#requirements), [Structure](terraform/cca_terraform_module/README.md/.#structure) and [Initial Deployment](terraform/cca_terraform_module/README.md/.#initial-deployment) sections.  
-Once you're done with Terraform, continue to [step 4](#step-4-dashboard-deployment) below.
+Once you're done with Terraform, continue to [step 3](#step-3-dashboard-deployment) below.
 
 ### Deployment Option 2
 
@@ -85,7 +85,7 @@ Executing Helm when in the `helm` directory:
 
     helm upgrade -i kubecost-s3-exporter kubecost_s3_exporter/ -n <namespace> --values kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
 
-Once you're done, continue to [step 4](#step-4-dashboard-deployment) below.
+Once you're done, continue to [step 3](#step-3-dashboard-deployment) below.
 
 ## Step 3: Dashboard Deployment
 
