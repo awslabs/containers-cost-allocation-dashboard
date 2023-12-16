@@ -1,6 +1,6 @@
 # Containers Cost Allocation (CCA) Dashboard
 
-Welcome!
+Welcome!  
 This repository contains a project for visualizing data from [Kubecost](https://www.kubecost.com/) in Amazon QuickSight as part of [CID (Cloud Intelligence Dashboards)](https://catalog.workshops.aws/awscid/en-US).   
 Here we demonstrate how you can break down EKS in-cluster cost and usage in a multi-cluster environment, and visualize this data in QuickSight alongside the other CIDs, using data from a [self-hosted Kubecost pod](https://www.kubecost.com/products/self-hosted).
 
