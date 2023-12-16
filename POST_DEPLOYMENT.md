@@ -43,6 +43,6 @@ See [the `kubecost_s3_exporter` Terraform reusable module's README.md file](terr
 Adjust the `glue_crawler_schedule` variable in the `pipeline` module.  
 See [the `pipeline` Terraform reusable module's README.md file](terraform/cca_terraform_module/modules/pipeline/README.md) for more information on this variable.
 * For the QuickSight dataset refresh schedule:
-Adjust the `qs_data_set_settings.dataset_refresh_schedule` variable in the `quicksight` module.  
-Adjust the `qs_data_set_settings.timezone` variable in the `quicksight` module.  
-See [the `quicksight` Terraform reusable module's README.md file](terraform/cca_terraform_module/modules/quicksight/README.md) for more information on this variable.
+Adjust the `dataset_refresh_schedule` field `qs_data_set_settings` variable in the `quicksight` module.  
+Adjust the `timezone` field in the `qs_data_set_settings` variable in the `quicksight` module.  
+See [the `quicksight` Terraform reusable module's README.md file](terraform/cca_terraform_module/modules/quicksight/README.md) for more information on these variables.
