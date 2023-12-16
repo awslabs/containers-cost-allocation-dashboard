@@ -2,18 +2,11 @@
 
 There are 3 high-level steps to deploy the solution:
 
-1. [Clone the repository](#step-1-clone-the-repository)
-2. [Build an image using `Dockerfile` and push it](#step-2-build-and-push-the-container-image)
-3. [Deploy both the AWS resources and K8s resources using Terraform and Helm](#step-3-deploy-the-aws-and-k8s-resources)
-4. [Deploy the QuickSight dashboard using `cid-cmd` tool](#step-4-dashboard-deployment)
+1. [Build and Push the Container Image](#step-1-build-and-push-the-container-image)
+2. [Deploy the AWS and K8s Resources](#step-2-deploy-the-aws-and-k8s-resources)
+3. [Dashboard Deployment](#step-3-dashboard-deployment)
 
-## Step 1: Clone the Repository
-
-Clone the repository as below:
-
-    git@ssh.gitlab.aws.dev:cid/containers-cost-and-usage-dashboard.git
-
-## Step 2: Build and Push the Container Image
+## Step 1: Build and Push the Container Image
 
 We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.  
 For the registry, we recommend using Private Repository in Amazon Elastic Container Registry (ECR).  
@@ -47,7 +40,7 @@ Push:
 
     docker buildx build --push --platform linux/amd64,linux/arm64/v8 --tag <registry_url>/<repo>:<tag> .
 
-## Step 3: Deploy the AWS and K8s Resources
+## Step 2: Deploy the AWS and K8s Resources
 
 This solution provides a Terraform module for deployment of both the AWS the K8s resources.  
 There are 2 options to use it:
@@ -94,7 +87,7 @@ Executing Helm when in the `helm` directory:
 
 Once you're done, continue to [step 4](#step-4-dashboard-deployment) below.
 
-## Step 4: Dashboard Deployment
+## Step 3: Dashboard Deployment
 
 As part of using Terraform to create the AWS resources, it also created a `cca.yaml` file.  
 This file is used to deploy the QuickSight dashboard.  
