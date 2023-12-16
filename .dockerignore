@@ -1,6 +1,0 @@
-*.csv
-*.sql
-*.png
-virtualenv
-test
-chart
