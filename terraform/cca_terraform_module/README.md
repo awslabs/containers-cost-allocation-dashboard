@@ -680,7 +680,7 @@ To continue adding additional clusters after the initial deployment, the only re
 2. Define additional providers for the clusters
 3. Create additional calling modules of the `kubecost_s3_exporter` reusable module, for each cluster, and provide variables values.  
 This is done in the `main.tf` file in the `deploy` directory.  
-You can follow the instructions in the [`kubecost_s3_exporter` calling module creation steps](#create-a-calling-module-for-the-kubecosts3exporter-module-and-provide-variables-values)
+You can follow the instructions in the [`kubecost_s3_exporter` calling module creation steps](#create-a-calling-module-for-the-kubecost_s3_exporter-module-and-provide-variables-values)
 4. If you need to add labels or annotations for this cluster, follow the [Maintenance -> Adding/Removing Labels/Annotations to/from the Dataset section](#addingremoving-labelsannotations-tofrom-the-dataset)
 5. Optionally, add cluster output for the IRSA (IAM Role for Service Account) and parent IAM role, for each cluster
 
