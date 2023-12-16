@@ -18,7 +18,6 @@ Please note that OpenCost is not supported.
 
 More information on the Kubecost EKS-optimized bundle can be found in the below resources:
 
-* [Kubecost AWS page](https://www.kubecost.com/aws)
 * [Launch blog post](https://aws.amazon.com/blogs/containers/aws-and-kubecost-collaborate-to-deliver-cost-monitoring-for-eks-customers/)
 * [AMP integration blog post](https://aws.amazon.com/blogs/mt/integrating-kubecost-with-amazon-managed-service-for-prometheus/)
 * [Multi-cluster visibility blog post](https://aws.amazon.com/blogs/containers/multi-cluster-cost-monitoring-using-kubecost-with-amazon-eks-and-amazon-managed-service-for-prometheus/)
