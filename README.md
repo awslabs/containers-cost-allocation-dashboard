@@ -11,8 +11,8 @@ This project can work with any Kubecost tier:
 * Kubecost enterprise tier, with the following limitations:
   * Data for all clusters are included in a single file per day instead of file per cluster per day
   * AWS account ID will not be shown
-  * The `eksclustername` dataset field will show the primary cluster name for any cluster.  
-    Instead, you can customize the dashboard and use the `clusterid` field
+  * The `properties.eksclustername` dataset field will show the primary cluster name for any cluster.  
+    Instead, you can customize the dashboard and use the `properties.cluster` field
 
 Please note that OpenCost is not supported.
 
