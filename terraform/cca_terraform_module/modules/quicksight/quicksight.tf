@@ -124,7 +124,7 @@ resource "random_uuid" "qs_data_set_cca_custom_column_region_code_uuid" {}
 resource "aws_quicksight_data_set" "cca" {
   data_set_id = random_uuid.qs_data_set_cca_uuid.id
   import_mode = "SPICE"
-  name        = "cca_kubecost_view"
+  name        = var.qs_data_set_settings.name
 
   data_set_usage_configuration {
     disable_use_as_direct_query_source = false
