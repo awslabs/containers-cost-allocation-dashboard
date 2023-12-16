@@ -253,6 +253,15 @@ variable "qs_data_set_settings" {
     (Optional) An object representing the configuration the QuickSight dataset.
                This object has the following fields:
 
+               (Optional) name: The name of the QuickSight dataset.
+                                Possible values: A valid QuickSight data sourceset.
+                                Default value: "cca_kubecost_view"
+               (Optional) dataset_refresh_schedule: The hour of the day for the dataset refresh schedule.
+                                Possible values: An hour of the day, in the format of "HH:MM".
+                                Default value: "05:00"
+               (Optional) timezone: The timezone for the dataset refresh schedule.
+                                Possible values: One of the timezones listed in the "timezones.txt" file.
+                                Default value: empty string (a timezone will be automatically chosen based on the QuickSight account's region).
                (Optional) users: A list of QuickSight users and and their permissions.
                                  Users in this list take precedence over users in "qs_common_users" list, if they appear in both.
                                  Each item in the list is an object with the following fields:
@@ -265,6 +274,7 @@ variable "qs_data_set_settings" {
                                                         Default value: "Owner"
   EOF
   type = object({
+    name                     = "cca_kubecost_view"
     dataset_refresh_schedule = optional(string, "05:00")
     timezone                 = optional(string, "")
     users = optional(list(object({
@@ -274,6 +284,7 @@ variable "qs_data_set_settings" {
   })
 
   default = {
+    name                     = "cca_kubecost_view"
     dataset_refresh_schedule = "05:00"
     timezone                 = ""
     users                    = []
