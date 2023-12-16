@@ -23,7 +23,7 @@ More information on the Kubecost EKS-optimized bundle can be found in the below 
 * [Multi-cluster visibility blog post](https://aws.amazon.com/blogs/containers/multi-cluster-cost-monitoring-using-kubecost-with-amazon-eks-and-amazon-managed-service-for-prometheus/)
 * [Amazon Cognito integration blog post](https://aws.amazon.com/blogs/containers/securing-kubecost-access-with-amazon-cognito/)
 * [EKS user guide](https://docs.aws.amazon.com/eks/latest/userguide/cost-monitoring.html)
-* [Kubecost on the AWS Marketplace](https://aws.amazon.com/marketplace/pp/prodview-jatxqd2ccqvgc?sr=0-1&ref_=beagle&applicationId=AWSMPContessa) 
+* [Kubecost on the AWS Marketplace](https://aws.amazon.com/marketplace/pp/prodview-asiz4x22pm2n2?sr=0-2&ref_=beagle&applicationId=AWSMPContessa) 
 * [EKS Blueprints Add-on](https://aws-quickstart.github.io/cdk-eks-blueprints/addons/kubecost/)
 * [EKS Add-on](https://docs.aws.amazon.com/eks/latest/userguide/eks-add-ons.html#workloads-add-ons-available-vendors)
 
