@@ -66,7 +66,7 @@ With this deployment option, Terraform deploys only the AWS resources, and the K
 
 1. Please follow the instructions under in the [Terraform module README](terraform/cca_terraform_module/README.md) file.  
 For the initial deployment, you need to go through the [Requirements](terraform/cca_terraform_module/README.md/.#requirements), [Structure](terraform/cca_terraform_module/README.md/.#structure) and [Initial Deployment](terraform/cca_terraform_module/README.md/.#initial-deployment) sections.  
-When reaching the ["CreateCreate a Calling Module for the `kubecost_s3_exporter` Module and Provide Variables Values"](terraform/cca_terraform_module/README.md/.#create-a-calling-module-for-the-kubecosts3exporter-module-and-provide-variables-values), do the following:  
+When reaching the ["Create a Calling Module for the `kubecost_s3_exporter` Module and Provide Variables Values"](terraform/cca_terraform_module/README.md/.#create-a-calling-module-for-the-kubecosts3exporter-module-and-provide-variables-values), do the following:  
 Make sure that as part of the variables values you provide, you use the `invoke_helm` variable with value of `false`.
    
 2. After successfully executing `terraform apply` (the [last step - step 4 - of the "Initial Deployment" section](terraform/cca_terraform_module/README.md/.#step-4-deploy)), Terraform, will create the AWS resources.  
