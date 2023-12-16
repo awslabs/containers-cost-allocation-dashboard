@@ -1,0 +1,5 @@
+.DS_Store
+cid/cca.yaml
+cid/cid.log
+helm/kubecost_s3_exporter/clusters_values/*.yaml
+terraform/cca_terraform_module/deploy_local/
