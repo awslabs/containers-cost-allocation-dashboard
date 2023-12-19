@@ -2,3 +2,4 @@
 .DS_Store
 cid/cca.yaml
 cid/cid.log
+helm/kubecost_s3_exporter/clusters_values/*.yaml
