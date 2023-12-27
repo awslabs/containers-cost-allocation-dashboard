@@ -27,8 +27,9 @@ The IAM OIDC Provider must be created in the EKS cluster's account.
 
 ## Deployment Requirements
 
-* Terraform and Helm installed 
-* The `cid-cmd` tool installed ([install with PIP](https://pypi.org/project/cid-cmd/))
+* Terraform 1.3.x or higher
+* Helm 3.x or higher 
+* The `cid-cmd` tool ([install with PIP](https://pypi.org/project/cid-cmd/))
 
 Please continue reading the below sections.  
 They include more detailed instructions for some of the above requirements. 
