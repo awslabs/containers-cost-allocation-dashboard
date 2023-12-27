@@ -10,7 +10,7 @@ It is not created by the Terraform module, you need to create it in advance.
 * Athena workgroup, if you choose to not create it using the Terraform module.  
 Notice that by default, the Terraform module will create an Athena workgroup.  
 You can choose to not create it, and then this requirement becomes relevant.
-* An S3 bucket to be used for the Athena workgroup query results location
+* An S3 bucket to be used for the Athena workgroup query results location (see [detailed instructions](#configure-athena-query-results-location))
 
 ## EKS Requirements
 
