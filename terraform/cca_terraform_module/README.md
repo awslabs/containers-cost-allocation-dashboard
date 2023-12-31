@@ -45,13 +45,6 @@ Below is the complete module structure, followed by details on each directory/mo
     ├── outputs.tf
     ├── providers.tf
     ├── timezones.txt
-    ├── deploy_local
-    │   ├── main.tf
-    │   ├── outputs.tf
-    │   ├── providers.tf
-    │   ├── terraform.tfstate
-    │   ├── terraform.tfstate.backup
-    │   └── timezones.txt
     ├── examples
     │   └── root_module
     │       ├── main.tf
