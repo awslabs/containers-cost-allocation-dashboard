@@ -2,7 +2,7 @@ locals {
 
   # The below local variable is used to define the static columns of the schema
   # It maps each column to hive, presto and QuickSight dataset data types
-  # The hive type is used in AWS Glue table, the presto type is used in the Athena view
+  # The hive type is used in AWS Glue table, the prews
   static_columns = [
     {
       name             = "name"
