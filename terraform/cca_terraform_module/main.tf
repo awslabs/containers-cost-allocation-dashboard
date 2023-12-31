@@ -31,7 +31,7 @@ terraform {
 # Calling module for the common module, to provide common variables values
 # These variables are then used in other modules
 module "common_variables" {
-  source = "../modules/common_variables"
+  source = "./modules/common_variables"
 
   bucket_arn      = "" # Add S3 bucket ARN here, of the bucket that will be used to store the data collected from Kubecost
   k8s_labels      = [] # Optionally, add K8s labels you'd like to be present in the dataset
@@ -45,7 +45,7 @@ module "common_variables" {
 
 # Calling module for the pipeline module, to create the AWS pipeline resources
 module "pipeline" {
-  source = "../modules/pipeline"
+  source = "./modules/pipeline"
 
   #                         #
   # Common Module Variables #
@@ -77,7 +77,7 @@ module "cluster1" {
 
   # This is an example, to help you get started
 
-  source = "../modules/kubecost_s3_exporter"
+  source = "./modules/kubecost_s3_exporter"
 
   providers = {
     aws.pipeline = aws
@@ -112,7 +112,7 @@ module "cluster2" {
 
   # This is an example, to help you get started
 
-  source = "../modules/kubecost_s3_exporter"
+  source = "./modules/kubecost_s3_exporter"
 
   providers = {
     aws.pipeline = aws
@@ -148,7 +148,7 @@ module "cluster2" {
 
 # Calling module for the quicksight module, to create the QuickSight resources
 module "quicksight" {
-  source = "../modules/quicksight"
+  source = "./modules/quicksight"
 
   providers = {
     aws = aws.quicksight
