@@ -745,9 +745,9 @@ def kubecost_allocation_data_to_parquet(allocation_data,
     df["window.end"] = pd.to_datetime(df["window.end"], format="%Y-%m-%d %H:%M:%S.%f")
     for column, na_value in dataframe_columns_to_na_value_mapping_with_kubecost_labels_annotations.items():
         if column not in ["window.start", "window.end"]:
-            if type(na_value) == str:
+            if type(na_value) is str:
                 df[column] = df[column].astype("string")
-            elif type(na_value) == int:
+            elif type(na_value) is int:
                 df[column] = df[column].astype("float64")
 
     # Filtering the DataFrame to include only the desired columns
