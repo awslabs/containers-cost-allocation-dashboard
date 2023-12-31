@@ -12,6 +12,9 @@ output "annotations" {
 
 # Clusters outputs
 #output "cluster1" {
+#
+#  # This is an example, to help you get started
+#
 #  value       = module.cluster1
 #  description = "The outputs for 'cluster1'"
 #}
