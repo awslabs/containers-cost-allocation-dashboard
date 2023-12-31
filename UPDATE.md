@@ -32,10 +32,7 @@ Running `terraform apply` will detect the changes, show you what's changed, and 
 Note for users who customized the dashboard:  
 Make sure to keep a copy of the customized dashboard, update the original one, and merge with your customizations.
 
-In case of a new dashboard version, follow the below process to update it.  
-
-1. Run the following command from the `cid` folder:
-
+In case of a new dashboard version, run the following command from the `cid` folder:
 
     cid-cmd update --norecursive --noforce --resources cca.yaml --dashboard-id containers-cost-allocation-cca
 
@@ -77,9 +74,18 @@ The output after executing the above command, should be similar to the below:
     ####### Containers Cost Allocation (CCA) is available at: https://<region>.quicksight.aws.amazon.com/sn/dashboards/containers-cost-allocation-cca
     #######
 
-2. Login to QuickSight, navigate to "Datasets", click on the `cca_view` dataset, click "EDIT DATASET", and click "SAVE & PUBLISH"
+If you get the following error:
 
-If there's no updated version of the dashbaord, that output should be similar to the below:
+      WARNING - Dataset cca_kubecost_view is not found
+      CRITICAL - Failed to find a Dataset "cca_kubecost_view" with required fields. Please retry with --update "yes" --force --recursive flags.
+
+Run the update using the following command:
+
+      cid-cmd update --recursive --noforce --resources cca.yaml --dashboard-id containers-cost-allocation-cca
+
+Use the above command only if you get the above error.
+
+If there's no updated version of the dashboard, that output should be similar to the below:
 
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.39 Beta
