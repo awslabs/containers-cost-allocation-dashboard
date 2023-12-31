@@ -148,6 +148,8 @@ In the settings page, set the Query results location.
 Optionally (recommended), encrypt the query results, and save:
 ![Screenshot of Athena Workgroup Settings Edit](./screenshots/athena_workgroup_settings_edit.png)
 
+You can also review the [following document](https://docs.aws.amazon.com/athena/latest/ug/querying.html#query-results-specify-location-workgroup) for more information
+
 #### Step 3: Configure permissions in QuickSight to access the above S3 bucket
 
 Follow the same steps as in step 2 of the [Athena Requirements for Terraform-Created Workgroup](#athena-requirements-for-terraform-created-workgroup).  
