@@ -39,45 +39,56 @@ This is so that Helm (invoked by Terraform or manually) can tell which AWS crede
 
 Below is the complete module structure, followed by details on each directory/module:
 
-    terraform/cca_terraform_module/
-    ├── README.md
-    ├── deploy
-    │   ├── main.tf
-    │   ├── outputs.tf
-    │   └── providers.tf
-    ├── examples
-    │   └── deploy
-    │       ├── main.tf
-    │       ├── outputs.tf
-    │       └── providers.tf
-    └── modules
-        ├── common_locals
-        │   ├── README.md
-        │   ├── locals.tf
-        │   └── outputs.tf
-        ├── common_variables
-        │   ├── README.md
-        │   ├── outputs.tf
-        │   └── variables.tf
-        ├── kubecost_s3_exporter
-        │   ├── README.md
-        │   ├── kubecost_s3_exporter.tf
-        │   ├── locals.tf
-        │   ├── outputs.tf
-        │   └── variables.tf
-        ├── pipeline
-        │   ├── README.md
-        │   ├── locals.tf
-        │   ├── outputs.tf
-        │   ├── pipeline.tf
-        │   ├── secret_policy.tpl
-        │   └── variables.tf
-        └── quicksight
-            ├── README.md
-            ├── locals.tf
-            ├── quicksight.tf
-            ├── timezones.txt
-            └── variables.tf
+    └── cca_terraform_module
+        ├── README.md
+        ├── main.tf
+        ├── outputs.tf
+        ├── providers.tf
+        ├── examples
+        │   └── root_module
+        │       ├── main.tf
+        │       ├── outputs.tf
+        │       └── providers.tf
+        └── modules
+            ├── common_locals
+            │   ├── locals.tf
+            │   └── outputs.tf
+            ├── common_variables
+            │   ├── README.md
+            │   ├── outputs.tf
+            │   └── variables.tf
+            ├── kubecost_s3_exporter
+            │   ├── README.md
+            │   ├── locals.tf
+            │   ├── main.tf
+            │   ├── outputs.tf
+            │   └── variables.tf
+            ├── pipeline
+            │   ├── README.md
+            │   ├── locals.tf
+            │   ├── main.tf
+            │   ├── outputs.tf
+            │   ├── secret_policy.tpl
+            │   └── variables.tf
+            └── quicksight
+                ├── README.md
+                ├── locals.tf
+                ├── main.tf
+                ├── timezones.txt
+                └── variables.tf
+
+### The Root Directory
+
+The root directory the root module.  
+It contains the [`main.tf`](main.tf) file used to call the child reusable modules and deploy the resources.  
+Use this file to add calling modules that call:
+* The `common_variables` reusable module, that is usd to provide common variables to all other modules
+* The `pipline` reusable module that deploy the pipeline resources
+* The `kubecost_s3_exporter` reusable module for each cluster, to deploy the Kubecost S3 Exporter on your clusters
+* The `quicksight` reusable module  
+
+This directory also has the [`providers.tf`](providers.tf) file, where you add a provider configuration for each module.  
+Lastly, this directory has an [`outputs.tf`](outputs.tf) file, to be used to add your required outputs.
 
 ### The `modules` Directory
 
@@ -122,40 +133,28 @@ The `quicksight` reusable module in the `quicksight` directory contains the Terr
 It contains module-specific variables, and resources.  
 It also contains a `timezones.txt` file you can use to choose time zone when setting dataset refresh schedule.
 
-### The `deploy` Directory
-
-The `deploy` directory is the root module.  
-It contains the `main.tf` file used to call the child reusable modules and deploy the resources.  
-Use this file to add calling modules that call:
-* The `common_variables` reusable module, that is usd to provide common variables to all other modules
-* The `pipline` reusable module that deploy the pipeline resources
-* The `kubecost_s3_exporter` reusable module for each cluster, to deploy the Kubecost S3 Exporter on your clusters
-* The `quicksight` reusable module  
-
-This directory also has the `providers.tf` file, where you add a provider configuration for each module.  
-Lastly, this directory has an `outputs.tf` file, to be used to add your required outputs.
-
 ### The `examples` Directory
 
-The `examples` directory includes examples of the `main.tf`, `outputs.tf` and `providers.tf` files from the `deploy` directory.  
+The `examples` directory currently includes only the `root_module` directory.  
+It includes examples of the [`main.tf`](examples/root_module/main.tf), [`outputs.tf`](examples/root_module/outputs.tf) and [`providers.tf`](examples/root_module/providers.tf) files from the root directory (root module)  
 These files give some useful examples for you to get started when modifying the actual files.
 
 ## Initial Deployment
 
 Deployment of the Containers Cost Allocation (CCA) Dashboard using this Terraform module requires the following steps:
 
-1. Add provider configuration for each module, in the `providers.tf` file in the root module
-2. Provide variables values in the `main.tf` file in the root module, for:
+1. Add provider configuration for each module, in the [`providers.tf`](providers.tf) file in the root module
+2. Provide variables values in the [`main.tf`](main.tf) file in the root module, for:
    1. The `common_variables` module
    2. The `pipeline` reusable module
    3. The `kubecost-s3-exporter` reusable module for each cluster
    4. The `quicksight` reusable module
-3. Optionally, add outputs to the `outputs.tf` file in the root module 
+3. Optionally, add outputs to the [`outputs.tf`](outputs.tf) file in the root module 
 4. Deploy
 
 ### Step 1: Define Providers in the `providers.tf` File
 
-After providing common inputs, we need to define providers in the [`providers.tf`](deploy/providers.tf) file in the root module.  
+After providing common inputs, we need to define providers in the [`providers.tf`](providers.tf) file in the root module.  
 In this file you'll define providers for:
 
 * The `pipeline` module, to identify the AWS account where the pipeline AWS resources will be created
@@ -166,7 +165,7 @@ These providers include references to credential files that will be used by Terr
 
 #### Define Provider for the `pipeline` Module
 
-In the [`providers.tf`](deploy/providers.tf) file in the `deploy` directory, you'll find a pre-created `aws` provider for the `pipeline` module:
+In the [`providers.tf`](providers.tf) file in the root directory, you'll find a pre-created `aws` provider for the `pipeline` module:
 
     #####################################
     # Section 1 - Pipeline AWS Provider #
@@ -190,11 +189,11 @@ In the [`providers.tf`](deploy/providers.tf) file in the `deploy` directory, you
 * Change the `shared_config_files` and `shared_credentials_files` if needed
 * Change the `profile` field to the AWS Profile that Terraform should use to create the pipeline resources 
 
-Examples can be found in the [`examples/deploy/providers.tf`](examples/deploy/providers.tf) file.
+Examples can be found in the [`examples/root_module/providers.tf`](examples/root_module/providers.tf) file.
 
 #### Define Provider for each EKS Cluster for the `kubecost_s3_exporter` Module
 
-In the [`providers.tf`](deploy/providers.tf) file in the `deploy` directory, you'll find 3 pre-created providers for a sample cluster.  
+In the [`providers.tf`](providers.tf) file in the root directory, you'll find 3 pre-created providers for a sample cluster.  
 The first 2 are for a cluster with Helm invocation, and the last one is for cluster without Helm invocation:
 
     ###########################################################
@@ -274,9 +273,11 @@ Repeat the `aws` provider definition for each account-region combination where y
 Repeat the `helm` provider definition for each cluster on which you'd like to deploy the Kubecost S3 Exporter.  
 Make sure that each provider's alias is unique per provider type.
 
+Examples can be found in the [`examples/root_module/providers.tf`](examples/root_module/providers.tf) file.
+
 #### Define Provider for the `quicksight` Module
 
-In the [`providers.tf`](deploy/providers.tf) file in the `deploy` directory, you'll find a pre-created `aws` provider for the `quicksight` module:
+In the [`providers.tf`](providers.tf) file in the root directory, you'll find a pre-created `aws` provider for the `quicksight` module:
 
     #######################################
     # Section 3 - Quicksight AWS Provider #
@@ -302,9 +303,11 @@ In the [`providers.tf`](deploy/providers.tf) file in the `deploy` directory, you
 * Change the `shared_config_files` and `shared_credentials_files` if needed
 * Change the `profile` field to the AWS Profile that Terraform should use to create the QuickSight resources 
 
+Examples can be found in the [`examples/root_module/providers.tf`](examples/root_module/providers.tf) file.
+
 ### Step 2: Provide Variable Values for Each Module
 
-After defining the providers, we need to provide module-specific variables values in the [`main.tf`](deploy/main.tf) file in the root module.    
+After defining the providers, we need to provide module-specific variables values in the [`main.tf`](main.tf) file in the root module.    
 In this file you'll create a calling module for:
 
 * The `common_variables` module
@@ -319,7 +322,7 @@ You'll provide the variables values in these calling modules.
 The deployment of this solution involves both AWS resources deployment and a data collection pod (Kubecost S3 Exporter) deployment.  
 Both have common variables, and to make things easy, the `common_variables` module is provided for this purpose.
 
-In the `main.tf` file in the `deploy` directory, you'll find a pre-created `common_variables` calling module:
+In the [`main.tf`](main.tf) file in the root directory, you'll find a pre-created `common_variables` calling module:
 
     ################################
     # Section 1 - Common Variables #
@@ -328,7 +331,7 @@ In the `main.tf` file in the `deploy` directory, you'll find a pre-created `comm
     # Calling module for the common module, to provide common variables values
     # These variables are then used in other modules
     module "common_variables" {
-      source = "../modules/common_variables"
+      source = "./modules/common_variables"
     
       bucket_arn      = "" # Add S3 bucket ARN here, of the bucket that will be used to store the data collected from Kubecost
       k8s_labels      = [] # Optionally, add K8s labels you'd like to be present in the dataset
@@ -341,11 +344,11 @@ The only required variable is the `bucket_arn`, please provide a value.
 You can also optionally provide values for the other variables, if needed.  
 
 For more information on the variables, see the [`commmon_variables` module README.md file](modules/common_variables/README.md).  
-For examples, see the [`examples/deploy/main.tf` file](examples/deploy/main.tf).
+For examples, see the [`examples/root_module/main.tf` file](examples/root_module/main.tf).
 
 #### Create a Calling Module for the `pipeline` Module and Provide Variables Values
 
-In the `main.tf` file in the `deploy` directory, you'll find a pre-created `pipeline` calling module:
+In the [`main.tf`](main.tf) file in the root directory, you'll find a pre-created `pipeline` calling module:
 
     ######################################
     # Section 2 - AWS Pipeline Resources #
@@ -353,7 +356,7 @@ In the `main.tf` file in the `deploy` directory, you'll find a pre-created `pipe
     
     # Calling module for the pipeline module, to create the AWS pipeline resources
     module "pipeline" {
-      source = "../modules/pipeline"
+      source = "./modules/pipeline"
     
       #                         #
       # Common Module Variables #
@@ -381,11 +384,11 @@ The `pipeline` module's own variables are all optional.
 If you don't need to change one of the optional variables, you can leave the pre-created calling module as is.  
 
 For more information on the variables, see the [`pipline` module README.md file](modules/pipeline/README.md).  
-For examples, see the [`examples/deploy/main.tf` file](examples/deploy/main.tf).
+For examples, see the [`examples/root_module/main.tf` file](examples/root_module/main.tf).
 
 #### Create a Calling Module for the `kubecost_s3_exporter` Module and Provide Variables Values
 
-In the `main.tf` file in the `deploy` directory, you'll find 2 pre-created `kubecost-s3-exporter` calling modules.  
+In the [`main.tf`](main.tf) file in the root directory, you'll find 2 pre-created `kubecost-s3-exporter` calling modules.  
 The first one is for a cluster with Helm invocation, and the last one is for a cluster without Helm invocation:
 
     #########################################################
@@ -399,7 +402,7 @@ The first one is for a cluster with Helm invocation, and the last one is for a c
     
       # This is an example, to help you get started
     
-      source = "../modules/kubecost_s3_exporter"
+      source = "./modules/kubecost_s3_exporter"
     
       providers = {
         aws.pipeline = aws
@@ -434,7 +437,7 @@ The first one is for a cluster with Helm invocation, and the last one is for a c
     
       # This is an example, to help you get started
     
-      source = "../modules/kubecost_s3_exporter"
+      source = "./modules/kubecost_s3_exporter"
     
       providers = {
         aws.pipeline = aws
@@ -487,12 +490,12 @@ Variables referenced from the `common_variables` module are already present, ple
 The `kubecost_s3_exporter` module has 2 required variables:
 * The `cluster_arn` variable, where you must input the EKS cluster ARN
 * The `kubecost_s3_exporter_container_image`, where you must input the Kubecost S3 Exporter Docker image.
-That's the image you built and pushed in ["Step 2: Build and Push the Container Image" in the DEPLOYMENT.md file](../../DEPLOYMENT.md/.#step-2-build-and-push-the-container-image).
+That's the image you built and pushed in ["Step 2: Build and Push the Container Image" in the DEPLOYMENT.md file](../../DEPLOYMENT.md/.#step-1-build-and-push-the-container-image).
 
 Example:
 
     module "cluster1" {
-      source = "../modules/kubecost_s3_exporter"
+      source = "./modules/kubecost_s3_exporter"
 
       ... omitted output ...
 
@@ -506,11 +509,11 @@ Example:
       kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_cid:0.1.0"
     }
 
-If you're deploying this module without Helm invocation ("Deployment Option 2" in the DEPLOYMENT.md file):  
+If you're deploying this module without Helm invocation ["Deployment Option 2" in the DEPLOYMENT.md file](../../DEPLOYMENT.md/.#deployment-option-2):  
 Make sure the `invoke_helm` has value of `false`, as below:
 
     module "cluster2" {
-      source = "../modules/kubecost_s3_exporter"
+      source = "./modules/kubecost_s3_exporter"
 
       ... omitted output ...
 
@@ -528,7 +531,7 @@ Make sure the `invoke_helm` has value of `false`, as below:
 Provide optional variables values if needed.
 
 For more information on the variables, see the [`kubecost_s3_exporter` module README.md file](modules/kubecost_s3_exporter/README.md).  
-For examples, see the [`examples/deploy/main.tf` file](examples/deploy/main.tf).
+For examples, see the [`examples/root_module/main.tf` file](examples/root_module/main.tf).
 
 ###### Notes
 
@@ -553,7 +556,7 @@ Make sure that each calling module has a unique name (`module "<unique_name>"`).
 
 #### Create a Calling Module for the `quicksight` Module and Provide Variables Values
 
-In the `main.tf` file in the `deploy` directory, you'll find a pre-created `quicksight` calling module:
+In the [`main.tf`](main.tf) file in the root directory, you'll find a pre-created `quicksight` calling module:
 
     ####################################
     # Section 4 - Quicksight Resources #
@@ -561,7 +564,7 @@ In the `main.tf` file in the `deploy` directory, you'll find a pre-created `quic
     
     # Calling module for the quicksight module, to create the QuickSight resources
     module "quicksight" {
-      source = "../modules/quicksight"
+      source = "./modules/quicksight"
     
       providers = {
         aws = aws.quicksight
@@ -608,11 +611,11 @@ It's prepared for you as can be seen above, with an empty string.
 Notice the comment above it, and act accordingly (provide value or remove it)
 
 For more information on the variables, see the [`quicksight` module README.md file](modules/quicksight/README.md).  
-For examples, see the [`examples/deploy/main.tf` file](examples/deploy/main.tf).
+For examples, see the [`examples/root_module/main.tf` file](examples/root_module/main.tf).
 
 ### Step 3: Optionally, Add Outputs to the `outputs.tf` File
 
-The `deploy` directory has an `outputs.tf` file, used to show useful outputs after deployment.  
+The root directory has an [`outputs.tf`](outputs.tf) file, used to show useful outputs after deployment.  
 Below are explanations on how to use it.
 
 #### The `labels` and `annotations` Outputs
@@ -622,7 +625,7 @@ When doing so, Terraform calculates the distinct labels and annotations from all
 This is done so that Terraform can create a column in the Glue Table, for each distinct label and annotation.  
 This output is included, so that you can make sure the labels and annotations were added to the QuickSight dataset.
 
-The `main.tf` file already has `labels` and `annotations` outputs, to show the list of distinct labels and annotations:
+The [`outputs.tf`](outputs.tf) file already has `labels` and `annotations` outputs, to show the list of distinct labels and annotations:
 
     output "labels" {
       value       = length(module.common.k8s_labels) > 0 ? join(", ", distinct(module.common.k8s_labels)) : null
@@ -641,7 +644,7 @@ No need to make any changes to it.
 This Terraform module creates an IRSA IAM Role and parent IAM Role for each cluster, as part of the `kubecost-s3-exporter` module.  
 It creates them with a name that includes the IAM OIDC Provider ID.  
 This is done to keep the IAM Role name within the length limit, but it also causes difficulties in correlating it to a cluster.  
-You can add an output to the `output.tf` file for each cluster, to show the mapping of the cluster name and the IAM Roles (IRSA and parent) ARNs.
+You can add an output to the [`output.tf`](outputs.tf) file for each cluster, to show the mapping of the cluster name and the IAM Roles (IRSA and parent) ARNs.
 
 The `outputs.tf` file already has a sample output to get you started:
 
@@ -652,7 +655,7 @@ The `outputs.tf` file already has a sample output to get you started:
 
 Change the output name from `cluster1` to a name that uniquely represents your cluster.  
 Then, change the value to reference to the module instance of your cluster (`module.<module_instance_name>`).
-More examples can be found in the [`examples/deploy/outputs.tf` file](examples/deploy/outputs.tf).
+More examples can be found in the [`examples/root_module/outputs.tf` file](examples/root_module/outputs.tf).
 
 It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Roles ARNs.  
 Make sure you use a unique cluster name in the output name.
@@ -661,7 +664,7 @@ When deploying, Terraform will output a line showing the output name and the IAM
 
 ### Step 4: Deploy
 
-From the `deploy` directory, perform the following:
+From the root directory, perform the following:
 
 1. Run `terraform init`
 2. Run `terraform apply`
@@ -679,12 +682,12 @@ To continue adding additional clusters after the initial deployment, the only re
 1. Create an [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html) in the EKS cluster's account
 2. Define additional providers for the clusters
 3. Create additional calling modules of the `kubecost_s3_exporter` reusable module, for each cluster, and provide variables values.  
-This is done in the `main.tf` file in the `deploy` directory.  
+This is done in the [`main.tf`](main.tf) file in the root directory.  
 You can follow the instructions in the [`kubecost_s3_exporter` calling module creation steps](#create-a-calling-module-for-the-kubecost_s3_exporter-module-and-provide-variables-values)
 4. If you need to add labels or annotations for this cluster, follow the [Maintenance -> Adding/Removing Labels/Annotations to/from the Dataset section](#addingremoving-labelsannotations-tofrom-the-dataset)
 5. Optionally, add cluster output for the IRSA (IAM Role for Service Account) and parent IAM role, for each cluster
 
-Then, from the `deploy` directory, run `terraform init` and `terraform apply`
+Then, from the root directory, run `terraform init` and `terraform apply`
 
 ### Updating Clusters Inputs
 
@@ -695,14 +698,14 @@ Below are instructions for doing so:
 
 To update inputs for existing clusters (all or some), perform the following:
 
-1. In the `deploy` directory, open the `main.tf` file
+1. In the root directory, open the [`main.tf`](main.tf) file
 2. Change the relevant inputs in the calling modules of the clusters you wish to update
-3. From the `deploy` directory, run `terraform apply`
+3. From the root directory, run `terraform apply`
 
 ### Adding/Removing Labels/Annotations to/from the Dataset
 
 After the initial deployment, you might want to add or remove labels or annotations for some or all clusters, to/from the dataset.  
-To do this, perform the following in the `common_variables` calling module in the `main.tf` file in the `deploy` directory:
+To do this, perform the following in the `common_variables` calling module in the [`main.tf`](main.tf) file in the root directory:
 1. To add labels, add the K8s labels keys in the `k8s_labels` variable.  
 This list should include all K8s labels from all clusters, that you wish to include in the dataset.  
 2. To add annotations, add the K8s annotations keys in the `k8s_annotations` variable.  
@@ -725,7 +728,7 @@ In this case, this is how the `k8s_labels` and `k8s_annotations` variables will 
     # Calling module for the common module, to provide common variables values
     # These variables are then used in other modules
     module "common_variables" {
-      source = "../modules/common_variables"
+      source = "./modules/common_variables"
     
       bucket_arn      = "<bucket_arn_here>" # Add S3 bucket ARN here, of the bucket that will be used to store the data collected from Kubecost
       k8s_labels      = ["a", "b", "c", "f", "g"] # Optionally, add K8s labels you'd like to be present in the dataset
@@ -733,7 +736,7 @@ In this case, this is how the `k8s_labels` and `k8s_annotations` variables will 
       aws_common_tags = {} # Optionally, add AWS common tags you'd like to be created on all resources
     }
 
-3. From the `deploy` directory, run `terraform apply`.  
+3. From the root directory, run `terraform apply`.  
 Terraform will output the new list of labels and annotations when the deployment is completed.
 
 **_Note about annotations:_**
@@ -747,15 +750,15 @@ To include K8s annotations in the Kubecost Allocation API response, following [t
 
 To remove the Kubecost S3 Exporter from a specific cluster, perform the following:
 
-1. From the `main.tf` file in the `deploy` directory, remove the module instance of the cluster
-2. From the `outputs.tf` file in the `deploy` directory, remove the outputs of the cluster, if any
+1. From the [`main.tf`](main.tf) file in the root directory, remove the calling module instance of the cluster
+2. From the [`outputs.tf`](outputs.tf) file in the root directory, remove the outputs of the cluster, if any
 3. Run `terraform apply`
-4. From the `providers.tf` file in the `deploy` directory, remove the providers of the cluster  
+4. From the [`providers.tf`](providers.tf) file in the root directory, remove the providers of the cluster  
 You must remove the providers only after you did step 1-3 above, otherwise the above steps will fail
 5. If Kubecost S3 Exporter was deployed on this cluster using `invoke_helm=false`, you also need to uninstall the chart:  
 `helm uninstall kubecost-s3-exporter -n <namespace> --kube-context <cluster_context>`
 
 ### Complete Cleanup
 
-To completely clean up the entire setup, run `terraform destroy` from the `deploy` directory.  
+To completely clean up the entire setup, run `terraform destroy` from the root directory.  
 Then, follow the "Cleanup" section of the main README.md to clean up other resources that weren't created by Terraform.
