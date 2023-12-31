@@ -30,7 +30,7 @@ terraform {
 
 # Calling module for the common module, to provide common variables values
 module "common_variables" {
-  source = "../modules/common_variables"
+  source = "./modules/common_variables"
 
   bucket_arn      = "arn:aws:s3:::udid-data-collection-kubecost-data"
   k8s_labels      = ["app", "chart", "component", "app.kubernetes.io/version", "app.kubernetes.io/managed_by", "app.kubernetes.io/part_of"]
@@ -46,7 +46,7 @@ module "common_variables" {
 ######################################
 
 module "pipeline" {
-  source = "../modules/pipeline"
+  source = "./modules/pipeline"
 
   #                         #
   # Common Module Variables #
@@ -79,7 +79,7 @@ module "pipeline" {
 # Clusters in Region us-east-1 #
 
 module "us-east-1-111111111111-cluster1" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -118,7 +118,7 @@ module "us-east-1-111111111111-cluster1" {
 }
 
 module "us-east-1-111111111111-cluster2" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -154,7 +154,7 @@ module "us-east-1-111111111111-cluster2" {
 # Clusters in Region us-east-2 #
 
 module "us-east-2-111111111111-cluster1" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -188,7 +188,7 @@ module "us-east-2-111111111111-cluster1" {
 }
 
 module "us-east-2-111111111111-cluster2" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -225,7 +225,7 @@ module "us-east-2-111111111111-cluster2" {
 # Clusters in Region us-east-1 #
 
 module "us-east-1-222222222222-cluster1" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -258,7 +258,7 @@ module "us-east-1-222222222222-cluster1" {
 }
 
 module "us-east-1-222222222222-cluster2" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -291,7 +291,7 @@ module "us-east-1-222222222222-cluster2" {
 # Clusters in Region us-east-2 #
 
 module "us-east-2-222222222222-cluster1" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -324,7 +324,7 @@ module "us-east-2-222222222222-cluster1" {
 }
 
 module "us-east-2-222222222222-cluster2" {
-  source = "../modules/helm"
+  source = "./modules/kubecost_s3_exporetr"
 
   providers = {
     aws.pipeline = aws
@@ -363,7 +363,7 @@ module "us-east-2-222222222222-cluster2" {
 ####################################
 
 module "quicksight" {
-  source = "../modules/quicksight"
+  source = "./modules/quicksight"
 
   providers = {
     aws = aws.quicksight
