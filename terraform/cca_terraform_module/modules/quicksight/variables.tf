@@ -293,7 +293,7 @@ variable "qs_data_set_settings" {
     error_message = "The 'dataset_refresh_schedule' field in the 'qs_data_set_settings' must be in format of 'HH:MM'"
   }
   validation {
-    condition     = contains(split("\n", file("./modules/quicksight/timezones.txt")), var.qs_data_set_settings.timezone) || var.qs_data_set_settings.timezone == ""
+    condition     = contains(split("\n", file("./timezones.txt")), var.qs_data_set_settings.timezone) || var.qs_data_set_settings.timezone == ""
     error_message = "The 'timezone' field in the 'qs_data_set_settings' contains an invalid value. It must be one of the timezones listed in 'timezones.txt' file"
   }
   validation {

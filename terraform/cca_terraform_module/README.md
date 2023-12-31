@@ -39,43 +39,50 @@ This is so that Helm (invoked by Terraform or manually) can tell which AWS crede
 
 Below is the complete module structure, followed by details on each directory/module:
 
-    └── cca_terraform_module
-        ├── README.md
-        ├── main.tf
-        ├── outputs.tf
-        ├── providers.tf
-        ├── examples
-        │   └── root_module
-        │       ├── main.tf
-        │       ├── outputs.tf
-        │       └── providers.tf
-        └── modules
-            ├── common_locals
-            │   ├── locals.tf
-            │   └── outputs.tf
-            ├── common_variables
-            │   ├── README.md
-            │   ├── outputs.tf
-            │   └── variables.tf
-            ├── kubecost_s3_exporter
-            │   ├── README.md
-            │   ├── locals.tf
-            │   ├── main.tf
-            │   ├── outputs.tf
-            │   └── variables.tf
-            ├── pipeline
-            │   ├── README.md
-            │   ├── locals.tf
-            │   ├── main.tf
-            │   ├── outputs.tf
-            │   ├── secret_policy.tpl
-            │   └── variables.tf
-            └── quicksight
-                ├── README.md
-                ├── locals.tf
-                ├── main.tf
-                ├── timezones.txt
-                └── variables.tf
+    cca_terraform_module/
+    ├── README.md
+    ├── main.tf
+    ├── outputs.tf
+    ├── providers.tf
+    ├── timezones.txt
+    ├── deploy_local
+    │   ├── main.tf
+    │   ├── outputs.tf
+    │   ├── providers.tf
+    │   ├── terraform.tfstate
+    │   ├── terraform.tfstate.backup
+    │   └── timezones.txt
+    ├── examples
+    │   └── root_module
+    │       ├── main.tf
+    │       ├── outputs.tf
+    │       └── providers.tf
+    └── modules
+        ├── common_locals
+        │   ├── locals.tf
+        │   └── outputs.tf
+        ├── common_variables
+        │   ├── README.md
+        │   ├── outputs.tf
+        │   └── variables.tf
+        ├── kubecost_s3_exporter
+        │   ├── README.md
+        │   ├── locals.tf
+        │   ├── main.tf
+        │   ├── outputs.tf
+        │   └── variables.tf
+        ├── pipeline
+        │   ├── README.md
+        │   ├── locals.tf
+        │   ├── main.tf
+        │   ├── outputs.tf
+        │   ├── secret_policy.tpl
+        │   └── variables.tf
+        └── quicksight
+            ├── README.md
+            ├── locals.tf
+            ├── main.tf
+            └── variables.tf
 
 ### The Root Directory
 
@@ -87,8 +94,11 @@ Use this file to add calling modules that call:
 * The `kubecost_s3_exporter` reusable module for each cluster, to deploy the Kubecost S3 Exporter on your clusters
 * The `quicksight` reusable module  
 
-This directory also has the [`providers.tf`](providers.tf) file, where you add a provider configuration for each module.  
-Lastly, this directory has an [`outputs.tf`](outputs.tf) file, to be used to add your required outputs.
+This directory also has the following files:
+
+* The [`providers.tf`](providers.tf) file, where you add a provider configuration for each module  
+* The [`outputs.tf`](outputs.tf) file, to be used to add your required outputs
+* The [`timezones.txt`](timezones.txt) file you can use to choose time zone when setting dataset refresh schedule
 
 ### The `modules` Directory
 
@@ -130,8 +140,7 @@ The `quicksight` reusable module in the `quicksight` directory contains the Terr
 * The QuickSight data source and dataset
 * Generate YAML file used to create the QuickSight dashboard
 
-It contains module-specific variables, and resources.  
-It also contains a `timezones.txt` file you can use to choose time zone when setting dataset refresh schedule.
+It contains module-specific variables, and resources
 
 ### The `examples` Directory
 
