@@ -1,5 +1,3 @@
-# Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
 output "bucket_arn" {
   description = "The ARN of the S3 Bucket to which the Kubecost data will be uploaded"
   value       = var.bucket_arn

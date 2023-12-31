@@ -1,5 +1,3 @@
-# Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
 output "glue_database_name" {
   description = "The AWS Glue Database name"
   value       = aws_glue_catalog_database.kubecost_glue_db.name

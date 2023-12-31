@@ -1,5 +1,3 @@
-# Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
 variable "bucket_arn" {
   description = <<-EOF
     (Required) The ARN of the S3 Bucket to which the Kubecost data will be uploaded.

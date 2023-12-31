@@ -1,5 +1,3 @@
-# Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
 # Output for showing the distinct labels from all clusters, collected from the "k8s_labels" common input
 output "labels" {
   value       = length(module.common_variables.k8s_labels) > 0 ? join(", ", distinct(module.common_variables.k8s_labels)) : null

@@ -1,5 +1,3 @@
-# Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
 locals {
   bucket_name                        = element(split(":::", var.bucket_arn), 1)
   cluster_name                       = element(split("/", data.aws_arn.eks_cluster_arn_fields.resource), 1)

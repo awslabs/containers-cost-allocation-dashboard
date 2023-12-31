@@ -1,5 +1,3 @@
-# Copyright 2023 Amazon.com and its affiliates; all rights reserved. This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
-
 output "irsa" {
   description = <<EOF
     A map of IAM Roles that are created for the authentication from the EKS cluster to the AWS resources.
