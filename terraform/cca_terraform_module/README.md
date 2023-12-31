@@ -650,13 +650,15 @@ You can add an output to the [`output.tf`](outputs.tf) file for each cluster, to
 
 The `outputs.tf` file already has a sample output to get you started:
 
-    output "cluster1" {
-      value       = module.cluster1
-      description = "The outputs for 'cluster1'"
-    }
+    #output "cluster1" {
+    #  value       = module.cluster1
+    #  description = "The outputs for 'cluster1'"
+    #}
 
-Change the output name from `cluster1` to a name that uniquely represents your cluster.  
-Then, change the value to reference to the module instance of your cluster (`module.<module_instance_name>`).
+* Uncomment the output block.  
+* Change the output name from `cluster1` to a name that uniquely represents your cluster.  
+* Change the value to reference to the module instance of your cluster (`module.<module_instance_name>`).
+
 More examples can be found in the [`examples/root_module/outputs.tf` file](examples/root_module/outputs.tf).
 
 It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Roles ARNs.  

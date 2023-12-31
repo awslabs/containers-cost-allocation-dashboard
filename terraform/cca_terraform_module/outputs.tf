@@ -11,7 +11,7 @@ output "annotations" {
 }
 
 # Clusters outputs
-output "cluster1" {
-  value       = module.cluster1
-  description = "The outputs for 'cluster1'"
-}
+#output "cluster1" {
+#  value       = module.cluster1
+#  description = "The outputs for 'cluster1'"
+#}
