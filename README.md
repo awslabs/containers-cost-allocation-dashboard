@@ -79,3 +79,12 @@ For instructions on troubleshooting common issues related to this solution, plea
 ## Cleanup
 
 For instructions on cleanup, please refer to the [`CLEANUP.md`](CLEANUP.md) file.
+
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information on how to report security issues.
+See [SECURITY.md](SECURITY.md) for more information related to security in this solution.
+
+## License
+
+This project is licensed under the Apache-2.0 License.
