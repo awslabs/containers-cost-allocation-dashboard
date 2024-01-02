@@ -36,8 +36,7 @@ Add the `kubecost_api_endpoint` variable to the cluster's calling module, for th
 By default, if you don't add this variable to the calling module, the data collection pod uses `http://kubecost-cost-analyzer.kubecost:9090` to communicate with Kubecost.  
 To make sure the data collection pod uses TLS when communicating with the Kubecost pod, the URL in this variable must start with `https`.  
 For example, use `https://kubecost-cost-analyzer.kubecost` (note no port is defined, meaning TCP port 443 is used).  
-Note that by default, when enabling TLS in Kubecost frontend container, it uses TCP port 443.  
-In future versions, Kubecost will change the default port when using TLS, to TCP port 9090 (in this case, use `https://kubecost-cost-analyzer.kubecost:9090` in `kubecost_api_endpoint`)
+To identify which port is used by the Kubecost frontend service, run `kubectl get services` (see example of the `kubectl get services` command output below [4]).  
 2. If you're using a self-signed server certificate in Kubecost, disable TLS verification in the data collection pod.  
 Do so by adding `tls_verify` variable with value of `false`, in the cluster's calling module for the clusters where you enabled TLS in Kubecost.  
 This is done in the `main.tf` file in the root directory of the Terraform module.  
