@@ -2,12 +2,12 @@
 
 ## Enabling Encryption In-Transit Between the Data Collection Pod and Kubecost Pod
 
-By default, the Kubecost cost-analyzer-frontend service uses HTTP service to serve the UI/API endpoints, over TCP port 9090.  
+By default, the Kubecost `cost-analyzer-frontend` service uses HTTP service to serve the UI/API endpoints, over TCP port 9090.  
 For secure communication between the data collection pod and the Kubecost service, it's recommended to encrypt the data in-transit.  
 To do that, you first need to enable TLS in Kubecost, and then enable communication over HTTPS in the data collection pod.  
 Below you'll find the necessary steps to take.
 
-### Enabling TLS in Kubecost
+### Enabling TLS in Kubecost `cost-analyzer-frontend` Container
 
 At the time of writing this document, Kubecost doesn't have any public documentation on enabling TLS.  
 This section will help you go through enabling TLS in Kubecost.  
@@ -31,33 +31,41 @@ Enabling TLS in the data collection pod is done on per pod basis on each cluster
 This is because the same is done on per pod basis in Kubecost, and Kubecost is installed separately on each cluster.  
 Please take the following steps to enable TLS communication in the data collection pod:
 
-1. In the `deploy/main.py` file, add the `kubecost_api_endpoint` variable to the module instance for the cluster.   
-By default, if you don't add this variable to the module instance, the data collection pod uses `http://kubecost-cost-analyzer.kubecost:9090` to communicate with Kubecost.  
-The URL you should to make sure the data collection pod uses TLS and use TCP port 443, must start with `https`.  
-For example, use `https://kubecost-cost-analyzer.kubecost` (not port at the end means TCP port 443).
-2. If you're using a self-signed server certificate in Kubecost (as doe in step 1 above), disable TLS verification in the data collection pod.  
-Do so by adding `tls_verify` variable with value of `false`, in the module instance in `deploy/main.tf`.
+1. In the [`main.tf`](terraform/cca_terraform_module/main.tf) file in the root directory of the Terraform module:  
+Add the `kubecost_api_endpoint` variable to the cluster's calling module, for the clusters where you enabled TLS in Kubecost.  
+By default, if you don't add this variable to the calling module, the data collection pod uses `http://kubecost-cost-analyzer.kubecost:9090` to communicate with Kubecost.  
+To make sure the data collection pod uses TLS when communicating with the Kubecost pod, the URL in this variable must start with `https`.  
+For example, use `https://kubecost-cost-analyzer.kubecost` (note no port is defined, meaning TCP port 443 is used).  
+Note that by default, when enabling TLS in Kubecost frontend container, it uses TCP port 443.  
+In future versions, Kubecost will change the default port when using TLS, to TCP port 9090 (in this case, use `https://kubecost-cost-analyzer.kubecost:9090` in `kubecost_api_endpoint`)
+2. If you're using a self-signed server certificate in Kubecost, disable TLS verification in the data collection pod.  
+Do so by adding `tls_verify` variable with value of `false`, in the cluster's calling module for the clusters where you enabled TLS in Kubecost.  
+This is done in the `main.tf` file in the root directory of the Terraform module.  
 The default value of `tls_verify` is `true`.  
 This means that if the `kubecost_api_endpoint` uses an `https` URL and you're using a self-signed certificate in Kubecost, the data collection pod will fail to connect to Kubecost API.  
 So in this case, you must disable TLS verification in the data collection pod.  
 Please note that although at this point, the data in-transit will be encrypted, using a self-signed certificate is insecure.
-3. If you're using a server certificate signed by a CA, in Kubecost, the data collection pod will need to pull the CA certificate, so that it can use it for certificate verification.  
-   1. Add the CA certificate to the `kubecost_ca_certificates_list` variable in `modules/common/variables.tf`.<br >
-   See an example in `examples/modules/common/variables.tf`.  
+3. If your Kubecost frontend container uses a server certificate signed by a CA, the data collection pod will need to pull the CA certificate, so that it can use it for certificate verification.  
+Please follow the below steps to add the root CA certificate to the data collection pod:
+   1. Add the `kubecost_ca_certificates_list` variable in `common_variables` calling module in the [`main.tf`](terraform/cca_terraform_module/main.tf) file in the root directory of the Terraform module.
+   This variable is a list of root CA certificates with the relevant information required for the Terraform module.
+   Terraform will use it to create a Secret in AWS Secret Manager.  
+   See example for using this variable, in `common_variables` calling module in [the example `main.tf` file](terraform/cca_terraform_module/examples/root_module/main.tf)
    This variable will be used by Terraform to create an AWS Secrets Manager Secret in the pipline account.  
-   The `cert_path` key is mandatory, and must have the local full path to the CA certificate, including the file name.  
-   The `cert_secret_name` is mandatory, and is a name of your choice, that will be used for the AWS Secrets Manager secret.  
-   The `cert_secret_allowed_principals` is optional, and can be used to add additional IAM principals to be added to the secret policy.  
-   When Terraform creates the secret, it'll also create a secret policy.  
-   These principals will be added to the policy, in addition to the principal that will always be added to the policy to allow the cluster.
-   2. Add the `kubecost_ca_certificate_secret_name` variable to the module instance of the cluster in `deploy/main.py`.  
-   The value must be the same secret name that you used in the `cert_secret_name` key in the `kubecost_ca_certificates_list` variable.  
-   This is used by Terraform to identify the secret to be used for this cluster to communicate with Kubecost, and pass it to Helm.  
-   3. Make sure that the `tls_verify` variable is `true` (this should be the default).
+   2. Add the `kubecost_ca_certificate_secret_name` variable to the cluster's calling module for the clusters where you enabled TLS in Kubecost.  
+   This is done in the [`main.tf`](terraform/cca_terraform_module/main.tf) file in the root directory of the Terraform module.  
+   The value must be the same secret name that you used in the `cert_secret_name` key in the relevant certificate from the `kubecost_ca_certificates_list` variable.  
+   This is used by Terraform to identify the secret to be used for the specific cluster to communicate with Kubecost, and pass it to Helm.
+   See example for using this variable, in `us-east-1-111111111111-cluster1` calling module in [the example `main.tf` file](terraform/cca_terraform_module/examples/root_module/main.tf).
+   3. Add the `kubecost_ca_certificate_secrets` variable to the cluster's calling module for the clusters where you enabled TLS in Kubecost.  
+   The value must be `module.pipeline.kubecost_ca_cert_secret`.
+   This is done in the [`main.tf`](terraform/cca_terraform_module/main.tf) file in the root directory of the Terraform module.  
+   See example for using this variable, in `us-east-1-111111111111-cluster1` calling module in [the example `main.tf` file](terraform/cca_terraform_module/examples/root_module/main.tf).
+   4. Make sure that the `tls_verify` variable is `true` (this should be the default)
 
 Once the above procedure is done, the data sent between the data collection pod and Kubecost will be encrypted in-transit.  
-Please be advised that all your other clients communicating with Kubecost must now use HTTPS too, and use the said CA certificate.<br>
-Please note that Terraform does not create secret rotation configuration.  
+Please be advised that all your other clients communicating with Kubecost must now use HTTPS too, and use the said CA certificate.  
+Please note that Terraform does not create secret rotation configuration.    
 You need to make sure you update the secret with a new CA certificate before it expires. 
 
 [1] The `kubectl` command to use for creating TLS secret:

@@ -39,6 +39,20 @@ module "common_variables" {
     tag_key1 = "tag_value1"
     tak_key2 = "tag_value2"
   }
+
+  # Example of adding root CA certificate
+  # Should be used when enabling TLS in Kubecost, for the data collection pod to verify Kubecost's server certificate
+  # The `cert_path` key must be the full path to the root CA certificate, and is mandatory
+  # The `cert_secret_name` is used to define the name that will be used when creating the AWS Secret Manager secret, and is mandatory
+  # The `cert_secret_allowed_principals` is used add allowed IAM principals for accessing the secret - they will be added to the secret policy.
+  # This field is optional. If you leave it empty, the K8s Service Account used by the data collection pod will be the only allowed princial
+  kubecost_ca_certificates_list = [
+    {
+      "cert_path" : "~/openssl/ca/certs/ca.cert.pem"
+      "cert_secret_name" : "kubecost"
+      "cert_secret_allowed_principals" : ["arn:aws:iam::111111111111:role/role-name"]
+    }
+  ]
 }
 
 ######################################
