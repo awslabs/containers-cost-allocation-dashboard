@@ -12,30 +12,31 @@ The solution is composed of the following resources (note - deployment instructi
 This project deploys a CronJob controller and a Service Account to each EKS cluster you choose.  
 The CronJob controller creates the data collection pod on a schedule.  
 These components are used to collect data from Kubecost.
-2. A pipeline that is composed of the following components, which are deployed by this project:
+2. A pipeline that is composed of the following components:
    1. An Amazon S3 bucket that stores the Kubecost data
    2. AWS Glue database, table and crawler
-   3. AWS Secrets Manager secret (created optionally)
-   4. Amazon Athena workgroup
-   5. Relevant IAM roles and policies
+   3. Amazon Athena workgroup
+   4. Relevant IAM roles and policies 
+   5. AWS Secrets Manager secret.  
+   Optional, used for storing root CA certificate when TLS is enabled on Kubecost frontend container
 3. Amazon QuickSight dashboard, data source and dataset
 
 Most of the above components are deployed using a Terraform module.  
-The K8s resources are deployed using a Helm chart (that is invoked by the Terraform module).  
-The QuickSight dashboard is deployed using a CLI tool.  
-Deployment instructions can be found in the [Deployment section](DEPLOYMENT.md/.#deployment)
+The K8s resources are deployed using a Helm chart (that is invoked by the Terraform module or by the user).  
+The QuickSight dashboard is deployed using the `cid-cmd` CLI tool.  
+Deployment instructions can be found in the [DEPLOYMENT.md file](DEPLOYMENT.md)
 
 ## High-Level Logic
 
 1. The CronJob K8s controller runs daily and creates a pod that collects cost allocation data from Kubecost.  
-It uses the [Kubecost Allocation API](https://docs.kubecost.com/apis/apis-overview/api-allocation) to retrieve the cost allocation data.
+It uses the [Kubecost Allocation API](https://docs.kubecost.com/apis/apis-overview/api-allocation) to retrieve the cost allocation data.  
 In most cases, it collects the data between 72 hours ago 00:00:00 and 48 hours ago 00:00:00.  
 In some cases it may collect more, if it identifies gaps between the data available in Kubecost and in the S3 bucket.  
 Once data is collected, it's then converted to a Parquet, compressed and uploaded to an S3 bucket of your choice.
 2. The data is made available in Athena using AWS Glue database, table and crawler.  
 The crawler runs daily (using a defined schedule), to create or update partitions.
-3. QuickSight uses the Athena table as a data source to visualize the data.
-The data in the QuickSight dataset is refreshed daily according to a defined.
+3. QuickSight uses the Athena table as a data source to visualize the data.  
+The data in the QuickSight dataset is refreshed daily according to a defined schedule.
 
 ## Authentication Logic
 
@@ -66,7 +67,8 @@ This is possible because the prefix we use in the S3 bucket includes the account
 
 ### S3 Bucket Policy
 
-In addition, an S3 bucket policy sample is provided as part of this documentation.  
+In addition, a sample S3 bucket policy is provided as part of this documentation.  
+This is for the bucket that is used to store the Kubecost data.  
 See ["Using an S3 Bucket Policy on the Kubecost Data Bucket" in the SECURITY.md](SECURITY.md/.#using-an-s3-bucket-policy-on-the-kubecost-data-bucket) file.  
 The Terraform module that's provided with this solution does not create it, because it doesn't create the S3 bucket.  
 It's up to you to use it on your S3 bucket. 
@@ -77,7 +79,7 @@ This project uses the [Kubecost Allocation API](https://docs.kubecost.com/apis/a
 
 ## Back-filling Past Data
 
-This solution supports back-filling past data up to the Kubecost retention limits (15 days for the free tier, 30 days for the business tier).  
+This solution supports back-filling past data up to the Kubecost retention limits (15 days for the free tier).  
 The back-filling is done automatically by the data collection pod if it identifies gaps in the S3 data compared to the Kubecost data.  
 The way it works is as follows:
 
@@ -112,8 +114,8 @@ If Parquet files within the Kubecost retention limit timeframe were accidentally
 
 Notes:
 
-1. The back-filling solution supports back-filling data only up to the Kubecost retention limit (15 days for the free tier, 30 days for the business tier)
-2. The back-filling solution is automatic, and does not support force-back-filling of data that already exists in the S3 bucket.
-If you'd like to force-back-fill existing data, you must delete the Parquet file for the desired date, and then run the data collection.  
+1. The back-filling solution supports back-filling data only up to the Kubecost retention limit (15 days for the free tier)
+2. The back-filling solution is automatic, and does not support force-back-filling of data that already exists in the S3 bucket.  
+If you'd like to force-back-fill existing data, you must delete the Parquet file for the desired date, and then run the data collection (please back up first).  
 An example reason for such a scenario is that an issue was fixed or a feature was added to the solution, and you'd like it to be applied for past data.  
-Notice that this is possible only up to the Kubecost retention limit (15 days for the free tier, 30 days for the business tier).
+Notice that this is possible only up to the Kubecost retention limit (15 days for the free tier).
