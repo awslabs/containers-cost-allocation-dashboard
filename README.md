@@ -38,9 +38,9 @@ It's used to collect the data from Kubecost and upload it to an S3 bucket that y
 * A pipeline that makes the data available to be queried in Athena
 * A QuickSight dashboard, along with its QuickSight assets (data source, dataset)
 
-The AWS resources in this solution are deployed using a Terraform module which is provided as part of it.  
-The K8s resources in this solution are deployed using a Helm chart which is provided as part of it.  
-It's invoked by Terraform by default, but you can choose to deploy it yourself.
+The AWS resources in this solution are deployed using a Terraform module.  
+The K8s resources in this solution are deployed using a Helm chart.  
+It's invoked by Terraform by default, but you can choose to deploy it yourself.  
 The QuickSight dashboard is deployed using the `cid-cmd` CLI tool.
 
 More detailed information on the architecture and logic are found in the [`ARCHITECTURE.md`](ARCHITECTURE.md) file.  
