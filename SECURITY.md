@@ -147,10 +147,10 @@ With this approach, the maximum bucket policy size will be quickly reached, and 
 The resources used in this S3 bucket policy include:
 
 * The bucket name, to allow access to it
-* All objects in the bucket, using the `arn:aws:s3:::kubecost-data-collection-bucket/*` string.  
+* All objects in the bucket, using the `<your_kubecost_bucket_arn>/*` string.  
 The reason for using a wildcard here is that multiple principals (multiple EKS clusters) require access to different objects in the bucket.  
 Using specific objects for each principal will result in a longer bucket policy that will eventually exceed the bucket policy size limit.  
-The identity policy (the parent IAM role) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.<br >
+The identity policy (the parent IAM role) that is created as part of this solution for each cluster, specifies only the specific prefix and objects.  
 Considering this, the access to the S3 bucket is more specific than what's specified in the "Resources" part of this bucket policy.
 
 ## Setting Server-Side Encryption on the S3 Bucket
