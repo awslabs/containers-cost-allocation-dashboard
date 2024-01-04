@@ -1,5 +1,9 @@
 # Security
 
+## Reporting Security Issues
+
+We take all security reports seriously. When we receive such reports, we will investigate and subsequently address any potential vulnerabilities as quickly as possible. If you discover a potential security issue in this project, please notify AWS/Amazon Security via our vulnerability reporting page or directly via email to AWS Security. Please do not create a public GitHub issue in this project.
+
 ## Enabling Encryption In-Transit Between the Data Collection Pod and Kubecost Pod
 
 By default, the Kubecost `cost-analyzer-frontend` service uses HTTP service to serve the UI/API endpoints, over TCP port 9090.  

@@ -1,5 +1,19 @@
 # Post-Deployment
 
+This document includes post-deployment steps.  
+Except the first section, all are optional, but it's advised to review all the below.
+
+## What Needs to Happen for Data to Appear on the Dashboard?
+
+Before you start using the dashboard, make sure the following is true:
+
+* Data must be present in the S3 bucket.
+For this, the Kubecost S3 Exporter container must have collected data for at least one day.  
+Note: since it collects data from 72 hours ago 00:00:00 to 48 hours ago 00:00:00, it might find no data on new Kubecost deployments.  
+Wait until enough data was collected by Kubecost, so that the Kubecost S3 Exporter can collect data.
+* The Glue crawler must have successfully run after data was already uploaded by Kubecost S3 Exporter to the S3 bucket
+* The QuickSight dataset must have refreshed successfully after the Glue crawler ran successfully
+
 ## Share the Dashboard with Users
 
 To share the dashboard with users, for them to be able to view it and create Analysis from it, see [this link](https://catalog.workshops.aws/awscid/en-US/dashboards/share).
