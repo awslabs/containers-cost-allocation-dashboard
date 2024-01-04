@@ -158,9 +158,11 @@ resource "aws_glue_catalog_table" "kubecost_glue_view" {
   database_name = aws_glue_catalog_database.kubecost_glue_db.name
   parameters = {
     presto_view = "true"
+    comment     = "Presto View"
   }
 
   table_type         = "VIRTUAL_VIEW"
+  view_expanded_text = "/* Presto View */"
   view_original_text = "/* Presto View: ${base64encode(local.presto_view)} */"
 
   storage_descriptor {
