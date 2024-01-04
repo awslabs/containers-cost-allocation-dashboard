@@ -277,15 +277,19 @@ Make sure that each provider's alias is unique per provider type.
 
 Examples can be found in the [`examples/root_module/providers.tf`](examples/root_module/providers.tf) file.
 
-#### Define Provider for the `quicksight` Module
+#### Define Providers for the `quicksight` Module
 
-In the [`providers.tf`](providers.tf) file in the root directory, you'll find a pre-created `aws` provider for the `quicksight` module:
+In the [`providers.tf`](providers.tf) file in the root directory, you'll find 2 pre-created `aws` providers for the `quicksight` module:
 
     #######################################
     # Section 3 - Quicksight AWS Provider #
     #######################################
     
-    # Example provider for QuickSight
+    #                                  #
+    # Example providers for QuickSight #
+    #                                  #
+    
+    # Example provider for QuickSight main region
     provider "aws" {
     
       # This is an example, to help you get started
@@ -300,8 +304,41 @@ In the [`providers.tf`](providers.tf) file in the root directory, you'll find a 
         tags = module.common_variables.aws_common_tags
       }
     }
+    
+    # Example provider for QuickSight identity region
+    provider "aws" {
+    
+      # This is an example, to help you get started
+    
+      alias = "quicksight-identity"
+    
+      region                   = "us-east-1"
+      shared_config_files      = ["~/.aws/config"]
+      shared_credentials_files = ["~/.aws/credentials"]
+      profile                  = "quicksight_profile"
+      default_tags {
+        tags = module.common_variables.aws_common_tags
+      }
+    }
 
+The first provider (aliased `quicksight`) is for the QuickSight region where the dashboard is deployed.  
+The second provider (aliased `quicksight-identity`) is for the QuickSight identity region where QuickSight users are.
+
+In the first provider:
 * Change the `region` field if needed
+* Change the `shared_config_files` and `shared_credentials_files` if needed
+* Change the `profile` field to the AWS Profile that Terraform should use to create the QuickSight resources 
+
+In the second provider:
+* Change the `region` field if needed.  
+To identify the identity region:
+  * log in to QuickSight
+  * On the top right, click the person button, and switch to the region where you intend to deploy the dashboard.  
+  This is the same region you gave as input in the first provider.
+  * On the top right, click the person button again, and click "Manage QuickSight"
+  * On the left pane, click "Security & permissions".
+  If you see the "Security & permissions" page, then the identity region is the same as the dashboard region.  
+  If you see a message "Switch to `<region name>` to edit permissions or unsubscribe", then the region in the message is the identity region.
 * Change the `shared_config_files` and `shared_credentials_files` if needed
 * Change the `profile` field to the AWS Profile that Terraform should use to create the QuickSight resources 
 
@@ -569,7 +606,8 @@ In the [`main.tf`](main.tf) file in the root directory, you'll find a pre-create
       source = "./modules/quicksight"
     
       providers = {
-        aws = aws.quicksight
+        aws          = aws.quicksight
+        aws.identity = aws.quicksight-identity
       }
     
       #                         #
@@ -657,11 +695,11 @@ The `outputs.tf` file already has a sample output to get you started:
 
 * Uncomment the output block.  
 * Change the output name from `cluster1` to a name that uniquely represents your cluster.  
-* Change the value to reference to the module instance of your cluster (`module.<module_instance_name>`).
+* Change the value to reference to the calling module of your cluster (`module.<module_instance_name>`).
 
 More examples can be found in the [`examples/root_module/outputs.tf` file](examples/root_module/outputs.tf).
 
-It is highly advised that you add an output to the `outputs.tf` file for each cluster, to show the IAM Roles ARNs.  
+It is highly advised that you add an output to the [`outputs.tf`](outputs.tf) file for each cluster, to show the IAM Roles ARNs.  
 Make sure you use a unique cluster name in the output name.
 
 When deploying, Terraform will output a line showing the output name and the IAM Roles ARNs.

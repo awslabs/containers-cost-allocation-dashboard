@@ -97,7 +97,8 @@ You'll have to give this bucket name as an input in a Terraform variable (docume
 In QuickSight, go to "Manage QuickSight" (top right), then "Security & permissions" on the left.  
 Click "Manage" under "Access granted to X services", then select Athena and click "Next".  
 Select the S3 bucket that you created above.  
-Also, make sure you select S3 buckets required by other QuickSight data sources, otherwise you these data sources may lose access.  
+Make sure you check both the checkbox next to the S3 bucket name and the checkbox under "Write permission for Athena Workgroup".  
+Also, make sure you select S3 buckets required by other QuickSight data sources, otherwise these data sources may lose access.  
 Then, click "Finish" and "Save".
 
 If you get an error as the below:
@@ -168,3 +169,12 @@ Note - if at step 2 above, you get the following error:
 1. Navigate to the IAM console
 2. Edit the QuickSight-managed S3 IAM Policy (usually named `AWSQuickSightS3Policy`)
 3. Add the S3 bucket in the same sections of the policy where you have your CUR bucket
+
+## Verifying Enough QuickSight SPICE Capacity
+
+Make sure you have enough QuickSight SPICE capacity to create the QuickSight dataset and store the data.  
+The required capacity depends on the size of your EKS clusters from which Kubecost data is collected.  
+You may start with small SPICE capacity and adjust as needed.  
+Make sure it's at least larger than 0, so Terraform can create the QuickSight dataset.
+
+To add SPICE capacity, follow [this document](https://docs.aws.amazon.com/quicksight/latest/user/managing-spice-capacity.html).

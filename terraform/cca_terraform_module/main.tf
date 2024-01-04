@@ -181,7 +181,9 @@ module "quicksight" {
   # Provide quicksight module variables values here
 
   # Add an S3 bucket name for Athena Workgroup Query Results Location, if var.athena_workgroup_configuration.create is "true"
-  # Otherwise, remove the below field
+  # It must be different from the S3 bucket used to store the Kubecost data
+  # If you decided to use var.athena_workgroup_configuration.create as "false", remove the below field
+  # Then, add the "name" field and specify and existing Athena workgroup
   athena_workgroup_configuration = {
     query_results_location_bucket_name = ""
   }

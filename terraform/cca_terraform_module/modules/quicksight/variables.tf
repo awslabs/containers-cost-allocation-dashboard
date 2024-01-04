@@ -115,6 +115,7 @@ variable "athena_workgroup_configuration" {
 
                (Required conditionally) query_results_location_bucket_name: Required only when "create" is "true".
                                                                             In this case, used to set the Athena Workgroup query results location.
+                                                                            This S3 bucket name must be different from the S3 bucket used to store the Kubecost data.
                                                                             If "create" is "false", this field is ignored.
                                                                             Possible values: A valid S3 bucket name.
                                                                             Default value: An empty string ("").
