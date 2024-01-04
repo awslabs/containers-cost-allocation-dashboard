@@ -74,7 +74,11 @@ provider "aws" {
 # Section 3 - Quicksight AWS Provider #
 #######################################
 
-# Example provider for QuickSight
+#                                  #
+# Example providers for QuickSight #
+#                                  #
+
+# Example provider for QuickSight main region
 provider "aws" {
 
   # This is an example, to help you get started
@@ -90,6 +94,7 @@ provider "aws" {
   }
 }
 
+# Example provider for QuickSight identity region
 provider "aws" {
 
   # This is an example, to help you get started
