@@ -38,6 +38,7 @@ In case of a new dashboard version, run the following command from the `cid` fol
 
 
 Make sure you provide credentials as environment variables or by passing `--profile_name` argument to the above command.  
+Make sure you provide region as environment variable or by passing `--region_name` argument to the above command.  
 The output after executing the above command, should be similar to the below:
 
 

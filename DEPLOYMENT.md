@@ -96,6 +96,7 @@ From the `cid` folder, run the following command:
     cid-cmd deploy --resources cca.yaml --dashboard-id containers-cost-allocation-cca  
 
 Make sure you provide credentials as environment variables or by passing `--profile_name` argument to the above command.  
+Make sure you provide region as environment variable or by passing `--region_name` argument to the above command.  
 The output after executing the above command, should be similar to the below:
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.39 Beta
