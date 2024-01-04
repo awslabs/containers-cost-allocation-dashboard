@@ -5,8 +5,9 @@ module "common_locals" {
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = ">= 5.26.0"
+      source                = "hashicorp/aws"
+      version               = ">= 5.26.0"
+      configuration_aliases = [aws.identity]
     }
     random = {
       source  = "hashicorp/random"
@@ -23,17 +24,21 @@ data "aws_region" "quicksight_region" {}
 data "aws_caller_identity" "quicksight_caller_identity" {}
 
 data "aws_quicksight_user" "qs_current_user" {
+  provider = aws.identity
+
   user_name = element(split(":assumed-role/", data.aws_caller_identity.quicksight_caller_identity.arn), 1)
 }
 
 data "aws_quicksight_user" "qs_data_source_users" {
-  count = length(local.distinct_qs_data_source_users)
+  provider = aws.identity
+  count    = length(local.distinct_qs_data_source_users)
 
   user_name = local.distinct_qs_data_source_users[count.index].username
 }
 
 data "aws_quicksight_user" "qs_data_set_users" {
-  count = length(local.distinct_qs_data_set_users)
+  provider = aws.identity
+  count    = length(local.distinct_qs_data_set_users)
 
   user_name = local.distinct_qs_data_set_users[count.index].username
 }

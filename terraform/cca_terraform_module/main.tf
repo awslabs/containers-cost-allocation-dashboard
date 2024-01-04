@@ -151,7 +151,8 @@ module "quicksight" {
   source = "./modules/quicksight"
 
   providers = {
-    aws = aws.quicksight
+    aws          = aws.quicksight
+    aws.identity = aws.quicksight-identity
   }
 
   #                         #

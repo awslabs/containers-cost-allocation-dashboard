@@ -197,3 +197,15 @@ provider "aws" {
     tags = module.common_variables.aws_common_tags
   }
 }
+
+provider "aws" {
+  alias = "quicksight-identity"
+
+  region                   = "us-east-1"
+  shared_config_files      = ["~/.aws/config"]
+  shared_credentials_files = ["~/.aws/credentials"]
+  profile                  = "quicksight_profile"
+  default_tags {
+    tags = module.common_variables.aws_common_tags
+  }
+}
