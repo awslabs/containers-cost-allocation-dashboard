@@ -58,15 +58,15 @@ Before proceeding to the deployment of this solution, please complete the requir
 ## Deployment
 
 For instructions on deploying this solution, please refer to the [`DEPLOYMENT.md`](DEPLOYMENT.md) file.  
-When done, proceed to the [Post-Deployment Steps](#post-deployment-steps) section.
+When done, proceed to the [Post-Deployment Steps](#post-deployment-steps) section below.
 
 ## Post-Deployment Steps
 
 Before proceeding to use the dashboard, please complete the post-deployment steps outlined in the [`POST_DEPLOYMENT.md`](POST_DEPLOYMENT.md) file.  
 In addition, if you'd like to deploy the Kubecost-S3-Exporter on additional clusters:  
-See the [Deploying on Additional Clusters section in the MAINTENANCE.md file](MAINTENANCE.md/.#deploying-on-additional-clusters).  
+See the ["Deploying on Additional Clusters" section in the MAINTENANCE.md file](MAINTENANCE.md/.#deploying-on-additional-clusters).  
 If you'd like to add/remove K8s labels/annotations to/from the dataset:  
-See the [Adding/Removing Labels/Annotations to/from the Dataset section in the MAINTENANCE.md file](MAINTENANCE.md/.#addingremoving-labelsannotations-tofrom-the-dataset).
+See the ["Adding/Removing Labels/Annotations to/from the Dataset" section in the MAINTENANCE.md file](MAINTENANCE.md/.#addingremoving-labelsannotations-tofrom-the-dataset).
 
 ## Update the Solution
 
