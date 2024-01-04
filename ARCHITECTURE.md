@@ -2,7 +2,7 @@
 
 The following is the solution's architecture:
 
-![Screenshot of the solution's architecture](./screenshots/architecture_diagram.png)
+![Screenshot of the solution's architecture](screenshots/architecture_diagram.png)
 
 ## Solution's Components
 

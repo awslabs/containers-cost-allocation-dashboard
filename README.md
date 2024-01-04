@@ -32,6 +32,10 @@ Feature comparison between Kubecost tiers can be found [here](https://docs.kubec
 
 ## Architecture
 
+The following is the solution's architecture:
+
+![Screenshot of the solution's architecture](screenshots/architecture_diagram.png)
+
 This solution is composed of the following components (in high-level):
 * A data collection pod (referred to as "Kubecost S3 Exporter" throughout some parts of the documentation).  
 It's used to collect the data from Kubecost and upload it to an S3 bucket that you own.
