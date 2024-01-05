@@ -147,23 +147,23 @@ Deployment of the Containers Cost Allocation (CCA) Dashboard using this Terrafor
 
 1. Add provider configuration for each reusable module, in the [`providers.tf`](providers.tf) file in the root module
    1. Add provider for the `pipeline` reusable module  
-      See the [module's README.md file](modules/pipeline/README.md) for more information and examples.
+      See the [module's README.md file](modules/pipeline/README.md/.#define-provider-for-the-pipeline-module) for more information and examples.
    2. Add provider for the `kubecost_s3_exporter` reusable module  
-      See the [module's README.md file](modules/kubecost_s3_exporter/README.md) for more information and examples.
+      See the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#define-provider-for-each-eks-cluster-for-the-kubecosts3exporter-module) for more information and examples.
    3. Add provider for the `quicksight` reusable module  
-      See the [module's README.md file](modules/quicksight/README.md) for more information and examples.
+      See the [module's README.md file](modules/quicksight/README.md/.#define-providers-for-the-quicksight-module) for more information and examples.
 2. Provide variables values in the [`main.tf`](main.tf) file in the root module, for:
    1. The `common_variables` reusable module  
-      See the [module's README.md file](modules/common_variables/README.md) for more information and examples.
+      See the [module's README.md file](modules/common_variables/README.md/.#create-a-calling-module-for-the-commonvariables-module-and-provide-variables-values) for more information and examples.
    2. The `pipeline` reusable module  
-      See the [module's README.md file](modules/pipeline/README.md) for more information and examples.
+      See the [module's README.md file](modules/pipeline/README.md/.#create-a-calling-module-for-the-pipeline-module-and-provide-variables-values) for more information and examples.
    3. The `kubecost_s3_exporter` reusable module for each cluster  
-      See the [module's README.md file](modules/kubecost_s3_exporter/README.md) for more information and examples.
+      See the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#create-a-calling-module-for-the-kubecosts3exporter-module-and-provide-variables-values) for more information and examples.
    4. The `quicksight` reusable module  
-      See the [module's README.md file](modules/quicksight/README.md) for more information and examples.
+      See the [module's README.md file](modules/quicksight/README.md/.#create-a-calling-module-for-the-quicksight-module-and-provide-variables-values) for more information and examples.
 3. Optionally, add outputs to the [`outputs.tf`](outputs.tf) file in the root module
-   1. See more information on the `common_variables` module's outputs in the [module's README.md file](modules/common_variables/README.md)
-   2. See more information on the `kubecost_s3_exporter` module's outputs in the [module's README.md file](modules/kubecost_s3_exporter/README.md)
+   1. See more information on the `common_variables` module's outputs in the [module's README.md file](modules/common_variables/README.md/.#the-labels-and-annotations-outputs)
+   2. See more information on the `kubecost_s3_exporter` module's outputs in the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#adding-outputs-for-each-cluster)
 4. Deploy:  
    From the root directory of the Terraform module:
    1. Run `terraform init`
