@@ -146,20 +146,20 @@ These files give some useful examples for you to get started when modifying the 
 Deployment of the Containers Cost Allocation (CCA) Dashboard using this Terraform module requires the following steps:
 
 1. Add provider configuration for each reusable module, in the [`providers.tf`](providers.tf) file in the root module
-   1. Add provider for the `pipeline` reusable module
+   1. Add provider for the `pipeline` reusable module  
       See the [module's README.md file](modules/pipeline/README.md) for more information and examples.
-   2. Add provider for the `kubecost_s3_exporter` reusable module
+   2. Add provider for the `kubecost_s3_exporter` reusable module  
       See the [module's README.md file](modules/kubecost_s3_exporter/README.md) for more information and examples.
-   3. Add provider for the `quicksight` reusable module
+   3. Add provider for the `quicksight` reusable module  
       See the [module's README.md file](modules/quicksight/README.md) for more information and examples.
 2. Provide variables values in the [`main.tf`](main.tf) file in the root module, for:
-   1. The `common_variables` reusable module.  
+   1. The `common_variables` reusable module  
       See the [module's README.md file](modules/common_variables/README.md) for more information and examples.
-   2. The `pipeline` reusable module
+   2. The `pipeline` reusable module  
       See the [module's README.md file](modules/pipeline/README.md) for more information and examples.
-   3. The `kubecost_s3_exporter` reusable module for each cluster
+   3. The `kubecost_s3_exporter` reusable module for each cluster  
       See the [module's README.md file](modules/kubecost_s3_exporter/README.md) for more information and examples.
-   4. The `quicksight` reusable module
+   4. The `quicksight` reusable module  
       See the [module's README.md file](modules/quicksight/README.md) for more information and examples.
 3. Optionally, add outputs to the [`outputs.tf`](outputs.tf) file in the root module
    1. See more information on the `common_variables` module's outputs in the [module's README.md file](modules/common_variables/README.md)
