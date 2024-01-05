@@ -56,27 +56,34 @@ On other clusters, you can choose to deploy the K8s resources yourself using the
 
 With this deployment option, Terraform deploys both the AWS resources and the K8s resources (by invoking Helm).
 
-Please follow the instructions in the [Terraform module README](terraform/cca_terraform_module/README.md) file.  
+1. Open the [`providers.tf`](terraform/cca_terraform_module/providers.tf) file and define the providers.  
+Follow the sections and the comments inside them, which provide instructions.
+2. Open the [`main.tf`](terraform/cca_terraform_module/main.tf) file and define the calling modules.
+Follow the sections and the comments inside them, which provide instructions.
+3. Run `terraform init`
+4. Run `terraform apply`
+
+If you want more detailed information, please follow the instructions in the [Terraform module README](terraform/cca_terraform_module/README.md) file.  
 For the initial deployment, you need to go through the [Requirements](terraform/cca_terraform_module/README.md/.#requirements), [Structure](terraform/cca_terraform_module/README.md/.#structure) and [Initial Deployment](terraform/cca_terraform_module/README.md/.#initial-deployment) sections.  
+
 Once you're done with Terraform, continue to [step 3](#step-3-dashboard-deployment) below.
 
 ### Deployment Option 2
 
 With this deployment option, Terraform deploys only the AWS resources, and the K8s resources are deployed using the `helm` command.
 
-1. Please follow the instructions under in the [Terraform module README](terraform/cca_terraform_module/README.md) file.  
-For the initial deployment, you need to go through the [Requirements](terraform/cca_terraform_module/README.md/.#requirements), [Structure](terraform/cca_terraform_module/README.md/.#structure) and [Initial Deployment](terraform/cca_terraform_module/README.md/.#initial-deployment) sections.  
-When reaching the ["Create a Calling Module for the `kubecost_s3_exporter` Module and Provide Variables Values"](terraform/cca_terraform_module/README.md/.#create-a-calling-module-for-the-kubecost_s3_exporter-module-and-provide-variables-values), do the following:  
-Make sure that as part of the variables values you provide, you use the `invoke_helm` variable with value of `false`.
-   
-2. After successfully executing `terraform apply` (the [last step - step 4 - of the "Initial Deployment" section](terraform/cca_terraform_module/README.md/.#step-4-deploy)), Terraform, will create the AWS resources.  
-In addition, Terraform will create the following:  
-Per cluster for which you used the `invoke_helm` input with value of `false`, a YAML file will be created containing the Helm values for this cluster.  
+1. Open the [`providers.tf`](terraform/cca_terraform_module/providers.tf) file and define the providers.  
+Follow the sections and the comments inside them, which provide instructions.
+2. Open the [`main.tf`](terraform/cca_terraform_module/main.tf) file and define the calling modules.
+Follow the sections and the comments inside them, which provide instructions.  
+Make sure you use `invole_helm` input set to `false` in each cluster's calling module.
+3. Run `terraform init`
+4. Run `terraform apply`
+
+After applying the Terraform configuration, a YAML file will be created per cluster, containing the Helm values for this cluster.  
 The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.  
-The YAML files will be created in the `helm/kubecost_s3_exporter/clusters_values` directory.
-
-3. For each cluster, deploy the K8s resources by executing Helm
-
+The YAML files will be created in the `helm/kubecost_s3_exporter/clusters_values` directory.  
+Then, for each cluster, deploy the K8s resources by executing Helm.  
 Executing Helm when you're still in the Terraform `deploy` directory:
 
     helm upgrade -i kubecost-s3-exporter ../../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
@@ -84,6 +91,9 @@ Executing Helm when you're still in the Terraform `deploy` directory:
 Executing Helm when in the `helm` directory:
 
     helm upgrade -i kubecost-s3-exporter kubecost_s3_exporter/ -n <namespace> --values kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
+
+If you want more detailed information, please follow the instructions in the [Terraform module README](terraform/cca_terraform_module/README.md) file.  
+For the initial deployment, you need to go through the [Requirements](terraform/cca_terraform_module/README.md/.#requirements), [Structure](terraform/cca_terraform_module/README.md/.#structure) and [Initial Deployment](terraform/cca_terraform_module/README.md/.#initial-deployment) sections.
 
 Once you're done, continue to [step 3](#step-3-dashboard-deployment) below.
 
