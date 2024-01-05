@@ -332,7 +332,7 @@ In the first provider:
 In the second provider:
 * Change the `region` field if needed.  
 To identify the identity region:
-  * log in to QuickSight
+  * Log in to QuickSight
   * On the top right, click the person button, and switch to the region where you intend to deploy the dashboard.  
   This is the same region you gave as input in the first provider.
   * On the top right, click the person button again, and click "Manage QuickSight"
