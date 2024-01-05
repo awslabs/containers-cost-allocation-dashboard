@@ -5,48 +5,302 @@ The `kubecost_s3_exporter` reusable module is used deploy the Kubecost S3 Export
 * The K8s resources (CronJob and Service Account)
 * IAM roles
 
-## Variables
+## Define Provider for each EKS Cluster for the `kubecost_s3_exporter` Module
 
-### Variables from the `common_variables` Module
+In the [`providers.tf`](../../providers.tf) file in the root directory, you'll find 3 pre-created providers for a sample cluster.  
+The first 2 are for a cluster with Helm invocation, and the last one is for cluster without Helm invocation:
 
-The below table lists variables that are meant to only take references from the `common_variables` module:
+    ###########################################################
+    # Section 2 - Kubecost S3 Exporter AWS and Helm Providers #
+    ###########################################################
+    
+    # Providers for the kubecost_s3_exporter module.
+    # Used to deploy the K8s resources on clusters, and creates IRSA in cluster's accounts
+    # There are 2 deployment options:
+    #
+    # 1. Deploy the K8s resources by having Terraform invoke Helm
+    #    In this case, you have to define 2 providers per cluster - an AWS provider and a Helm provider
+    # 2. Deploy the K8s resources by having Terraform generate a Helm values.yaml, then you deploy it using Helm
+    #    In this case, you have to define 1 provider per cluster - an AWS provider
+    
+    #                                                    #
+    # Example providers for cluster with Helm invocation #
+    #                                                    #
+    
+    # Use these providers if you'd like Terraform to invoke Helm to deploy the K8s resources
+    # Duplicate the providers for each cluster on which you wish to deploy the Kubecost S3 Exporter
+    
+    provider "aws" {
+    
+      # This is an example, to help you get started
+    
+      alias = "us-east-1-111111111111-cluster1"          # Change to an alias that uniquely identifies the cluster within all the AWS provider blocks
+    
+      region                   = "us-east-1"             # Change the region if necessary
+      shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
+      shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
+      profile                  = "profile1"              # Change to the profile that identifies the account and region where the cluster is
+      default_tags {
+        tags = module.common_variables.aws_common_tags
+      }
+    }
+    
+    provider "helm" {
+    
+      # This is an example, to help you get started
+    
+      alias = "us-east-1-111111111111-cluster1"                                 # Change to an alias that uniquely identifies the cluster within all the Helm provider blocks
+    
+      kubernetes {
+        config_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"  # Change to the context that identifies the cluster in the K8s config file (in many cases it's the cluster ARN)
+        config_path    = "~/.kube/config"                                       # Change to the full path of the K8s config file
+      }
+    }
+    
+    #                                                       #
+    # Example provider for cluster without Helm invocation  #
+    #                                                       #
+    
+    # Use this provider if you'd like Terraform to generate a Helm values.yaml, then you deploy it using Helm
+    # Duplicate the provider for each cluster on which you wish to deploy the Kubecost S3 Exporter
+    provider "aws" {
+    
+      # This is an example, to help you get started
+    
+      alias = "us-east-1-111111111111-cluster2"          # Change to an alias that uniquely identifies the cluster within all AWS Helm provider blocks
+    
+      region                   = "us-east-1"             # Change the region if necessary
+      shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
+      shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
+      profile                  = "profile1"              # Change to the profile that identifies the account and region where the cluster is
+      default_tags {
+        tags = module.common_variables.aws_common_tags
+      }
+    }
 
-| Name                                                                                                                         | Description                                                                                                                                                                | Type           | Default                                     | Possible Values                                                                                               | Required |
-|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
-| <a name="input_bucket_arn"></a> bucket\_arn                                                                                  | The ARN of the S3 Bucket to which the Kubecost data will be uploaded. Meant to only take a reference to the "bucket_arn" output from the common module                     | `string`       | n/a                                         | Only `module.common_variables.bucket_arn`                                                                     | yes      |
-| <a name="input_k8s_labels"></a> k8s\_labels                                                                                  | K8s labels common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_labels" output from the common module           | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_labels`                                                                     | no       |
-| <a name="input_k8s_annotations"></a> k8s\_annotations                                                                        | K8s annotations common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_annotations" output from the common module | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_annotations`                                                                | no       |
-| <a name="input_aws_common_tags"></a> aws\_common\_tags                                                                       | Common AWS tags to be used on all AWS resources created by Terraform. Meant to only take a reference to the "aws_common_tags" output from the common module                | `map(any)`     | `{}`                                        | Only `module.common_variables.aws_common_tags`                                                                | no       |
+In the `aws` provider:
 
-### Variables from the `pipeline` Module
+* Change the `alias` field to a unique name that represents your EKS cluster.  
+It must be unique among the `aws` provider definitions.
+* Change the `region` field if needed
+* Change the `shared_config_files` and `shared_credentials_files` if needed
+* Change the `profile` field to the AWS Profile that Terraform should use to communicate with the cluster
 
-The below table lists variables that are meant to only take references from the `pipeline` module:
+If you decided to have Terraform invoke Helm (the default behavior), you also need the `helm` provider. Otherwise, you don't need it.  
+In case you decided to have Terraform invoke Helm, here's what you need to change in the `helm` provider:
 
-| Name                                                                                                                         | Description                                                                                                                                                                | Type           | Default                                     | Possible Values                                                                                               | Required |
-|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
-| <a name="input_kubecost_ca_certificate_secrets"></a> kubecost\_ca\_certificate\_secrets                                      | A list of AWS Secret Manager secrets created by the pipeline module. Meant to only take a reference to the "kubecost_ca_cert_secret" output from the pipeline module.      | `list(any)`    | `[]`                                        | Only `module.pipeline.kubecost_ca_cert_secret`                                                                | no       |
+* Change the `alias` field to a unique name that represents your EKS cluster.    
+It can be the same alias as in the corresponding `aws` provider for the same cluster.  
+It must be unique among the `helm` provider definitions.
+* Change the `kubernetes.config_context` to the config context of your cluster.  
+To identify the cluster context, you can execute `kubectl config get-contexts`, `kubectl config view` or `cat <kubeconfig file path>`.  
+More information on contexts can be found in [this document](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/#context).
+* Change the `kubernetes.config_path` to the path of your kube config file, if needed
 
-### This Module's Variables
+Repeat the `aws` provider definition for each account-region combination where you'd like to deploy the Kubecost S3 Exporter on a cluster.  
+Repeat the `helm` provider definition for each cluster on which you'd like to deploy the Kubecost S3 Exporter.  
+Make sure that each provider's alias is unique per provider type.
 
-The below table list variables that are specific to the `kubecost_s3_exporter` module:
+Examples can be found in the [`examples/root_module/providers.tf`](../../examples/root_module/providers.tf) file.
 
-| Name                                                                                                                         | Description                                                                                                                                                                | Type           | Default                                     | Possible Values                                                                                               | Required |
-|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
-| <a name="input_cluster_arn"></a> cluster\_arn                                                                                | The EKS cluster ARN in which the Kubecost S3 Exporter pod will be deployed                                                                                                 | `string`       | n/a                                         | An EKS Cluster ARN                                                                                            | yes      |
-| <a name="input_kubecost_s3_exporter_container_image"></a> kubecost\_s3\_exporter\_container\_image                           | The Kubecost S3 Exporter container image                                                                                                                                   | `string`       | n/a                                         | A Docker container image (`<registry_url>/<repo>:<tag>`)                                                      | yes      |
-| <a name="input_kubecost_s3_exporter_container_image_pull_policy"></a> kubecost\_s3\_exporter\_container\_image\_pull\_policy | The image pull policy that'll be used by the Kubecost S3 Exporter pod                                                                                                      | `string`       | Always                                      | One of "Always", "IfNotPresent" or "Never"                                                                    | no       |
-| <a name="input_kubecost_s3_exporter_cronjob_schedule"></a> kubecost\_s3\_exporter\_cronjob\_schedule                         | The schedule of the Kubecost S3 Exporter CronJob                                                                                                                           | `string`       | 0 0 * * *"                                  | A Cron expression. For example, `0 0 * * *`                                                                   | no       |
-| <a name="input_kubecost_s3_exporter_ephemeral_volume_size"></a> kubecost\_s3\_exporter\_ephemeral\_volume\_size              | The ephemeral volume size for the Kubecost S3 Exporter pod                                                                                                                 | `string`       | "50Mi"                                      | A volume size in the format of 'NMi', where N >= 1. For example, 10Mi, 50Mi, 100Mi, 150Mi                     | no       |
-| <a name="input_kubecost_api_endpoint"></a> kubecost\_api\_endpoint                                                           | The Kubecost API endpoint in format of 'http://<name\_or\_ip>:<port>'                                                                                                      | `string`       | http://kubecost-cost-analyzer.kubecost:9090 | A URI in the format of http://<name_or_ip>:[port]' or 'https://<name_or_ip>:[port]                            | no       |
-| <a name="input_backfill_period_days"></a> backfill\_period\_days                                                             | The number of days to check for backfilling                                                                                                                                | `number`       | 15                                          | A positive integer equal or larger than 3                                                                     | no       |
-| <a name="input_aggregation"></a> aggregation                                                                                 | The aggregation to use for returning the Kubecost Allocation API results                                                                                                   | `string`       | container                                   | One of "container", "pod", "namespace", "controller", "controllerKind", "node", or "cluster" (case-sensitive) | no       |
-| <a name="input_kubecost_allocation_api_paginate"></a> kubecost_allocation_api_paginate                                       | Dictates whether to paginate using 1-hour time ranges (relevant for 1h step)                                                                                               | `string`       | False                                       | One of "Yes", "No", "Y", "N", "True" or "False" (case-insensitive)                                            | no       |
-| <a name="input_connection_timeout"></a> connection_timeout                                                                   | The time (in seconds) to wait for TCP connection establishment                                                                                                             | `number`       | 10                                          | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
-| <a name="input_kubecost_allocation_api_read_timeout"></a> kubecost_allocation_api_read_timeout                               | The time (in seconds) to wait for the Kubecost Allocation On-Demand API to send an HTTP response                                                                           | `number`       | 60                                          | A float larger than 0 (for example, 0.1, 1, 3.5, 5, 10)                                                       | no       |
-| <a name="input_tls_verify"></a> tls_verify                                                                                   | Dictates whether TLS certificate verification is done for HTTPS connections                                                                                                | `string`       | True                                        | One of "Yes", "No", "Y", "N", "True" or "False" (case-insensitive)                                            | no       |
-| <a name="input_kubecost_ca_certificate_secret_name"></a> kubecost\_ca\_certificate\_secret\_name                             | The AWS Secrets Manager secret name, for the CA certificate used for verifying Kubecost's server certificate when using HTTPS                                              | `string`       | ""                                          | A valid AWS Secrets Manager secret name                                                                       | no       |
-| <a name="input_namespace"></a> namespace                                                                                     | The namespace in which the Kubecost S3 Exporter pod and service account will be created                                                                                    | `string`       | kubecost-s3-exporter                        | A valid namespace name                                                                                        | no       |
-| <a name="input_create_namespace"></a> create\_namespace                                                                      | Dictates whether to create the namespace as part of the Helm Chart deployment                                                                                              | `bool`         | true                                        | `true` or `false`                                                                                             | no       |
-| <a name="input_service_account"></a> service\_account                                                                        | The service account for the Kubecost S3 Exporter pod                                                                                                                       | `string`       | kubecost-s3-exporter                        | A valid service account name                                                                                  | no       |
-| <a name="input_create_service_account"></a> create\_service\_account                                                         | Dictates whether to create the service account as part of the Helm Chart deployment                                                                                        | `bool`         | true                                        | `true` or `false`                                                                                             | no       |
-| <a name="input_invoke_helm"></a> invoke\_helm                                                                                | Dictates whether to invoke Helm to deploy the K8s resources (the kubecost-s3-exporter CronJob and the Service Account)                                                     | `bool`         | true                                        | `true` or `false`                                                                                             | no       |
+## Create a Calling Module for the `kubecost_s3_exporter` Module and Provide Variables Values
+
+In the [`main.tf`](../../main.tf) file in the root directory, you'll find 2 pre-created `kubecost_s3_exporter` calling modules.  
+The first one is for a cluster with Helm invocation, and the last one is for a cluster without Helm invocation:
+
+    #########################################################
+    # Section 3 - Data Collection Pod Deployment using Helm #
+    #########################################################
+    
+    # Calling modules for the kubecost_s3_exporter module.
+    # Deploys the K8s resources on clusters, and creates IRSA in cluster's accounts
+    # There are 2 deployment options:
+    #
+    # 1. Deploy the K8s resources by having Terraform invoke Helm
+    #    This option is shown in the "cluster1" calling module example
+    # 2. Deploy the K8s resources by having Terraform generate a Helm values.yaml, then you deploy it using Helm
+    #    This option is shown in the "cluster2" calling module example
+    
+    # Example calling module for cluster with Helm invocation
+    # Use it if you'd like Terraform to invoke Helm to deploy the K8s resources
+    # Replace "cluster1" with a unique name to identify the cluster
+    # Duplicate the calling module for each cluster on which you wish to deploy the Kubecost S3 Exporter
+    module "cluster1" {
+    
+      # This is an example, to help you get started
+    
+      source = "./modules/kubecost_s3_exporter"
+    
+      providers = {
+        aws.pipeline = aws
+        aws.eks      = aws.us-east-1-111111111111-cluster1  # Replace with the AWS provider alias for the cluster
+        helm         = helm.us-east-1-111111111111-cluster1 # Replace with the Helm provider alias for the cluster
+      }
+    
+      #                         #
+      # Common Module Variables #
+      #                         #
+    
+      # References to variables outputs from the common module
+      # Always include when creating new calling module, and do not remove or change
+    
+      bucket_arn      = module.common_variables.bucket_arn
+      k8s_labels      = module.common_variables.k8s_labels
+      k8s_annotations = module.common_variables.k8s_annotations
+      aws_common_tags = module.common_variables.aws_common_tags
+    
+      #                                       #
+      # Kubecost S3 Exporter Module Variables #
+      #                                       #
+    
+      # Provide kubecost_s3_exporter module variables values here
+    
+      cluster_arn                          = "" # Add the EKS cluster ARN here
+      kubecost_s3_exporter_container_image = "" # Add the Kubecost S3 Exporter container image here (example: 111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_s3_exporter:0.1.0)
+    }
+    
+    # Example calling module for cluster without Helm invocation
+    # Use it if you'd like Terraform to generate a Helm values.yaml, then you deploy it using Helm
+    # Replace "cluster2" with a unique name to identify the cluster
+    # Duplicate the calling module for each cluster on which you wish to deploy the Kubecost S3 Exporter
+    module "cluster2" {
+    
+      # This is an example, to help you get started
+    
+      source = "./modules/kubecost_s3_exporter"
+    
+      providers = {
+        aws.pipeline = aws
+        aws.eks      = aws.us-east-1-111111111111-cluster2 # Replace with the AWS provider alias for the cluster
+      }
+    
+      #                         #
+      # Common Module Variables #
+      #                         #
+    
+      # References to variables outputs from the common module
+      # Always include when creating new calling module, and do not remove or change
+    
+      bucket_arn      = module.common_variables.bucket_arn
+      k8s_labels      = module.common_variables.k8s_labels
+      k8s_annotations = module.common_variables.k8s_annotations
+      aws_common_tags = module.common_variables.aws_common_tags
+    
+      #                                       #
+      # Kubecost S3 Exporter Module Variables #
+      #                                       #
+    
+      # Provide kubecost_s3_exporter module variables values here
+    
+      cluster_arn                          = "" # Add the EKS cluster ARN here
+      kubecost_s3_exporter_container_image = "" # Add the Kubecost S3 Exporter container image here (example: 111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_s3_exporter:0.1.0)
+      invoke_helm                          = false
+    }
+
+### Rename the Calling Module 
+
+Rename of the calling module from "cluster1" to a name that uniquely represents your cluster.  
+It doesn't have to be the same name as the provider alias you defined for the cluster, but using consistent naming convention is advised.
+
+### Change Providers References
+
+Change the providers references in the `providers` block:
+
+1. Always leave the `aws.pipeline` field as is.  
+It references the pipeline provider, and is used by the `kubecost_s3_exporter` reusable module to create the parent IAM role in the pipeline account
+2. Change the `aws.eks` field value to the alias of the `aws` provider.  
+This must be the alias of the `aws` provider you defined for this cluster in the `providers.tf` file
+3. If this cluster is deployed using Helm invocation, change the `helm` field value to the alias of the `helm` provider.  
+This must be the alias of the `helm` provider you defined in the `providers.tf` file for this cluster.  
+Otherwise, the `helm` field isn't necessary in this calling module.
+
+### Provide Variables Values
+
+Variables referenced from the `common_variables` module are already present, please do not change or remove them.  
+The `kubecost_s3_exporter` module has 2 required variables:
+* The `cluster_arn` variable, where you must input the EKS cluster ARN
+* The `kubecost_s3_exporter_container_image`, where you must input the Kubecost S3 Exporter Docker image.
+That's the image you built and pushed in ["Step 2: Build and Push the Container Image" in the DEPLOYMENT.md file](../../../../DEPLOYMENT.md/.#step-1-build-and-push-the-container-image).
+
+Example:
+
+    module "cluster1" {
+      source = "./modules/kubecost_s3_exporter"
+
+      ... omitted output ...
+
+      #                                       #
+      # Kubecost S3 Exporter Module Variables #
+      #                                       #
+    
+      # Provide kubecost_s3_exporter module variables values here
+    
+      cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"
+      kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_s3_exporter:0.1.0"
+    }
+
+If you're deploying this module without Helm invocation ["Deployment Option 2" in the DEPLOYMENT.md file](../../../../DEPLOYMENT.md/.#deployment-option-2):  
+Make sure the `invoke_helm` has value of `false`, as below:
+
+    module "cluster2" {
+      source = "./modules/kubecost_s3_exporter"
+
+      ... omitted output ...
+
+      #                                       #
+      # Kubecost S3 Exporter Module Variables #
+      #                                       #
+    
+      # Provide kubecost_s3_exporter module variables values here
+    
+      cluster_arn                          = "arn:aws:eks:us-east-1:111111111111:cluster/cluster2"
+      kubecost_s3_exporter_container_image = "111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_s3_exporter:0.1.0"
+      invoke_helm                          = false
+    }
+
+Provide optional variables values if needed.
+
+For more information on the variables, see this module's [`variables.tf` file](variables.tf).  
+For examples, see the [`examples/root_module/main.tf` file](../../examples/root_module/main.tf).
+
+#### Notes
+
+1. The `tls_verify` and `kubecost_ca_certificate_secret_name` are used for TLS connection to Kubecost.  
+If you didn't enable TLS in Kubecost, they aren't relevant, and you can ignore this input for this cluster.  
+If you enabled TLS in Kubecost, then `tls_verify` will be used by the Kubecost S3 Exporter container to verify the Kubecost server certificate.  
+In this case, you must provide the CA certificate in the `kubecost_ca_certificates_list`, and specify the secret name for it in the `kubecost_ca_certificate_secret_name` input.  
+If you don't do so, and `tls_verify` is set, the TLS connection will fail.  
+Otherwise, you can unset the `tls_verify` input. The connection will still be encrypted, but it's less secure due to the absence of server certificate verification.
+2. If you defined a secret name in `kubecost_ca_certificate_secret_name`, you MUST add the `kubecost_ca_certificate_secrets` variable with value of `module.pipeline.kubecost_ca_cert_secret` in the calling module.  
+Thi is due to the following process that happens in Terraform when specifying the above variable:  
+Terraform will pull the configuration of the secret that was created by the `pipeline` module.  
+This is to then use the secret's ARN in the parent IAM role's inline policy, and to use its region in the Python script to get the secret value.  
+For this process (Terraform pulling the secret configuration) to work, the following must happen:  
+There must be a dependency between the `kubecost_s3_exporter` module that pulls the secret configuration, and the `pipeline` module that created the secret.  
+If the `kubecost_ca_certificate_secrets` variable with value of `module.pipeline.kubecost_ca_cert_secret` isn't added in this case, the deployment fails.
+
+### Deploy on Additional Clusters
+
+Repeat the above steps for this calling module, for each cluster on which you wish to deploy the Kubecost S3 Exporter.  
+Make sure that each calling module has a unique name (`module "<unique_name>"`).
+
+## Adding Outputs for each Cluster
+
+This Terraform module creates an IRSA IAM Role and parent IAM Role for each cluster, as part of the `kubecost_s3_exporter` module.  
+It creates them with a name that includes the IAM OIDC Provider ID.  
+This is done to keep the IAM Role name within the length limit, but it also causes difficulties in correlating it to a cluster.  
+You can add an output to the [`output.tf`](../../outputs.tf) file in the root directory for each cluster.  
+This is to show the mapping of the cluster name and the IAM Roles (IRSA and parent) ARNs.
+
+The [`outputs.tf`](../../outputs.tf) file in the root directory already has a sample output to get you started:
+
+    #output "cluster1" {
+    #  value       = module.cluster1
+    #  description = "The outputs for 'cluster1'"
+    #}
+
+* Uncomment the output block.  
+* Change the output name from `cluster1` to a name that uniquely represents your cluster.  
+* Change the value to reference to the calling module of your cluster (`module.<calling_module_name>`).
+
+More examples can be found in the [`examples/root_module/outputs.tf` file](../../examples/root_module/outputs.tf).

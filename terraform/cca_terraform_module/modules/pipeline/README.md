@@ -1,38 +1,69 @@
 # The `pipeline` Module
 
-The `pipeline` reusable module is used deploy the pipeline AWS resources for this solution.  
+The `pipeline` reusable module is used deploy the pipeline AWS resources for this solution.
 
-## Variables
+## Define Provider for the `pipeline` Module
 
-### Variables from the `common_variables` Module
+In the [`providers.tf`](../../providers.tf) file in the root directory, you'll find a pre-created `aws` provider for the `pipeline` module:
 
-The below table lists variables that are meant to only take references from the `common_variables` module:
+    #####################################
+    # Section 1 - Pipeline AWS Provider #
+    #####################################
+    
+    # Provider for the pipeline module
+    provider "aws" {
+    
+      # This is an example, to help you get started
+    
+      region                   = "us-east-1"            # Change the region if necessary
+      shared_config_files      = ["~/.aws/config"]      # Change the path to the shared config file, if necessary
+      shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
+      profile                  = "pipeline_profile"     # Change to the profile that will be used for the account and region where the pipeline resources will be deployed
+      default_tags {
+        tags = module.common_variables.aws_common_tags
+      }
+    }
 
-| Name                                                                                                                         | Description                                                                                                                                                                | Type           | Default                                     | Possible Values                                                                                               | Required |
-|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
-| <a name="input_bucket_arn"></a> bucket\_arn                                                                                  | The ARN of the S3 Bucket to which the Kubecost data will be uploaded. Meant to only take a reference to the "bucket_arn" output from the common module                     | `string`       | n/a                                         | Only `module.common_variables.bucket_arn`                                                                     | yes      |
-| <a name="input_k8s_labels"></a> k8s\_labels                                                                                  | K8s labels common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_labels" output from the common module           | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_labels`                                                                     | no       |
-| <a name="input_k8s_annotations"></a> k8s\_annotations                                                                        | K8s annotations common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_annotations" output from the common module | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_annotations`                                                                | no       |
-| <a name="input_aws_common_tags"></a> aws\_common\_tags                                                                       | Common AWS tags to be used on all AWS resources created by Terraform. Meant to only take a reference to the "aws_common_tags" output from the common module                | `map(any)`     | `{}`                                        | Only `module.common_variables.aws_common_tags`                                                                | no       |
+* Change the `region` field if needed
+* Change the `shared_config_files` and `shared_credentials_files` if needed
+* Change the `profile` field to the AWS Profile that Terraform should use to create the pipeline resources 
 
-### This Module's Variables
+Examples can be found in the [`examples/root_module/providers.tf`](../../examples/root_module/providers.tf) file.
 
-The below table lists the `pipeline` module's variables:
+## Create a Calling Module for the `pipeline` Module and Provide Variables Values
 
-| Name                                                                                         | Description                                                                                                              | Type                                                                                                                                                        | Default          | Possible Values                                     | Required |
-|----------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|-----------------------------------------------------|----------|
-| <a name="input_glue_database_name"></a> glue\_database\_name                                 | The AWS Glue database name                                                                                               | `string`                                                                                                                                                    | kubecost_db      | A valid AWS Glue database name                      | no       |
-| <a name="input_glue_table_name"></a> glue\_table\_name                                       | The AWS Glue table name                                                                                                  | `string`                                                                                                                                                    | kubecost_table   | A valid AWS Glue table name                         | no       |
-| <a name="input_glue_view_name"></a> glue\_view\_name                                         | The AWS Glue table name for the Athena view                                                                              | `string`                                                                                                                                                    | kubecost_view    | A valid AWS Glue table name                         | no       |
-| <a name="input_glue_crawler_name"></a> glue\_crawler\_name                                   | The AWS Glue crawler name                                                                                                | `string`                                                                                                                                                    | kubecost crawler | A valid AWS Glue crawler name                       | no       |
-| <a name="input_glue_crawler_schedule"></a> glue\_crawler\_schedule                           | The schedule for the Glue Crawler, in Cron format. Make sure to set it after the last Kubecost S3 Exporter Cron schedule | `string`                                                                                                                                                    | 0 1 * * ? *      | A valid Cron expression. For example, `0 1 * * ? *` | no       |
-| <a name="input_athena_view_data_retention_months"></a> athena\_view\_data\_retention\_months | The amount of months back to keep data in the Athena view                                                                | `string`                                                                                                                                                    | 6                | A non-zero positive integer                         | no       |
-| <a name="input_kubecost_ca_certificates_list"></a> kubecost\_ca\_certificates\_list          | A list of objects containing CA certificates paths and their desired secret name in AWS Secrets Manager                  | <pre>list(object({<br>    cert_path = string<br>    cert_secret_name = string<br>    cert_secret_allowed_principals = optional(list(string))<br>  }))</pre> | `[]`             |                                                     | no       |
+In the [`main.tf`](../../main.tf) file in the root directory, you'll find a pre-created `pipeline` calling module:
 
-The below table lists the inputs of the `kubecost_ca_certificates_list` variable:
+    ######################################
+    # Section 2 - AWS Pipeline Resources #
+    ######################################
+    
+    # Calling module for the pipeline module, to create the AWS pipeline resources
+    module "pipeline" {
+      source = "./modules/pipeline"
+    
+      #                         #
+      # Common Module Variables #
+      #                         #
+    
+      # References to variables outputs from the common module, do not remove or change
+    
+      bucket_arn      = module.common_variables.bucket_arn
+      k8s_labels      = module.common_variables.k8s_labels
+      k8s_annotations = module.common_variables.k8s_annotations
+      aws_common_tags = module.common_variables.aws_common_tags
+    
+      #                           #
+      # Pipeline Module Variables #
+      #                           #
+    
+      # Provide optional pipeline module variables values here, if needed
+    
+    }
 
-| Name                                                                                  | Description                                                                         | Type           | Default | Possible Values                         | Required |
-|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|----------------|---------|-----------------------------------------|----------|
-| <a name="input_cert_path"></a> cert\_path                                             | Local path (including file name) to the CA certificate file                         | `string`       | n/a     | A path                                  | yes      |
-| <a name="input_cert_secret_name"></a> cert\_secret\_name                              | The AWS Secrets Manager secret name to be used for the CA certificate               | `string`       | n/a     | A valid AWS Secrets Manager secret name | yes      |
-| <a name="input_cert_secret_allowed_principals"></a> cert\_secret\_allowed\_principals | A list of additional principal ARNs to add to the AWS Secrets Manager secret policy | `list(string)` | n/a     | A list of principal ARNs                | no       |
+Variables referenced from the `common_variables` module are already present, please do not change or remove them.  
+The `pipeline` module's own variables are all optional.  
+If you don't need to change one of the optional variables, you can leave the pre-created calling module as is.
+
+For more information on the variables, see this module's [`variables.tf` file](variables.tf).  
+For examples, see the [`examples/root_module/main.tf` file](../../examples/root_module/main.tf).

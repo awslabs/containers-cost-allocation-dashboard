@@ -1,87 +1,169 @@
 # The `quicksight` Module
 
-The `quicksight` reusable module is used deploy the QuickSight resources for this solution.  
+The `quicksight` reusable module is used deploy the QuickSight resources for this solution.
 
-## Variables
+## Define Providers for the `quicksight` Module
 
-### Variables from the `common_variables` Module
+In the [`providers.tf`](../../providers.tf) file in the root directory, you'll find 2 pre-created `aws` providers for the `quicksight` module:
 
-The below table lists variables that are meant to only take references from the `common_variables` module:
+    #######################################
+    # Section 3 - Quicksight AWS Provider #
+    #######################################
+    
+    #                          #
+    # Providers for QuickSight #
+    #                          #
+    
+    # Providers for the QuickSight module.
+    # Used to deploy the QuickSight resources and to identify the QuickSight users
+    # It has 2 providers:
+    #
+    # 1. The first provider block is to identify the account and QuickSight region where the dashboard will be deployed
+    # 2. The second provider block is to identify the QuickSight identity region (where the QuickSight users are)
+    #    To identify the identity region:
+    #    a. Log in to QuickSight
+    #    b. On the top right, click the person button, and switch to the region where you intend to deploy the dashboard.
+    #       This is the same region as in the first provider
+    #    c. On the top right, click the person button again, and click "Manage QuickSight"
+    #    d. On the left pane, click "Security & permissions".
+    #       If you see the "Security & permissions" page, then the identity region is the same as the dashboard region.
+    #       If you see a message "Switch to `<region name>` to edit permissions or unsubscribe", then the region in the message is the identity region.
+    #       Use it in the `region` field on the second provider block
+    
+    # Provider for QuickSight account and region where the dashboard will be deployed
+    provider "aws" {
+    
+      # This is an example, to help you get started
+    
+      alias = "quicksight"
+    
+      region                   = "us-east-1"             # Change the region if necessary. This is the region you select on the top right part of the QuickSight UI
+      shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
+      shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
+      profile                  = "quicksight_profile"    # Change to the profile that will be used for the account and region where the QuickSight dashboard will be deployed
+      default_tags {
+        tags = module.common_variables.aws_common_tags
+      }
+    }
+    
+    # Provider for QuickSight identity region
+    provider "aws" {
+    
+      # This is an example, to help you get started
+    
+      alias = "quicksight-identity"
+    
+      region                   = "us-east-1"             # Change the region if necessary. This is the region you identified in the steps above
+      shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
+      shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
+      profile                  = "quicksight_profile"    # Change to the profile that will be used to identify the QuickSight identity region
+      default_tags {
+        tags = module.common_variables.aws_common_tags
+      }
+    }
 
-| Name                                                                                                                         | Description                                                                                                                                                                | Type           | Default                                     | Possible Values                                                                                               | Required |
-|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|----------|
-| <a name="input_bucket_arn"></a> bucket\_arn                                                                                  | The ARN of the S3 Bucket to which the Kubecost data will be uploaded. Meant to only take a reference to the "bucket_arn" output from the common module                     | `string`       | n/a                                         | Only `module.common_variables.bucket_arn`                                                                     | yes      |
-| <a name="input_k8s_labels"></a> k8s\_labels                                                                                  | K8s labels common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_labels" output from the common module           | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_labels`                                                                     | no       |
-| <a name="input_k8s_annotations"></a> k8s\_annotations                                                                        | K8s annotations common across all clusters, that you wish to include in the dataset. Meant to only take a reference to the "k8s_annotations" output from the common module | `list(string)` | `[]`                                        | Only `module.common_variables.k8s_annotations`                                                                | no       |
-| <a name="input_aws_common_tags"></a> aws\_common\_tags                                                                       | Common AWS tags to be used on all AWS resources created by Terraform. Meant to only take a reference to the "aws_common_tags" output from the common module                | `map(any)`     | `{}`                                        | Only `module.common_variables.aws_common_tags`                                                                | no       |
+The first provider (aliased `quicksight`) is for the QuickSight region where the dashboard is deployed.  
+The second provider (aliased `quicksight-identity`) is for the QuickSight identity region where QuickSight users are.
 
-### Variables from the `pipeline` Module
+In the first provider:
+* Change the `region` field if needed
+* Change the `shared_config_files` and `shared_credentials_files` if needed
+* Change the `profile` field to the AWS Profile that Terraform should use to create the QuickSight resources 
 
-The below table lists variables that are meant to only take references from the `pipeline` module:
+In the second provider:
+* Change the `region` field if needed.  
+To identify the identity region:
+  * Log in to QuickSight
+  * On the top right, click the person button, and switch to the region where you intend to deploy the dashboard.  
+  This is the same region you gave as input in the first provider.
+  * On the top right, click the person button again, and click "Manage QuickSight"
+  * On the left pane, click "Security & permissions".
+  If you see the "Security & permissions" page, then the identity region is the same as the dashboard region.  
+  If you see a message "Switch to `<region name>` to edit permissions or unsubscribe", then the region in the message is the identity region.
+* Change the `shared_config_files` and `shared_credentials_files` if needed
+* Change the `profile` field to the AWS Profile that Terraform should use to create the QuickSight resources 
 
-| Name                                                                                 | Description                                                                                                                                                                                           | Type                                                                                                                                                                                                                                                                                                                  | Default                                                                                                       | Possible Values                                   | Required |
-|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------|----------|
-| <a name="input_glue_database_name"></a> glue\_database\_name                         | The AWS Glue database name. Meant to only take a reference to the "glue_database_name" output from the pipeline module                                                                                | `string`                                                                                                                                                                                                                                                                                                              | n/a                                                                                                           | Must be only `module.pipeline.glue_database_name` | yes      |
-| <a name="input_glue_view_name"></a> glue\_view\_name                                 | The AWS Glue view name. Meant to only take a reference to the "glue_view_name" output from the pipeline module                                                                                        | `string`                                                                                                                                                                                                                                                                                                              | n/a                                                                                                           | Must be only `module.pipeline.glue_view_name`     | yes      |
+Examples can be found in the [`examples/root_module/providers.tf`](../../examples/root_module/providers.tf) file.
 
-### This Module's Variables
+## Create a Calling Module for the `quicksight` Module and Provide Variables Values
 
-The below table list variables that are specific to the `quicksight` module:
+In the [`main.tf`](../../main.tf) file in the root directory, you'll find a pre-created `quicksight` calling module:
 
+    ####################################
+    # Section 4 - Quicksight Resources #
+    ####################################
+    
+    # Calling module for the quicksight module, to create the QuickSight resources
+    module "quicksight" {
+      source = "./modules/quicksight"
+    
+      providers = {
+        aws          = aws.quicksight
+        aws.identity = aws.quicksight-identity
+      }
+    
+      #                         #
+      # Common Module Variables #
+      #                         #
+    
+      # References to variables outputs from the common module, do not remove or change
+    
+      k8s_labels      = module.common_variables.k8s_labels
+      k8s_annotations = module.common_variables.k8s_annotations
+      aws_common_tags = module.common_variables.aws_common_tags
+    
+      #                           #
+      # Pipeline Module Variables #
+      #                           #
+    
+      # References to variables outputs from the pipeline module, do not remove or change
+    
+      glue_database_name = module.pipeline.glue_database_name
+      glue_view_name     = module.pipeline.glue_view_name
+    
+      #                             #
+      # QuickSight Module Variables #
+      #                             #
+    
+      # Provide quicksight module variables values here
+    
+      # This configuration block is used to define Athena workgroup
+      # There are 2 options to use it:
+      #
+      # 1. Have Terraform create the Athena workgroup for you (the first uncommented block)
+      # 2. Use an existing Athena workgroup (the second commented block)
+    
+      # Add an S3 bucket name for Athena Workgroup Query Results Location, if var.athena_workgroup_configuration.create is "true"
+      # It must be different from the S3 bucket used to store the Kubecost data
+      # If you decided to use var.athena_workgroup_configuration.create as "false", remove the below field
+      # Then, add the "name" field and specify and existing Athena workgroup
+    
+      # Block for having Terraform create Athena workgroup
+      # You can optionally add the "name" field to change the default name that will used ("kubecost")
+      athena_workgroup_configuration = {
+        query_results_location_bucket_name = "" # Add an S3 bucket name for Athena Workgroup Query Results Location. It must be different from the S3 bucket used to store the Kubecost data
+      }
+    
+      # Block for using an existing Athena workgroup
+      # If you want to use it, comment the first block above, and uncomment the block below, then give the inputs
+      # You can optionally add the "name" field to change the default name that will used ("kubecost")
+    #  athena_workgroup_configuration = {
+    #    create                             = false
+    #    name                               = "" # Add a name of an existing Athena Workgroup. Make sure it has Query Results Location set to an existing S3 bucket w hich is different from the S3 bucket used to store the Kubecost data
+    #    query_results_location_bucket_name = "" # Add an S3 bucket name for Athena Workgroup Query Results Location. It must be different from the S3 bucket used to store the Kubecost data
+    #  }
+    
+    }
 
-The below table lists the `quicksight` module's variables:
+Variables referenced from the `common_variables` module are already present, please do not change or remove them.  
+The `quicksight` module has one required variable - `athena_workgroup_configuration`.  
+It's used by to create an Athena workgroup or to reference an existing one:  
+* When using it to create an Athena workgroup, the `query_results_location_bucket_name` field in it is required.  
+In this case, you must provide an S3 bucket name, and it must be different from the S2 bucket used to store the Kubecost data.  
+You can also optionally provide the `name` field inside the `athena_workgroup_configuration` block, if you want to change the default name.
+* When using it to reference an existing Athena workgroup, you must use the `create` field as `false` in the `athena_workgroup_configuration` block.  
+In this case, the `name` field becomes required, and you must provide an existing Athena workgroup name.  
+The `query_results_location_bucket_name` in this case, is ignored.
 
-| Name                                                                                 | Description                                                                                                                                                                                           | Type                                                                                                                                                                                                                                                                                                                  | Default                                                                                                       | Possible Values                                   | Required |
-|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------|----------|
-| <a name="input_glue_database_name"></a> glue\_database\_name                         | The AWS Glue database name. Meant to only take a reference to the "glue_database_name" output from the pipeline module                                                                                | `string`                                                                                                                                                                                                                                                                                                              | n/a                                                                                                           | Must be only `module.pipeline.glue_database_name` | yes      |
-| <a name="input_glue_view_name"></a> glue\_view\_name                                 | The AWS Glue view name. Meant to only take a reference to the "glue_view_name" output from the pipeline module                                                                                        | `string`                                                                                                                                                                                                                                                                                                              | n/a                                                                                                           | Must be only `module.pipeline.glue_view_name`     | yes      |
-| <a name="input_athena_workgroup_configuration"></a> athena\_workgroup\_configuration | An object representing the configuration the Athena Workgroup. Used either to create a new Athena Workgroup, or reference an existing Athena Workgroup                                                | <pre>object({<br>    create                             = optional(bool, true)<br>    name                               = optional(string, "kubecost")<br>    query_results_location_bucket_name = optional(string, "")<br>  })</pre>                                                                                | <pre>{<br>  "create": true,<br>  "name": "kubecost",<br>  "query_results_location_bucket_name": ""<br>}</pre> |                                                   | no       |
-| <a name="input_qs_common_users"></a> qs\_common\_users                               | A list of QuickSight users and and their permissions for each QuickSight asset created by this module. Add users here if you want them to have access to all QuickSight assets created by this module | <pre>list(object({<br>    username                = string<br>    data_source_permissions = optional(string, "Owner")<br>    data_set_permissions    = optional(string, "Owner")<br>    analysis_permissions    = optional(string, "Owner")<br>    dashboard_permissions   = optional(string, "Owner")<br>  }))</pre> | `[]`                                                                                                          |                                                   | no       |
-| <a name="input_qs_data_source_settings"></a> qs\_data\_source\_settings              | An object representing the configuration the QuickSight data source.                                                                                                                                  | <pre>object({<br>    name = optional(string, "cca_kubecost")<br>    users = optional(list(object({<br>      username    = string<br>      permissions = optional(string, "Owner")<br>    })), [])<br>  })</pre>                                                                                                       | <pre>{<br>  "name": "cca_kubecost",<br>  "users": []<br>}</pre>                                               |                                                   | no       |
-| <a name="input_qs_data_set_settings"></a> qs\_data\_set\_settings                    | An object representing the configuration the QuickSight dataset.                                                                                                                                      | <pre>object({<br>    dataset_refresh_schedule = optional(string, "05:00")<br>    timezone                 = optional(string, "")<br>    users = optional(list(object({<br>      username    = string<br>      permissions = optional(string, "Owner")<br>    })), [])<br>  })</pre>                                   | <pre>{<br>  "dataset_refresh_schedule": "05:00",<br>  "timezone": "",<br>  "users": []<br>}</pre>             |                                                   | no       |
-
-The below table lists the inputs of the `athena_workgroup_configuration` variable:
-
-| Name                                                                                          | Description                                                                                                                                                                                                                | Type     | Default  | Possible Values                                                                              | Required      |
-|-----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|----------|----------------------------------------------------------------------------------------------|---------------|
-| <a name="input_create"></a> create                                                            | Dictates whether to create a custom Athena Workgroup                                                                                                                                                                       | `bool`   | `true`   | `true` or `false`                                                                            | no            |
-| <a name="input_name"></a> name                                                                | If `create` is `true`, used to define the created Athena Workgroup name, and to reference it in the QuickSight Data Source. If `create` is `false`, used only for referencing the Workgroup in the QuickSight Data Source. | `string` | kubecost | A valid Athena Workgroup name                                                                | no            |
-| <a name="input_query_results_location_bucket_name"></a> query\_result\_location\_bucket\_name | Required only when `create` is `true`. In this case, used to set the Athena Workgroup query results location. If `create` is `false`, this field is ignored.                                                               | `string` | ""       | A valid S3 bucket name. Must be different from the S3 bucket used to store the Kubecost data | conditionally |
-
-The below table lists the inputs of the `qs_common_users` variable (for each object in the list):
-
-| Name                                                                   | Description                                                  | Type     | Default | Possible Values             | Required      |
-|------------------------------------------------------------------------|--------------------------------------------------------------|----------|---------|-----------------------------|---------------|
-| <a name="input_username"></a> username                                 | The QuickSight username                                      | `string` | n/a     | A valid QuickSight username | yes           |
-| <a name="input_data_source_permissions"></a> data\_source\_permissions | The user's permissions for the QuickSight data source asset. | `string` | Owner   | "Owner" or "Viewer"         | no            |
-| <a name="input_data_set_permissions"></a> data\_set\_permissions       | The user's permissions for the QuickSight dataset asset.     | `string` | Owner   | "Owner" or "Viewer"         | no            |
-
-The below table lists the inputs of the `qs_data_source_settings` variable (for each object in the list):
-
-| Name                             | Description                                                  | Type                                                                                                                    | Default        | Possible Values                     | Required |
-|----------------------------------|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|----------------|-------------------------------------|----------|
-| <a name="input_name"></a> name   | The name of the QuickSight data source                       | `string`                                                                                                                | "cca_kubecost" | A valid QuickSight data source name | no       |
-| <a name="input_users"></a> users | The user's permissions for the QuickSight data source asset. | <pre>list(object({<br>      username    = string<br>      permissions = optional(string, "Owner")<br>    })), [])</pre> | `[]`           |                                     | no       |
-
-The below table lists the inputs of the `users` list in the `qs_data_source_settings` variable:
-
-| Name                                         | Description                                                 | Type     | Default | Possible Values             | Required |
-|----------------------------------------------|-------------------------------------------------------------|----------|---------|-----------------------------|----------|
-| <a name="input_username"></a> username       | The QuickSight username                                     | `string` | n/a     | A valid QuickSight username | yes      |
-| <a name="input_permissions"></a> permissions | The user's permissions for the QuickSight data source asset | `string` | Owner   | "Owner" or "Viewer"         | no       |
-
-The below table lists the inputs of the `qs_data_set_settings` variable (for each object in the list):
-
-| Name                                                                     | Description                                             | Type                                                                                                                    | Default                                                                               | Possible Values                                         | Required |
-|--------------------------------------------------------------------------|---------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|---------------------------------------------------------|----------|
-| <a name="input_name"></a> name                                           | The name of the QuickSight dataset                      | `string`                                                                                                                | "cca_kubecost"                                                                        | A valid QuickSight dataset name                         | no       |
-| <a name="input_dataset_refresh_schedule"></a> dataset\_refresh\_schedule | The hour of the day for the dataset refresh schedule    | `string`                                                                                                                | "05:00"                                                                               | An hour of the day, in the format of "HH:MM"            | no       |
-| <a name="input_timezone"></a> timezone                                   | The timezone for the dataset refresh schedule           | `string`                                                                                                                | "" (a timezone will be automatically chosen based on the QuickSight account's region) | One of the timezones listed in the "timezones.txt" file | no       |
-| <a name="input_users"></a> users                                         | The user's permissions for the QuickSight dataset asset | <pre>list(object({<br>      username    = string<br>      permissions = optional(string, "Owner")<br>    })), [])</pre> | `[]`                                                                                  |                                                         | no       |
-
-The below table lists the inputs of the `users` list in the `qs_data_set_settings` variable:
-
-| Name                                         | Description                                             | Type     | Default | Possible Values             | Required |
-|----------------------------------------------|---------------------------------------------------------|----------|---------|-----------------------------|----------|
-| <a name="input_username"></a> username       | The QuickSight username                                 | `string` | n/a     | A valid QuickSight username | yes      |
-| <a name="input_permissions"></a> permissions | The user's permissions for the QuickSight dataset asset | `string` | Owner   | "Owner" or "Viewer"         | no       |
+For more information on the variables, see this module's [`variables.tf` file](variables.tf).  
+For examples, see the [`examples/root_module/main.tf` file](../../examples/root_module/main.tf).

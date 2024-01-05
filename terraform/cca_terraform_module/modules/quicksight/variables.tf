@@ -100,7 +100,7 @@ variable "glue_view_name" {
 
 variable "athena_workgroup_configuration" {
   description = <<-EOF
-    (Optional) An object representing the configuration the Athena Workgroup.
+    (Required) An object representing the configuration the Athena Workgroup.
                Used either to create a new Athena Workgroup, or reference an existing Athena Workgroup.
                This object has the following fields:
 
@@ -126,12 +126,6 @@ variable "athena_workgroup_configuration" {
     name                               = optional(string, "kubecost")
     query_results_location_bucket_name = optional(string, "")
   })
-
-  default = {
-    create                             = true
-    name                               = "kubecost"
-    query_results_location_bucket_name = ""
-  }
 
   validation {
     condition = (
