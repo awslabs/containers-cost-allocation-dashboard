@@ -419,25 +419,25 @@ module "quicksight" {
 
   qs_common_users = [
     {
-      username = "Admin"
+      username = "user1"
     },
     {
-      username = "Admin2"
+      username = "user2"
     }
   ]
 
   qs_data_source_settings = {
     users = [
       {
-        username    = "Admin"
+        username    = "user1"
         permissions = "Viewer"
       },
       {
-        username    = "Admin3"
+        username    = "user3"
         permissions = "Viewer"
       },
       {
-        username = "Admin4"
+        username = "user4"
       }
     ]
   }
@@ -446,13 +446,13 @@ module "quicksight" {
     timezone = "Asia/Jerusalem"
     users = [
       {
-        username = "Admin4/udid-Isengard"
+        username = "user4"
       },
       {
-        username = "Admin/udid-Isengard"
+        username = "user1"
       },
       {
-        username    = "Admin3/udid-Isengard"
+        username    = "user3"
         permissions = "Viewer"
       }
     ]
