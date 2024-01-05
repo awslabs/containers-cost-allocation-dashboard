@@ -4,8 +4,8 @@
 terraform {
   required_providers {
     aws = {
-      source                = "hashicorp/aws"
-      version               = "~> 5.26.0"
+      source  = "hashicorp/aws"
+      version = "~> 5.26.0"
     }
     helm = {
       source  = "hashicorp/helm"
@@ -215,10 +215,10 @@ module "quicksight" {
   # Block for using an existing Athena workgroup
   # If you want to use it, comment the first block above, and uncomment the block below, then give the inputs
   # You can optionally add the "name" field to change the default name that will used ("kubecost")
-#  athena_workgroup_configuration = {
-#    create                             = false
-#    name                               = "" # Add a name of an existing Athena Workgroup. Make sure it has Query Results Location set to an existing S3 bucket w hich is different from the S3 bucket used to store the Kubecost data
-#    query_results_location_bucket_name = "" # Add an S3 bucket name for Athena Workgroup Query Results Location. It must be different from the S3 bucket used to store the Kubecost data
-#  }
+  #  athena_workgroup_configuration = {
+  #    create                             = false
+  #    name                               = "" # Add a name of an existing Athena Workgroup. Make sure it has Query Results Location set to an existing S3 bucket w hich is different from the S3 bucket used to store the Kubecost data
+  #    query_results_location_bucket_name = "" # Add an S3 bucket name for Athena Workgroup Query Results Location. It must be different from the S3 bucket used to store the Kubecost data
+  #  }
 
 }

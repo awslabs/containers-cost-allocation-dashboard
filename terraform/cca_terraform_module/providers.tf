@@ -43,12 +43,12 @@ provider "aws" {
 
   # This is an example, to help you get started
 
-  alias = "us-east-1-111111111111-cluster1"          # Change to an alias that uniquely identifies the cluster within all the AWS provider blocks
+  alias = "us-east-1-111111111111-cluster1" # Change to an alias that uniquely identifies the cluster within all the AWS provider blocks
 
-  region                   = "us-east-1"             # Change the region if necessary
-  shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
-  shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
-  profile                  = "profile1"              # Change to the profile that identifies the account and region where the cluster is
+  region                   = "us-east-1"            # Change the region if necessary
+  shared_config_files      = ["~/.aws/config"]      # Change the path to the shared config file, if necessary
+  shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
+  profile                  = "profile1"             # Change to the profile that identifies the account and region where the cluster is
   default_tags {
     tags = module.common_variables.aws_common_tags
   }
@@ -58,11 +58,11 @@ provider "helm" {
 
   # This is an example, to help you get started
 
-  alias = "us-east-1-111111111111-cluster1"                                 # Change to an alias that uniquely identifies the cluster within all the Helm provider blocks
+  alias = "us-east-1-111111111111-cluster1" # Change to an alias that uniquely identifies the cluster within all the Helm provider blocks
 
   kubernetes {
-    config_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1"  # Change to the context that identifies the cluster in the K8s config file (in many cases it's the cluster ARN)
-    config_path    = "~/.kube/config"                                       # Change to the full path of the K8s config file
+    config_context = "arn:aws:eks:us-east-1:111111111111:cluster/cluster1" # Change to the context that identifies the cluster in the K8s config file (in many cases it's the cluster ARN)
+    config_path    = "~/.kube/config"                                      # Change to the full path of the K8s config file
   }
 }
 
@@ -76,12 +76,12 @@ provider "aws" {
 
   # This is an example, to help you get started
 
-  alias = "us-east-1-111111111111-cluster2"          # Change to an alias that uniquely identifies the cluster within all AWS Helm provider blocks
+  alias = "us-east-1-111111111111-cluster2" # Change to an alias that uniquely identifies the cluster within all AWS Helm provider blocks
 
-  region                   = "us-east-1"             # Change the region if necessary
-  shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
-  shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
-  profile                  = "profile1"              # Change to the profile that identifies the account and region where the cluster is
+  region                   = "us-east-1"            # Change the region if necessary
+  shared_config_files      = ["~/.aws/config"]      # Change the path to the shared config file, if necessary
+  shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
+  profile                  = "profile1"             # Change to the profile that identifies the account and region where the cluster is
   default_tags {
     tags = module.common_variables.aws_common_tags
   }
@@ -118,10 +118,10 @@ provider "aws" {
 
   alias = "quicksight"
 
-  region                   = "us-east-1"             # Change the region if necessary. This is the region you select on the top right part of the QuickSight UI
-  shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
-  shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
-  profile                  = "quicksight_profile"    # Change to the profile that will be used for the account and region where the QuickSight dashboard will be deployed
+  region                   = "us-east-1"            # Change the region if necessary. This is the region you select on the top right part of the QuickSight UI
+  shared_config_files      = ["~/.aws/config"]      # Change the path to the shared config file, if necessary
+  shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
+  profile                  = "quicksight_profile"   # Change to the profile that will be used for the account and region where the QuickSight dashboard will be deployed
   default_tags {
     tags = module.common_variables.aws_common_tags
   }
@@ -134,10 +134,10 @@ provider "aws" {
 
   alias = "quicksight-identity"
 
-  region                   = "us-east-1"             # Change the region if necessary. This is the region you identified in the steps above
-  shared_config_files      = ["~/.aws/config"]       # Change the path to the shared config file, if necessary
-  shared_credentials_files = ["~/.aws/credentials"]  # Change the path to the shared credential file, if necessary
-  profile                  = "quicksight_profile"    # Change to the profile that will be used to identify the QuickSight identity region
+  region                   = "us-east-1"            # Change the region if necessary. This is the region you identified in the steps above
+  shared_config_files      = ["~/.aws/config"]      # Change the path to the shared config file, if necessary
+  shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
+  profile                  = "quicksight_profile"   # Change to the profile that will be used to identify the QuickSight identity region
   default_tags {
     tags = module.common_variables.aws_common_tags
   }
