@@ -7,7 +7,6 @@ variable "bucket_arn" {
     (Required) The ARN of the S3 Bucket to which the Kubecost data will be uploaded.
                Meant to only take a reference to the "bucket_arn" output from the common module.
                Possible values: Only "module.common.bucket_arn" (without the double quotes).
-               Possible values: A valid S3 bucket ARN.
   EOF
 
   type = string
