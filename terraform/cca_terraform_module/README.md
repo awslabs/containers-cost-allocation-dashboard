@@ -149,7 +149,7 @@ Deployment of the Containers Cost Allocation (CCA) Dashboard using this Terrafor
    1. Add provider for the `pipeline` reusable module  
       See the [module's README.md file](modules/pipeline/README.md/.#define-provider-for-the-pipeline-module) for more information and examples.
    2. Add provider for the `kubecost_s3_exporter` reusable module  
-      See the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#define-provider-for-each-eks-cluster-for-the-kubecosts3exporter-module) for more information and examples.
+      See the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#define-provider-for-each-eks-cluster-for-the-kubecost_s3_exporter-module) for more information and examples.
    3. Add provider for the `quicksight` reusable module  
       See the [module's README.md file](modules/quicksight/README.md/.#define-providers-for-the-quicksight-module) for more information and examples.
 2. Provide variables values in the [`main.tf`](main.tf) file in the root module, for:
@@ -158,7 +158,7 @@ Deployment of the Containers Cost Allocation (CCA) Dashboard using this Terrafor
    2. The `pipeline` reusable module  
       See the [module's README.md file](modules/pipeline/README.md/.#create-a-calling-module-for-the-pipeline-module-and-provide-variables-values) for more information and examples.
    3. The `kubecost_s3_exporter` reusable module for each cluster  
-      See the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#create-a-calling-module-for-the-kubecosts3exporter-module-and-provide-variables-values) for more information and examples.
+      See the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#create-a-calling-module-for-the-kubecost_s3_exporter-module-and-provide-variables-values) for more information and examples.
    4. The `quicksight` reusable module  
       See the [module's README.md file](modules/quicksight/README.md/.#create-a-calling-module-for-the-quicksight-module-and-provide-variables-values) for more information and examples.
 3. Optionally, add outputs to the [`outputs.tf`](outputs.tf) file in the root module
