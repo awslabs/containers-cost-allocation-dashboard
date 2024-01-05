@@ -6,7 +6,6 @@ terraform {
     aws = {
       source                = "hashicorp/aws"
       version               = "~> 5.26.0"
-      configuration_aliases = [aws.pipeline, aws.eks]
     }
     helm = {
       source  = "hashicorp/helm"
