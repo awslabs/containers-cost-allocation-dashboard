@@ -58,7 +58,7 @@ With this deployment option, Terraform deploys both the AWS resources and the K8
 
 1. Open the [`providers.tf`](terraform/cca_terraform_module/providers.tf) file and define the providers.  
 Follow the sections and the comments inside them, which provide instructions.
-2. Open the [`main.tf`](terraform/cca_terraform_module/main.tf) file and define the calling modules.
+2. Open the [`main.tf`](terraform/cca_terraform_module/main.tf) file and define the calling modules.  
 Follow the sections and the comments inside them, which provide instructions.
 3. Run `terraform init`
 4. Run `terraform apply`
@@ -74,7 +74,7 @@ With this deployment option, Terraform deploys only the AWS resources, and the K
 
 1. Open the [`providers.tf`](terraform/cca_terraform_module/providers.tf) file and define the providers.  
 Follow the sections and the comments inside them, which provide instructions.
-2. Open the [`main.tf`](terraform/cca_terraform_module/main.tf) file and define the calling modules.
+2. Open the [`main.tf`](terraform/cca_terraform_module/main.tf) file and define the calling modules.  
 Follow the sections and the comments inside them, which provide instructions.  
 Make sure you use `invole_helm` input set to `false` in each cluster's calling module.
 3. Run `terraform init`
