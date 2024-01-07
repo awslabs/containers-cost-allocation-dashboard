@@ -1,11 +1,11 @@
-# The `kubecost_s3_exporter` Module
+# Kubecost S3 Exporter Module
 
-The `kubecost_s3_exporter` reusable module is used deploy the Kubecost S3 Exporter, including:
+The Kubecost S3 Exporter reusable module is used deploy the Kubecost S3 Exporter, including:
 
 * The K8s resources (CronJob and Service Account)
 * IAM roles
 
-## Define Provider for each EKS Cluster for the `kubecost_s3_exporter` Module
+## Define Provider for each EKS Cluster
 
 In the [`providers.tf`](../../providers.tf) file in the root directory, you'll find 3 pre-created providers for a sample cluster.  
 The first 2 are for a cluster with Helm invocation, and the last one is for cluster without Helm invocation:
@@ -103,7 +103,7 @@ Make sure that each provider's alias is unique per provider type.
 
 Examples can be found in the [`examples/root_module/providers.tf`](../../examples/root_module/providers.tf) file.
 
-## Create a Calling Module for the `kubecost_s3_exporter` Module and Provide Variables Values
+## Create a Calling Module and Provide Variables Values
 
 In the [`main.tf`](../../main.tf) file in the root directory, you'll find 2 pre-created `kubecost_s3_exporter` calling modules.  
 The first one is for a cluster with Helm invocation, and the last one is for a cluster without Helm invocation:

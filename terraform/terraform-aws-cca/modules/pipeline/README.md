@@ -1,8 +1,8 @@
-# The `pipeline` Module
+# Pipline Module
 
-The `pipeline` reusable module is used deploy the pipeline AWS resources for this solution.
+The Pipeline reusable module is used deploy the pipeline AWS resources for this solution.
 
-## Define Provider for the `pipeline` Module
+## Define Provider
 
 In the [`providers.tf`](../../providers.tf) file in the root directory, you'll find a pre-created `aws` provider for the `pipeline` module:
 
@@ -30,7 +30,7 @@ In the [`providers.tf`](../../providers.tf) file in the root directory, you'll f
 
 Examples can be found in the [`examples/root_module/providers.tf`](../../examples/root_module/providers.tf) file.
 
-## Create a Calling Module for the `pipeline` Module and Provide Variables Values
+## Create a Calling Module and Provide Variables Values
 
 In the [`main.tf`](../../main.tf) file in the root directory, you'll find a pre-created `pipeline` calling module:
 

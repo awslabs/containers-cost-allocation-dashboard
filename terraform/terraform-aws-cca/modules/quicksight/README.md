@@ -1,8 +1,8 @@
-# The `quicksight` Module
+# QuickSight Module
 
-The `quicksight` reusable module is used deploy the QuickSight resources for this solution.
+The QuickSight reusable module is used deploy the QuickSight resources for this solution.
 
-## Define Providers for the `quicksight` Module
+## Define Providers
 
 In the [`providers.tf`](../../providers.tf) file in the root directory, you'll find 2 pre-created `aws` providers for the `quicksight` module:
 
@@ -85,7 +85,7 @@ To identify the identity region:
 
 Examples can be found in the [`examples/root_module/providers.tf`](../../examples/root_module/providers.tf) file.
 
-## Create a Calling Module for the `quicksight` Module and Provide Variables Values
+## Create a Calling Module and Provide Variables Values
 
 In the [`main.tf`](../../main.tf) file in the root directory, you'll find a pre-created `quicksight` calling module:
 

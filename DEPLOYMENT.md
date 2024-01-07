@@ -58,10 +58,12 @@ With this deployment option, Terraform deploys both the AWS resources and the K8
 
 1. Open the [`providers.tf`](terraform/terraform-aws-cca/providers.tf) file and define the providers.  
 Follow the sections and the comments in the file, which provide instructions.
-2. Open the [`main.tf`](terraform/terraform-aws-cca/main.tf) file and define the calling modules.  
+2. Open the [`terraform.tfvars`](terraform/terraform-aws-cca/terraform.tfvars) file and provide common root module variable values.  
+Follow the comments in the file, which provide instructions.
+3. Open the [`main.tf`](terraform/terraform-aws-cca/main.tf) file and define the calling modules.  
 Follow the sections and the comments in the file, which provide instructions.
-3. Run `terraform init`
-4. Run `terraform apply`
+4. Run `terraform init`
+5. Run `terraform apply`
 
 If you want more detailed information, please follow the instructions in the [Terraform module README](terraform/terraform-aws-cca/README.md) file.  
 For the initial deployment, you need to go through the [Requirements](terraform/terraform-aws-cca/README.md/.#requirements), [Structure](terraform/terraform-aws-cca/README.md/.#structure) and [Initial Deployment](terraform/terraform-aws-cca/README.md/.#initial-deployment) sections.  
@@ -74,11 +76,16 @@ With this deployment option, Terraform deploys only the AWS resources, and the K
 
 1. Open the [`providers.tf`](terraform/terraform-aws-cca/providers.tf) file and define the providers.  
 Follow the sections and the comments in the file, which provide instructions.
-2. Open the [`main.tf`](terraform/terraform-aws-cca/main.tf) file and define the calling modules.  
+2. Open the [`terraform.tfvars`](terraform/terraform-aws-cca/terraform.tfvars) file and provide common root module variable values.  
+Follow the comments in the file, which provide instructions.
+3. Open the [`main.tf`](terraform/terraform-aws-cca/main.tf) file and define the calling modules.  
 Follow the sections and the comments in the file, which provide instructions.  
 Make sure you use `invole_helm` input set to `false` in each cluster's calling module.
-3. Run `terraform init`
-4. Run `terraform apply`
+4. Run `terraform init`
+5. Run `terraform apply`
+
+If you want more detailed information, please follow the instructions in the [Terraform module README](terraform/terraform-aws-cca/README.md) file.  
+For the initial deployment, you need to go through the [Requirements](terraform/terraform-aws-cca/README.md/.#requirements), [Structure](terraform/terraform-aws-cca/README.md/.#structure) and [Initial Deployment](terraform/terraform-aws-cca/README.md/.#initial-deployment) sections.
 
 After applying the Terraform configuration, a YAML file will be created per cluster, containing the Helm values for this cluster.  
 The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.  
@@ -91,9 +98,6 @@ Executing Helm when you're still in the Terraform `deploy` directory:
 Executing Helm when in the `helm` directory:
 
     helm upgrade -i kubecost-s3-exporter kubecost_s3_exporter/ -n <namespace> --values kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
-
-If you want more detailed information, please follow the instructions in the [Terraform module README](terraform/terraform-aws-cca/README.md) file.  
-For the initial deployment, you need to go through the [Requirements](terraform/terraform-aws-cca/README.md/.#requirements), [Structure](terraform/terraform-aws-cca/README.md/.#structure) and [Initial Deployment](terraform/terraform-aws-cca/README.md/.#initial-deployment) sections.
 
 Once you're done, continue to [step 3](#step-3-dashboard-deployment) below.
 
