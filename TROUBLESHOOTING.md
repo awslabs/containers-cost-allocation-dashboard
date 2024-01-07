@@ -90,7 +90,7 @@ If you get the following error when executing `terraform apply`:
     │
 
 It means QuickSight doesn't have write permissions to your Athena query results location bucket.  
-Please follow [the instructions to configure these permissions](REQUIREMENTS.md/.#step-2-configure-permissions-in-quicksight-to-access-the-above-s3-bucket-).
+Please follow [the instructions to configure these permissions](REQUIREMENTS.md/.#configure-quicksight-permissions-for-the-s3-buckets).
 
 ### A `LimitExceededException` Error Related to QuickSight SPICE Capacity
 
