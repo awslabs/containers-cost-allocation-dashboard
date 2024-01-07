@@ -29,7 +29,7 @@ Provides information on the process to clean up resources.
 
 This Terraform module requires the following:
 
-* That you completed all requirements in the [REQUIREMENTS.md](../../REQUIREMENTS.md) file
+* That you completed all requirements in the project's [REQUIREMENTS.md](../../REQUIREMENTS.md) file
 * That you [built and pushed the Kubecost S3 Exporter container image to ECR](../../DEPLOYMENT.md/.#step-1-build-and-push-the-container-image)
 * That you manage your AWS credentials using [shared configuration and credentials files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).   
 This is required because this Terraform module is meant to create or access resources in different AWS accounts that may require different sets of credentials.
