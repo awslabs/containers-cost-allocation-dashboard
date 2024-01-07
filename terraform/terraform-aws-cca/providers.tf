@@ -15,7 +15,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
   profile                  = "pipeline_profile"     # Change to the profile that will be used for the account and region where the pipeline resources will be deployed
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -50,7 +50,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
   profile                  = "profile1"             # Change to the profile that identifies the account and region where the cluster is
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -83,7 +83,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
   profile                  = "profile1"             # Change to the profile that identifies the account and region where the cluster is
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -123,7 +123,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
   profile                  = "quicksight_profile"   # Change to the profile that will be used for the account and region where the QuickSight dashboard will be deployed
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -139,6 +139,6 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"] # Change the path to the shared credential file, if necessary
   profile                  = "quicksight_profile"   # Change to the profile that will be used to identify the QuickSight identity region
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }

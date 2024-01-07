@@ -1,12 +1,12 @@
-#                           #
-# Common Module's Variables #
-#                           #
+#                                #
+# Root Module's Common Variables #
+#                                #
 
 variable "bucket_arn" {
   description = <<-EOF
     (Required) The ARN of the S3 Bucket to which the Kubecost data will be uploaded.
-               Meant to only take a reference to the "bucket_arn" output from the common module.
-               Possible values: Only "module.common.bucket_arn" (without the double quotes).
+               Meant to only take a reference to the "bucket_arn" variable from the root module.
+               Possible values: Only "var.bucket_arn" (without the double quotes).
   EOF
 
   type = string
@@ -27,8 +27,8 @@ variable "bucket_arn" {
 variable "k8s_labels" {
   description = <<-EOF
     (Optional) K8s labels common across all clusters, that you wish to include in the dataset.
-               Meant to only take a reference to the "k8s_labels" output from the common module.
-               Possible values: Only "module.common.k8s_labels" (without the double quotes).
+               Meant to only take a reference to the "k8s_labels" variable from the root module.
+               Possible values: Only "var.k8s_labels" (without the double quotes).
                Default value: empty list ([]).
   EOF
 
@@ -49,8 +49,8 @@ variable "k8s_labels" {
 variable "k8s_annotations" {
   description = <<-EOF
     (Optional) K8s annotations common across all clusters, that you wish to include in the dataset.
-               Meant to only take a reference to the "k8s_annotations" output from the common module.
-               Possible values: Only "module.common.k8s_annotations" (without the double quotes).
+               Meant to only take a reference to the "k8s_annotations" variable from the root module.
+               Possible values: Only "var.k8s_annotations" (without the double quotes).
                Default value: empty list ([]).
   EOF
 
@@ -71,8 +71,8 @@ variable "k8s_annotations" {
 variable "aws_common_tags" {
   description = <<-EOF
     (Optional) Common AWS tags to be used on all AWS resources created by Terraform.
-               Meant to only take a reference to the "aws_common_tags" output from the common module.
-               Possible values: Only "module.common.aws_common_tags" (without the double quotes).
+               Meant to only take a reference to the "aws_common_tags" variable from the root module.
+               Possible values: Only "var.aws_common_tags" (without the double quotes).
                Default value: empty map ({}).
   EOF
 

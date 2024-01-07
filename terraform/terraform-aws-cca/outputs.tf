@@ -1,12 +1,12 @@
 # Output for showing the distinct labels from all clusters, collected from the "k8s_labels" common input
 output "labels" {
-  value       = length(module.common_variables.k8s_labels) > 0 ? join(", ", distinct(module.common_variables.k8s_labels)) : null
+  value       = length(var.k8s_labels) > 0 ? join(", ", distinct(var.k8s_labels)) : null
   description = "A list of the distinct labels of all clusters, that'll be added to the dataset"
 }
 
 # Output for showing the distinct annotations from all clusters, collected from the "k8s_annotations" common input
 output "annotations" {
-  value       = length(module.common_variables.k8s_annotations) > 0 ? join(", ", distinct(module.common_variables.k8s_annotations)) : null
+  value       = length(var.k8s_annotations) > 0 ? join(", ", distinct(var.k8s_annotations)) : null
   description = "A list of the distinct annotations of all clusters, that'll be added to the dataset"
 }
 

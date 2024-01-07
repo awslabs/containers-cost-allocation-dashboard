@@ -23,54 +23,23 @@ terraform {
   }
 }
 
-################################
-# Section 1 - Common Variables #
-################################
-
-# Calling module for the common module, to provide common variables values
-module "common_variables" {
-  source = "./modules/common_variables"
-
-  bucket_arn      = "arn:aws:s3:::bucket-name"
-  k8s_labels      = ["app", "chart", "component", "app.kubernetes.io/version", "app.kubernetes.io/managed_by", "app.kubernetes.io/part_of"]
-  k8s_annotations = ["kubernetes.io/psp", "eks.amazonaws.com/compute_type"]
-  aws_common_tags = {
-    tag_key1 = "tag_value1"
-    tak_key2 = "tag_value2"
-  }
-
-  # Example of adding root CA certificate
-  # Should be used when enabling TLS in Kubecost, for the data collection pod to verify Kubecost's server certificate
-  # The `cert_path` key must be the full path to the root CA certificate, and is mandatory
-  # The `cert_secret_name` is used to define the name that will be used when creating the AWS Secret Manager secret, and is mandatory
-  # The `cert_secret_allowed_principals` is used add allowed IAM principals for accessing the secret - they will be added to the secret policy.
-  # This field is optional. If you leave it empty, the K8s Service Account used by the data collection pod will be the only allowed princial
-  kubecost_ca_certificates_list = [
-    {
-      "cert_path" : "~/openssl/ca/certs/ca.cert.pem"
-      "cert_secret_name" : "kubecost"
-      "cert_secret_allowed_principals" : ["arn:aws:iam::111111111111:role/role-name"]
-    }
-  ]
-}
-
 ######################################
-# Section 2 - AWS Pipeline Resources #
+# Section 1 - AWS Pipeline Resources #
 ######################################
 
 module "pipeline" {
   source = "./modules/pipeline"
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module, do not remove
+  # References to root module common variables, do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                           #
   # Pipeline Module Variables #
@@ -82,7 +51,7 @@ module "pipeline" {
 }
 
 #########################################################
-# Section 3 - Data Collection Pod Deployment using Helm #
+# Section 2 - Data Collection Pod Deployment using Helm #
 #########################################################
 
 #                                  #
@@ -100,17 +69,17 @@ module "us-east-1-111111111111-cluster1" {
     helm         = helm.us-east-1-111111111111-cluster1
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -139,17 +108,17 @@ module "us-east-1-111111111111-cluster2" {
     helm         = helm.us-east-1-111111111111-cluster2
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -175,17 +144,17 @@ module "us-east-2-111111111111-cluster1" {
     helm         = helm.us-east-2-111111111111-cluster1
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -208,17 +177,17 @@ module "us-east-2-111111111111-cluster2" {
     aws.eks      = aws.us-east-2-111111111111-cluster2
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -246,17 +215,17 @@ module "us-east-1-222222222222-cluster1" {
     helm         = helm.us-east-1-222222222222-cluster1
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -279,17 +248,17 @@ module "us-east-1-222222222222-cluster2" {
     helm         = helm.us-east-1-222222222222-cluster2
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -312,17 +281,17 @@ module "us-east-2-222222222222-cluster1" {
     helm         = helm.us-east-2-222222222222-cluster1
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -345,17 +314,17 @@ module "us-east-2-222222222222-cluster2" {
     helm         = helm.us-east-2-222222222222-cluster2
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables
+  # Always include when creating new calling module, and do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                                       #
   # Kubecost S3 Exporter Module Variables #
@@ -372,7 +341,7 @@ module "us-east-2-222222222222-cluster2" {
 }
 
 ####################################
-# Section 4 - Quicksight Resources #
+# Section 3 - Quicksight Resources #
 ####################################
 
 module "quicksight" {
@@ -383,17 +352,16 @@ module "quicksight" {
     aws.identity = aws.quicksight-identity
   }
 
-  #                         #
-  # Common Module Variables #
-  #                         #
+  #                              #
+  # Root Module Common Variables #
+  #                              #
 
-  # References to variables outputs from the common module
-  # Always include when creating new calling module, and do not remove
+  # References to root module common variables, do not remove or change
 
-  bucket_arn      = module.common_variables.bucket_arn
-  k8s_labels      = module.common_variables.k8s_labels
-  k8s_annotations = module.common_variables.k8s_annotations
-  aws_common_tags = module.common_variables.aws_common_tags
+  bucket_arn      = var.bucket_arn
+  k8s_labels      = var.k8s_labels
+  k8s_annotations = var.k8s_annotations
+  aws_common_tags = var.aws_common_tags
 
   #                           #
   # Pipeline Module Variables #

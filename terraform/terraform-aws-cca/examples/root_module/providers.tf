@@ -8,7 +8,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "pipeline_profile"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -30,7 +30,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -51,7 +51,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -74,7 +74,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -95,7 +95,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile1"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -113,7 +113,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -134,7 +134,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -157,7 +157,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -169,7 +169,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "profile2"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -194,7 +194,7 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "quicksight_profile"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
 
@@ -206,6 +206,6 @@ provider "aws" {
   shared_credentials_files = ["~/.aws/credentials"]
   profile                  = "quicksight_profile"
   default_tags {
-    tags = module.common_variables.aws_common_tags
+    tags = var.aws_common_tags
   }
 }
