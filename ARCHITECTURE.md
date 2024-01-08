@@ -24,7 +24,7 @@ These components are used to collect data from Kubecost.
 Most of the above components are deployed using a Terraform module.  
 The K8s resources are deployed using a Helm chart (that is invoked by the Terraform module or by the user).  
 The QuickSight dashboard is deployed using the `cid-cmd` CLI tool.  
-Deployment instructions can be found in the [DEPLOYMENT.md] file(DEPLOYMENT.md)
+Deployment instructions can be found in the [`DEPLOYMENT.md`](DEPLOYMENT.md) file
 
 ## High-Level Logic
 
@@ -69,7 +69,7 @@ This is possible because the prefix we use in the S3 bucket includes the account
 
 In addition, a sample S3 bucket policy is provided as part of this documentation.  
 This is for the bucket that is used to store the Kubecost data.  
-See ["Using an S3 Bucket Policy on the Kubecost Data Bucket" in the SECURITY.md](SECURITY.md/.#using-an-s3-bucket-policy-on-the-kubecost-data-bucket) file.  
+See ["Using an S3 Bucket Policy on the Kubecost Data Bucket" in the SECURITY.md file](SECURITY.md/.#using-an-s3-bucket-policy-on-the-kubecost-data-bucket).  
 The Terraform module that's provided with this solution does not create it, because it doesn't create the S3 bucket.  
 It's up to you to use it on your S3 bucket. 
 
