@@ -46,7 +46,7 @@ This solution provides a Terraform module for deployment of both the AWS the K8s
 There are 2 options to use it:
 * Deployment Option 1: Deploy both the AWS resources and the K8s resources using Terraform (K8s resources are deployed by invoking Helm)
 * Deployment Option 2: Deploy only the AWS resources using Terraform, and deploy the K8s resources using the `helm` command.  
-With this option, Terraform will create a cluster-specific `values.yaml` file (with a unique name) for each cluster, which you can use
+With this option, Terraform will create a cluster-specific `values.yaml` file (with a unique name) for each cluster, which you can use.
 
 You can use a mix of these options.  
 On some clusters, you can choose to deploy the K8s resources by having Terraform invoke Helm (the first option).  
@@ -65,7 +65,7 @@ Follow the sections and the comments in the file, which provide instructions.
 4. Run `terraform init`
 5. Run `terraform apply`
 
-If you want more detailed information, please follow the instructions in the [Terraform module README](terraform/terraform-aws-cca/README.md) file.  
+If you want more detailed information, please follow the instructions in the [Terraform module README file](terraform/terraform-aws-cca/README.md).  
 For the initial deployment, you need to go through the [Requirements](terraform/terraform-aws-cca/README.md/.#requirements), [Structure](terraform/terraform-aws-cca/README.md/.#structure) and [Initial Deployment](terraform/terraform-aws-cca/README.md/.#initial-deployment) sections.  
 
 Once you're done with Terraform, continue to [step 3](#step-3-dashboard-deployment) below.
@@ -84,7 +84,7 @@ Make sure you use `invole_helm` input set to `false` in each cluster's calling m
 4. Run `terraform init`
 5. Run `terraform apply`
 
-If you want more detailed information, please follow the instructions in the [Terraform module README](terraform/terraform-aws-cca/README.md) file.  
+If you want more detailed information, please follow the instructions in the [Terraform module README file](terraform/terraform-aws-cca/README.md).  
 For the initial deployment, you need to go through the [Requirements](terraform/terraform-aws-cca/README.md/.#requirements), [Structure](terraform/terraform-aws-cca/README.md/.#structure) and [Initial Deployment](terraform/terraform-aws-cca/README.md/.#initial-deployment) sections.
 
 After applying the Terraform configuration, a YAML file will be created per cluster, containing the Helm values for this cluster.  
@@ -164,5 +164,8 @@ Selecting "no" will result in an output similar to the below:
 Any of the above selections will complete the deployment.  
 
 Note:  
-Data won't be available in the dashboard at least until the first time the data collection pod runs and collects data.
+Data won't be available in the dashboard at least until the following occurs:
+1. The data collection pod runs and collects data from Kubecost for the first time
 You must have data from at lest 72 hours ago in Kubecost for the data collection pod to collect data.
+2. The AWS Glue crawler runs for the first time after data was collected from Kubecost for the first time
+3. The QuickSight dataset is refreshed for the first time, after the above 2 conditions were met
