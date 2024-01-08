@@ -11,10 +11,10 @@ The following are considered updates to the Kubecost S3 Exporter:
 When any of the above is changed, follow the below steps to perform an update:
 
 1. Build and push the Docker image.  
-You can follow the same steps as in [Step 1: Build and Push the Container Image in the `DEPLOYMENT.md`](DEPLOYMENT.md/.#step-1-build-and-push-the-container-image) file.
+You can follow the same steps as in [Step 1: Build and Push the Container Image in the `DEPLOYMENT.md` file](DEPLOYMENT.md/.#step-1-build-and-push-the-container-image).
 2. Depending on how you deployed the K8s resources, choose one of the below:
    1. If you used [Deployment Option 1](DEPLOYMENT.md/.#deployment-option-1):  
-      Run `terraform apply` on the Terraform module, from the `deploy` directory.
+      Run `terraform apply` on the Terraform module, from the root directory of the Terraform module.
    2. If you used [Deployment Option 2](DEPLOYMENT.md/.#deployment-option-2):
       Run `helm upgrade` on the new Helm chart.
 
