@@ -14,7 +14,7 @@ This project can work with any Kubecost tier:
   * The `properties.eksclustername` dataset field will show the primary cluster name for any cluster.  
     Instead, you can customize the dashboard and use the `properties.cluster` field
 
-Please note that OpenCost is not supported.
+Please note that [OpenCost](https://www.opencost.io/) is not supported.
 
 More information on the Kubecost EKS-optimized bundle can be found in the below resources:
 
