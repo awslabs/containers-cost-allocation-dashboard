@@ -8,7 +8,7 @@
 
 ## AWS and K8s Resources Cleanup
 
-1. Follow the [Complete Cleanup section in the Terraform module README](terraform/terraform-aws-cca/README.md/.#complete-cleanup) file
+1. Follow the ["Complete Cleanup" section in the Terraform module README file](terraform/terraform-aws-cca/README.md/.#complete-cleanup)
 2. Manually remove the CloudWatch Log Stream that was created by the AWS Glue Crawler
 3. Manually empty and delete the S3 bucket you created, if not used for other use-cases
 
