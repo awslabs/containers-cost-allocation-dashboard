@@ -1,8 +1,8 @@
 locals {
   bucket_name                        = element(split(":::", var.bucket_arn), 1)
-  cluster_name                       = element(split("/", data.aws_arn.eks_cluster_arn_fields.resource), 1)
-  cluster_oidc_provider_id           = element(split("/", data.aws_iam_openid_connect_provider.oidc.arn), 3)
-  pipeline_partition                 = element(split(":", data.aws_caller_identity.pipeline_caller_identity.arn), 1)
+  cluster_name                       = element(split("/", data.aws_arn.eks_cluster.resource), 1)
+  cluster_oidc_provider_id           = element(split("/", data.aws_iam_openid_connect_provider.this.arn), 3)
+  pipeline_partition                 = element(split(":", data.aws_caller_identity.pipeline.arn), 1)
   kubecost_ca_certificate_secret_arn = length(var.kubecost_ca_certificate_secrets) > 0 ? lookup(element(var.kubecost_ca_certificate_secrets, index(var.kubecost_ca_certificate_secrets.*.name, var.kubecost_ca_certificate_secret_name)), "arn", "") : ""
   helm_chart_location                = "${path.module}/../../../../helm/kubecost_s3_exporter"
   helm_values_yaml = yamlencode(
@@ -18,7 +18,7 @@ locals {
       "serviceAccount" : {
         "name" : var.service_account
         "create" : var.create_service_account
-        "role" : length(aws_iam_role.kubecost_s3_exporter_irsa_child_role) > 0 ? aws_iam_role.kubecost_s3_exporter_irsa_child_role[0].arn : aws_iam_role.kubecost_s3_exporter_irsa_role[0].arn
+        "role" : length(aws_iam_role.kubecost_s3_exporter_irsa_child) > 0 ? aws_iam_role.kubecost_s3_exporter_irsa_child[0].arn : aws_iam_role.kubecost_s3_exporter_irsa[0].arn
       }
       "env" : [
         {
@@ -39,7 +39,7 @@ locals {
         },
         {
           "name" : "IRSA_PARENT_IAM_ROLE_ARN",
-          "value" : length(aws_iam_role.kubecost_s3_exporter_irsa_parent_role) > 0 ? aws_iam_role.kubecost_s3_exporter_irsa_parent_role[0].arn : ""
+          "value" : length(aws_iam_role.kubecost_s3_exporter_irsa_parent) > 0 ? aws_iam_role.kubecost_s3_exporter_irsa_parent[0].arn : ""
         },
         {
           "name" : "AGGREGATION",

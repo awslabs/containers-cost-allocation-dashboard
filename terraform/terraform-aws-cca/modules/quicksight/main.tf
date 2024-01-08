@@ -21,23 +21,23 @@ terraform {
   }
 }
 
-data "aws_region" "quicksight_region" {}
-data "aws_caller_identity" "quicksight_caller_identity" {}
+data "aws_region" "quicksight" {}
+data "aws_caller_identity" "quicksight" {}
 
-data "aws_quicksight_user" "qs_current_user" {
+data "aws_quicksight_user" "this" {
   provider = aws.identity
 
-  user_name = element(split(":assumed-role/", data.aws_caller_identity.quicksight_caller_identity.arn), 1)
+  user_name = element(split(":assumed-role/", data.aws_caller_identity.quicksight.arn), 1)
 }
 
-data "aws_quicksight_user" "qs_data_source_users" {
+data "aws_quicksight_user" "quicksight_data_source" {
   provider = aws.identity
   count    = length(local.distinct_qs_data_source_users)
 
   user_name = local.distinct_qs_data_source_users[count.index].username
 }
 
-data "aws_quicksight_user" "qs_data_set_users" {
+data "aws_quicksight_user" "quicksight_data_set" {
   provider = aws.identity
   count    = length(local.distinct_qs_data_set_users)
 
@@ -45,14 +45,14 @@ data "aws_quicksight_user" "qs_data_set_users" {
 }
 
 # This data source is used conditionally, only if the "create" field in the "custom_athena_workgroup" variable is "true"
-data "aws_kms_key" "s3_kms" {
+data "aws_kms_key" "athena_query_results_location" {
   count = var.athena_workgroup_configuration.create ? 1 : 0
 
   key_id = "alias/aws/s3"
 }
 
 # This resource is created conditionally, only if the "create" field in the "custom_athena_workgroup" variable is "true"
-resource "aws_athena_workgroup" "kubecost_athena_workgroup" {
+resource "aws_athena_workgroup" "kubecost" {
   count = var.athena_workgroup_configuration.create ? 1 : 0
 
   name          = var.athena_workgroup_configuration.name
@@ -61,25 +61,25 @@ resource "aws_athena_workgroup" "kubecost_athena_workgroup" {
   configuration {
     result_configuration {
       output_location       = "s3://${var.athena_workgroup_configuration.query_results_location_bucket_name}/"
-      expected_bucket_owner = data.aws_caller_identity.quicksight_caller_identity.account_id
+      expected_bucket_owner = data.aws_caller_identity.quicksight.account_id
       encryption_configuration {
         encryption_option = "SSE_KMS"
-        kms_key_arn       = data.aws_kms_key.s3_kms[count.index].arn
+        kms_key_arn       = data.aws_kms_key.athena_query_results_location[count.index].arn
       }
     }
   }
 }
 
-resource "random_uuid" "qs_data_source_cca_uuid" {}
+resource "random_uuid" "qs_data_source_cca" {}
 
 resource "aws_quicksight_data_source" "cca" {
-  data_source_id = random_uuid.qs_data_source_cca_uuid.id
+  data_source_id = random_uuid.qs_data_source_cca.id
   name           = var.qs_data_source_settings.name
   type           = "ATHENA"
 
   parameters {
     athena {
-      work_group = var.athena_workgroup_configuration.create ? aws_athena_workgroup.kubecost_athena_workgroup[0].name : var.athena_workgroup_configuration.name
+      work_group = var.athena_workgroup_configuration.create ? aws_athena_workgroup.kubecost[0].name : var.athena_workgroup_configuration.name
     }
   }
 
@@ -97,12 +97,12 @@ resource "aws_quicksight_data_source" "cca" {
       "quicksight:UpdateDataSource",
       "quicksight:UpdateDataSourcePermissions"
     ]
-    principal = data.aws_quicksight_user.qs_current_user.arn
+    principal = data.aws_quicksight_user.this.arn
   }
 
   # Adding other users that were given as input, with their respective permissions
   dynamic "permission" {
-    for_each = data.aws_quicksight_user.qs_data_source_users
+    for_each = data.aws_quicksight_user.quicksight_data_source
     content {
       actions = lookup(element(local.distinct_qs_data_source_users, index(local.distinct_qs_data_source_users.*.username, permission.value.user_name)), "permissions", "Owner") == "Owner" ? [
         "quicksight:DeleteDataSource",
@@ -116,17 +116,17 @@ resource "aws_quicksight_data_source" "cca" {
         "quicksight:DescribeDataSourcePermissions",
         "quicksight:PassDataSource"
       ]
-      principal = data.aws_quicksight_user.qs_data_source_users[permission.key].arn
+      principal = data.aws_quicksight_user.quicksight_data_source[permission.key].arn
     }
   }
 }
 
-resource "random_uuid" "qs_data_set_cca_uuid" {}
-resource "random_uuid" "qs_data_set_cca_physical_and_logical_table_maps_uuid" {}
-resource "random_uuid" "qs_data_set_cca_custom_column_region_code_uuid" {}
+resource "random_uuid" "qs_data_set_cca" {}
+resource "random_uuid" "qs_data_set_cca_physical_and_logical_table_maps" {}
+resource "random_uuid" "qs_data_set_cca_custom_column_region_code" {}
 
 resource "aws_quicksight_data_set" "cca" {
-  data_set_id = random_uuid.qs_data_set_cca_uuid.id
+  data_set_id = random_uuid.qs_data_set_cca.id
   import_mode = "SPICE"
   name        = var.qs_data_set_settings.name
 
@@ -137,12 +137,12 @@ resource "aws_quicksight_data_set" "cca" {
 
   logical_table_map {
     alias                = var.glue_view_name
-    logical_table_map_id = random_uuid.qs_data_set_cca_physical_and_logical_table_maps_uuid.id
+    logical_table_map_id = random_uuid.qs_data_set_cca_physical_and_logical_table_maps.id
 
     data_transforms {
       create_columns_operation {
         columns {
-          column_id   = random_uuid.qs_data_set_cca_custom_column_region_code_uuid.id
+          column_id   = random_uuid.qs_data_set_cca_custom_column_region_code.id
           column_name = "region_code"
           expression  = <<-EOT
           ifelse(
@@ -176,7 +176,7 @@ resource "aws_quicksight_data_set" "cca" {
     }
 
     source {
-      physical_table_id = random_uuid.qs_data_set_cca_physical_and_logical_table_maps_uuid.id
+      physical_table_id = random_uuid.qs_data_set_cca_physical_and_logical_table_maps.id
     }
   }
 
@@ -194,12 +194,12 @@ resource "aws_quicksight_data_set" "cca" {
       "quicksight:UpdateDataSet",
       "quicksight:UpdateDataSetPermissions",
     ]
-    principal = data.aws_quicksight_user.qs_current_user.arn
+    principal = data.aws_quicksight_user.this.arn
   }
 
   # Adding other users that were given as input, with their respective permissions
   dynamic "permissions" {
-    for_each = data.aws_quicksight_user.qs_data_set_users
+    for_each = data.aws_quicksight_user.quicksight_data_set
     content {
       actions = lookup(element(local.distinct_qs_data_set_users, index(local.distinct_qs_data_set_users.*.username, permissions.value.user_name)), "permissions", "Owner") == "Owner" ? [
         "quicksight:CancelIngestion",
@@ -221,12 +221,12 @@ resource "aws_quicksight_data_set" "cca" {
         "quicksight:ListRefreshSchedules",
         "quicksight:PassDataSet"
       ]
-      principal = data.aws_quicksight_user.qs_data_set_users[permissions.key].arn
+      principal = data.aws_quicksight_user.quicksight_data_set[permissions.key].arn
     }
   }
 
   physical_table_map {
-    physical_table_map_id = random_uuid.qs_data_set_cca_physical_and_logical_table_maps_uuid.id
+    physical_table_map_id = random_uuid.qs_data_set_cca_physical_and_logical_table_maps.id
 
     relational_table {
       catalog         = "AwsDataCatalog"
@@ -266,19 +266,19 @@ resource "aws_quicksight_data_set" "cca" {
   }
 }
 
-resource "random_uuid" "qs_data_set_cca_refresh_schedule_uuid" {}
+resource "random_uuid" "qs_data_set_cca_refresh_schedule" {}
 resource "time_offset" "qs_data_set_cca_start_after" {
   offset_minutes = 5
 }
 
 resource "aws_quicksight_refresh_schedule" "cca" {
   data_set_id = aws_quicksight_data_set.cca.data_set_id
-  schedule_id = random_uuid.qs_data_set_cca_refresh_schedule_uuid.id
+  schedule_id = random_uuid.qs_data_set_cca_refresh_schedule.id
   schedule {
     refresh_type = "FULL_REFRESH"
     schedule_frequency {
       interval        = "DAILY"
-      timezone        = var.qs_data_set_settings.timezone != "" ? var.qs_data_set_settings.timezone : lookup(local.region_to_timezone_mapping, data.aws_region.quicksight_region.name, "America/New_York")
+      timezone        = var.qs_data_set_settings.timezone != "" ? var.qs_data_set_settings.timezone : lookup(local.region_to_timezone_mapping, data.aws_region.quicksight.name, "America/New_York")
       time_of_the_day = var.qs_data_set_settings.dataset_refresh_schedule
     }
     start_after_date_time = trimsuffix(time_offset.qs_data_set_cca_start_after.rfc3339, "Z")

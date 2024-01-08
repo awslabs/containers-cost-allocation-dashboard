@@ -6,7 +6,7 @@ locals {
     SELECT
       *
     FROM
-      "${aws_glue_catalog_database.kubecost_glue_db.name}"."${aws_glue_catalog_table.kubecost_glue_table.name}"
+      "${aws_glue_catalog_database.kubecost.name}"."${aws_glue_catalog_table.kubecost.name}"
     WHERE
       (
         (current_date - INTERVAL '${var.athena_view_data_retention_months}' MONTH) <= "window.start"

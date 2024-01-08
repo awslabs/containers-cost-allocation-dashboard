@@ -17,38 +17,38 @@ terraform {
   }
 }
 
-data "aws_caller_identity" "pipeline_caller_identity" {
+data "aws_caller_identity" "pipeline" {
   provider = aws.pipeline
 }
 
-data "aws_caller_identity" "eks_caller_identity" {
+data "aws_caller_identity" "eks_cluster" {
   provider = aws.eks
 }
 
-data "aws_arn" "eks_cluster_arn_fields" {
+data "aws_arn" "eks_cluster" {
   provider = aws.eks
 
   arn = var.cluster_arn
 }
 
-data "aws_eks_cluster" "cluster" {
+data "aws_eks_cluster" "this" {
   provider = aws.eks
 
   name = local.cluster_name
 }
 
-data "aws_iam_openid_connect_provider" "oidc" {
+data "aws_iam_openid_connect_provider" "this" {
   provider = aws.eks
 
-  url = data.aws_eks_cluster.cluster.identity.0.oidc.0.issuer
+  url = data.aws_eks_cluster.this.identity.0.oidc.0.issuer
 }
 
 # The below resource is created conditionally, if the EKS cluster account ID and the pipeline account ID are the same
 # This means that a single IAM Role (IRSA) is created in the account, as cross-account authentication isn't required
-resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
+resource "aws_iam_role" "kubecost_s3_exporter_irsa" {
   provider = aws.eks
 
-  count = data.aws_caller_identity.eks_caller_identity.account_id == data.aws_caller_identity.pipeline_caller_identity.account_id ? 1 : 0
+  count = data.aws_caller_identity.eks_cluster.account_id == data.aws_caller_identity.pipeline.account_id ? 1 : 0
 
   name = "kubecost_s3_exporter_irsa_${local.cluster_oidc_provider_id}"
   assume_role_policy = jsonencode(
@@ -58,13 +58,13 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
         {
           Effect = "Allow"
           Principal = {
-            Federated = data.aws_iam_openid_connect_provider.oidc.arn
+            Federated = data.aws_iam_openid_connect_provider.this.arn
           }
           Action = "sts:AssumeRoleWithWebIdentity"
           Condition = {
             StringEquals = {
-              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.oidc.arn), 1)}:aud" = "sts.amazonaws.com"
-              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.oidc.arn), 1)}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account}"
+              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.this.arn), 1)}:aud" = "sts.amazonaws.com"
+              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.this.arn), 1)}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account}"
             }
           }
         }
@@ -80,7 +80,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${var.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+            Resource = "${var.bucket_arn}/account_id=${data.aws_arn.eks_cluster.account}/region=${data.aws_arn.eks_cluster.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -135,10 +135,10 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_role" {
 # The below 2 resources are created conditionally, if the EKS cluster account ID and the pipeline account ID are different
 # This means that a child IAM Role (IRSA) is created in the EKS account, and a parent IAM role is created in the pipeline accoubt
 # This is for cross-account authentication using IAM Role Chaining
-resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
+resource "aws_iam_role" "kubecost_s3_exporter_irsa_child" {
   provider = aws.eks
 
-  count = data.aws_caller_identity.eks_caller_identity.account_id != data.aws_caller_identity.pipeline_caller_identity.account_id ? 1 : 0
+  count = data.aws_caller_identity.eks_cluster.account_id != data.aws_caller_identity.pipeline.account_id ? 1 : 0
 
   name = "kubecost_s3_exporter_irsa_${local.cluster_oidc_provider_id}"
   assume_role_policy = jsonencode(
@@ -148,13 +148,13 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
         {
           Effect = "Allow"
           Principal = {
-            Federated = data.aws_iam_openid_connect_provider.oidc.arn
+            Federated = data.aws_iam_openid_connect_provider.this.arn
           }
           Action = "sts:AssumeRoleWithWebIdentity"
           Condition = {
             StringEquals = {
-              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.oidc.arn), 1)}:aud" = "sts.amazonaws.com"
-              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.oidc.arn), 1)}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account}"
+              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.this.arn), 1)}:aud" = "sts.amazonaws.com"
+              "${element(split(":oidc-provider/", data.aws_iam_openid_connect_provider.this.arn), 1)}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account}"
             }
           }
         }
@@ -170,7 +170,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
           {
             Action   = "sts:AssumeRole"
             Effect   = "Allow"
-            Resource = "arn:${local.pipeline_partition}:iam::${data.aws_caller_identity.pipeline_caller_identity.account_id}:role/kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
+            Resource = "arn:${local.pipeline_partition}:iam::${data.aws_caller_identity.pipeline.account_id}:role/kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
           }
         ]
         Version = "2012-10-17"
@@ -179,10 +179,10 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_child_role" {
   }
 }
 
-resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
+resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent" {
   provider = aws.pipeline
 
-  count = data.aws_caller_identity.eks_caller_identity.account_id != data.aws_caller_identity.pipeline_caller_identity.account_id ? 1 : 0
+  count = data.aws_caller_identity.eks_cluster.account_id != data.aws_caller_identity.pipeline.account_id ? 1 : 0
 
   name = "kubecost_s3_exporter_parent_${local.cluster_oidc_provider_id}"
   assume_role_policy = jsonencode(
@@ -192,7 +192,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
         {
           Effect = "Allow"
           Principal = {
-            AWS = aws_iam_role.kubecost_s3_exporter_irsa_child_role[0].arn
+            AWS = aws_iam_role.kubecost_s3_exporter_irsa_child[0].arn
           }
           Action = "sts:AssumeRole"
         }
@@ -208,7 +208,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
           {
             Action   = "s3:PutObject"
             Effect   = "Allow"
-            Resource = "${var.bucket_arn}/account_id=${data.aws_arn.eks_cluster_arn_fields.account}/region=${data.aws_arn.eks_cluster_arn_fields.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
+            Resource = "${var.bucket_arn}/account_id=${data.aws_arn.eks_cluster.account}/region=${data.aws_arn.eks_cluster.region}/year=*/month=*/*_${local.cluster_name}.snappy.parquet"
           }
         ]
         Version = "2012-10-17"
@@ -267,7 +267,7 @@ resource "aws_iam_role" "kubecost_s3_exporter_irsa_parent_role" {
 # This will NOT invoke Helm to deploy the K8s resources (data collection pod and service account) in the cluster
 # Instead, it'll create a local values.yaml file in the Helm chart's directory, to be used by the user to deploy the K8s using the "helm" command
 # The local file name will be "<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml", so it'll be unique
-resource "helm_release" "kubecost_s3_exporter_helm_release" {
+resource "helm_release" "kubecost_s3_exporter" {
   count = var.invoke_helm ? 1 : 0
 
   name             = "kubecost-s3-exporter"
@@ -280,7 +280,7 @@ resource "helm_release" "kubecost_s3_exporter_helm_release" {
 resource "local_file" "kubecost_s3_exporter_helm_values_yaml" {
   count = var.invoke_helm ? 0 : 1
 
-  filename             = "${local.helm_chart_location}/clusters_values/${data.aws_arn.eks_cluster_arn_fields.account}_${data.aws_arn.eks_cluster_arn_fields.region}_${local.cluster_name}_values.yaml"
+  filename             = "${local.helm_chart_location}/clusters_values/${data.aws_arn.eks_cluster.account}_${data.aws_arn.eks_cluster.region}_${local.cluster_name}_values.yaml"
   directory_permission = "0400"
   file_permission      = "0400"
   content              = <<-EOT

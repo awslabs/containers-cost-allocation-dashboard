@@ -15,10 +15,10 @@ output "irsa" {
     This field will be included in the output only in case the EKS cluster and the pipeline account are different.
 
   EOF
-  value = data.aws_caller_identity.eks_caller_identity.account_id == data.aws_caller_identity.pipeline_caller_identity.account_id ? {
-    irsa_iam_role_arn : aws_iam_role.kubecost_s3_exporter_irsa_role[0].arn
+  value = data.aws_caller_identity.eks_cluster.account_id == data.aws_caller_identity.pipeline.account_id ? {
+    irsa_iam_role_arn : aws_iam_role.kubecost_s3_exporter_irsa[0].arn
     } : {
-    irsa_child_iam_role : aws_iam_role.kubecost_s3_exporter_irsa_child_role[0].arn,
-    irsa_parent_iam_role_arn : aws_iam_role.kubecost_s3_exporter_irsa_parent_role[0].arn
+    irsa_child_iam_role : aws_iam_role.kubecost_s3_exporter_irsa_child[0].arn,
+    irsa_parent_iam_role_arn : aws_iam_role.kubecost_s3_exporter_irsa_parent[0].arn
   }
 }

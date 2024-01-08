@@ -12,11 +12,11 @@ terraform {
   }
 }
 
-data "aws_partition" "pipeline_partition" {}
-data "aws_region" "pipeline_region" {}
-data "aws_caller_identity" "pipeline_caller_identity" {}
+data "aws_partition" "pipeline" {}
+data "aws_region" "pipeline" {}
+data "aws_caller_identity" "pipeline" {}
 
-resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
+resource "aws_iam_policy" "kubecost_glue_crawler" {
   name = "kubecost_glue_crawler_policy"
   policy = jsonencode(
     {
@@ -34,10 +34,10 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
           ]
           Effect = "Allow"
           Resource = [
-            "arn:${data.aws_partition.pipeline_partition.partition}:glue:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:catalog",
-            aws_glue_catalog_database.kubecost_glue_db.arn,
-            aws_glue_catalog_table.kubecost_glue_table.arn,
-            "${replace(aws_glue_catalog_table.kubecost_glue_table.arn, aws_glue_catalog_table.kubecost_glue_table.name, replace(local.bucket_name, "-", "_"))}*"
+            "arn:${data.aws_partition.pipeline.partition}:glue:${data.aws_region.pipeline.name}:${data.aws_caller_identity.pipeline.account_id}:catalog",
+            aws_glue_catalog_database.kubecost.arn,
+            aws_glue_catalog_table.kubecost.arn,
+            "${replace(aws_glue_catalog_table.kubecost.arn, aws_glue_catalog_table.kubecost.name, replace(local.bucket_name, "-", "_"))}*"
           ]
           Sid = "AllowGlueKubecostTable"
         },
@@ -56,19 +56,19 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
         {
           Action   = "logs:CreateLogGroup"
           Effect   = "Allow"
-          Resource = "arn:${data.aws_partition.pipeline_partition.partition}:logs:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:*"
+          Resource = "arn:${data.aws_partition.pipeline.partition}:logs:${data.aws_region.pipeline.name}:${data.aws_caller_identity.pipeline.account_id}:*"
           Sid      = "AllowCloudWatchLogsCreateLogGroupForGlueCrawlers"
         },
         {
           Action   = "logs:CreateLogStream"
           Effect   = "Allow"
-          Resource = "arn:${data.aws_partition.pipeline_partition.partition}:logs:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:log-group:/aws-glue/crawlers:*"
+          Resource = "arn:${data.aws_partition.pipeline.partition}:logs:${data.aws_region.pipeline.name}:${data.aws_caller_identity.pipeline.account_id}:log-group:/aws-glue/crawlers:*"
           Sid      = "AllowCloudWatchLogsCreateLogStreamForKubecostCrawler"
         },
         {
           Action   = "logs:PutLogEvents"
           Effect   = "Allow"
-          Resource = "arn:${data.aws_partition.pipeline_partition.partition}:logs:${data.aws_region.pipeline_region.name}:${data.aws_caller_identity.pipeline_caller_identity.account_id}:log-group:/aws-glue/crawlers:log-stream:kubecost_crawler"
+          Resource = "arn:${data.aws_partition.pipeline.partition}:logs:${data.aws_region.pipeline.name}:${data.aws_caller_identity.pipeline.account_id}:log-group:/aws-glue/crawlers:log-stream:kubecost_crawler"
           Sid      = "AllowCloudWatchLogsPutLogs"
         }
       ]
@@ -77,7 +77,7 @@ resource "aws_iam_policy" "kubecost_glue_crawler_policy" {
   )
 }
 
-resource "aws_iam_role" "kubecost_glue_crawler_role" {
+resource "aws_iam_role" "kubecost_glue_crawler" {
   name = "kubecost_glue_crawler_role"
   assume_role_policy = jsonencode(
     {
@@ -93,16 +93,16 @@ resource "aws_iam_role" "kubecost_glue_crawler_role" {
       Version = "2012-10-17"
     }
   )
-  managed_policy_arns = [aws_iam_policy.kubecost_glue_crawler_policy.arn]
+  managed_policy_arns = [aws_iam_policy.kubecost_glue_crawler.arn]
 }
 
-resource "aws_glue_catalog_database" "kubecost_glue_db" {
+resource "aws_glue_catalog_database" "kubecost" {
   name = var.glue_database_name
 }
 
-resource "aws_glue_catalog_table" "kubecost_glue_table" {
+resource "aws_glue_catalog_table" "kubecost" {
   name          = var.glue_table_name
-  database_name = aws_glue_catalog_database.kubecost_glue_db.name
+  database_name = aws_glue_catalog_database.kubecost.name
   parameters = {
     "classification" = "parquet"
   }
@@ -154,9 +154,9 @@ resource "aws_glue_catalog_table" "kubecost_glue_table" {
   }
 }
 
-resource "aws_glue_catalog_table" "kubecost_glue_view" {
+resource "aws_glue_catalog_table" "kubecost_view" {
   name          = var.glue_view_name
-  database_name = aws_glue_catalog_database.kubecost_glue_db.name
+  database_name = aws_glue_catalog_database.kubecost.name
   parameters = {
     presto_view = "true"
     comment     = "Presto View"
@@ -198,16 +198,16 @@ resource "aws_glue_catalog_table" "kubecost_glue_view" {
   }
 }
 
-resource "aws_glue_crawler" "kubecost_glue_crawler" {
+resource "aws_glue_crawler" "kubecost" {
   name          = var.glue_crawler_name
-  database_name = aws_glue_catalog_database.kubecost_glue_db.name
+  database_name = aws_glue_catalog_database.kubecost.name
   schedule      = "cron(${var.glue_crawler_schedule})"
-  role          = aws_iam_role.kubecost_glue_crawler_role.name
+  role          = aws_iam_role.kubecost_glue_crawler.name
 
   catalog_target {
-    database_name = aws_glue_catalog_database.kubecost_glue_db.name
+    database_name = aws_glue_catalog_database.kubecost.name
     tables = [
-      aws_glue_catalog_table.kubecost_glue_table.name
+      aws_glue_catalog_table.kubecost.name
     ]
   }
 
@@ -234,26 +234,26 @@ resource "aws_glue_crawler" "kubecost_glue_crawler" {
 # The next 3 resources are conditionally created
 # If the "kubecost_ca_certificates_list" variable isn't empty, a secret containing the CA certificate will be created
 # Else, it won't be created
-resource "aws_secretsmanager_secret" "kubecost_ca_cert_secret" {
+resource "aws_secretsmanager_secret" "kubecost_ca_cert" {
   count = length(var.kubecost_ca_certificates_list) > 0 ? length(var.kubecost_ca_certificates_list) : 0
 
   name                    = var.kubecost_ca_certificates_list[count.index].cert_secret_name
   recovery_window_in_days = 0
 }
 
-resource "aws_secretsmanager_secret_version" "kubecost_ca_cert_content" {
+resource "aws_secretsmanager_secret_version" "kubecost_ca_cert" {
   count = length(var.kubecost_ca_certificates_list) > 0 ? length(var.kubecost_ca_certificates_list) : 0
 
-  secret_id     = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].id
+  secret_id     = aws_secretsmanager_secret.kubecost_ca_cert[count.index].id
   secret_string = file(var.kubecost_ca_certificates_list[count.index].cert_path)
 }
 
-resource "aws_secretsmanager_secret_policy" "kubecost_ca_cert_secret_policy" {
+resource "aws_secretsmanager_secret_policy" "kubecost_ca_cert" {
   count = length(var.kubecost_ca_certificates_list) > 0 ? length(var.kubecost_ca_certificates_list) : 0
 
-  secret_arn = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].arn
+  secret_arn = aws_secretsmanager_secret.kubecost_ca_cert[count.index].arn
   policy = templatefile("${path.module}/secret_policy.tpl", {
-    arn        = aws_secretsmanager_secret.kubecost_ca_cert_secret[count.index].id
+    arn        = aws_secretsmanager_secret.kubecost_ca_cert[count.index].id
     principals = var.kubecost_ca_certificates_list[count.index].cert_secret_allowed_principals
   })
 }

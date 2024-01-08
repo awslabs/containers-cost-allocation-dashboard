@@ -12,10 +12,10 @@ locals {
   # 2/ In case of duplicate users in the asset-specific variables ("qs_data_source_settings" and "qs_data_set_settings" variables) and "qs_common_users" variable:
   #    Users in the respective asset-specific variable take precedences.
   #    This means the the permissions of this user from the asset-specific variable will be used.
-  combined_qs_data_source_users = [for user in flatten([[for user in var.qs_common_users : { username : user.username, permissions : user.data_source_permissions }], var.qs_data_source_settings.users]) : user if user.username != data.aws_quicksight_user.qs_current_user.user_name]
+  combined_qs_data_source_users = [for user in flatten([[for user in var.qs_common_users : { username : user.username, permissions : user.data_source_permissions }], var.qs_data_source_settings.users]) : user if user.username != data.aws_quicksight_user.this.user_name]
   distinct_qs_data_source_users = values(zipmap(local.combined_qs_data_source_users.*.username, local.combined_qs_data_source_users))
 
-  combined_qs_data_set_users = [for user in flatten([[for user in var.qs_common_users : { username : user.username, permissions : user.data_set_permissions }], var.qs_data_set_settings.users]) : user if user.username != data.aws_quicksight_user.qs_current_user.user_name]
+  combined_qs_data_set_users = [for user in flatten([[for user in var.qs_common_users : { username : user.username, permissions : user.data_set_permissions }], var.qs_data_set_settings.users]) : user if user.username != data.aws_quicksight_user.this.user_name]
   distinct_qs_data_set_users = values(zipmap(local.combined_qs_data_set_users.*.username, local.combined_qs_data_set_users))
 
   qs_data_set_custom_columns = [
