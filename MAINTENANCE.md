@@ -6,7 +6,7 @@ Below are instruction for some common changes that you might do after the initia
 ## Deploying on Additional Clusters
 
 To add additional clusters to the dashboard, you need to add them to the Terraform module and apply it.  
-Please follow the ["Maintenance -> Deploying on Additional Clusters" part in the Terraform module README](terraform/terraform-aws-cca/README.md/.#deploying-on-additional-clusters) file.  
+Please follow the ["Maintenance -> Deploying on Additional Clusters" part in the Terraform module README file](terraform/terraform-aws-cca/README.md/.#deploying-on-additional-clusters).  
 Wait for the next schedule of the Kubecost S3 Exporter and QuickSight refresh, so that it'll collect the new data.  
 
 Alternatively, you can run the Kubecost S3 Exporter on-demand according to [Running the Kubecost S3 Exporter Pod On-Demand](#running-the-kubecost-s3-exporter-pod-on-demand) section.  
@@ -14,7 +14,7 @@ Then, manually run the Glue Crawler and manually refresh the QuickSight dataset.
 
 ## Removing Kubecost S3 Exporter from Specific Clusters
 
-Please follow the ["Cleanup -> Removing Kubecost S3 Exporter from Specific Clusters" part in the Terraform module README](terraform/terraform-aws-cca/README.md/.#removing-kubecost-s3-exporter-from-specific-clusters) file.
+Please follow the ["Cleanup -> Removing Kubecost S3 Exporter from Specific Clusters" part in the Terraform module README file](terraform/terraform-aws-cca/README.md/.#removing-kubecost-s3-exporter-from-specific-clusters).
 
 ## Adding/Removing Labels/Annotations to/from the Dataset
 
@@ -22,7 +22,7 @@ After the initial deployment, you might want to add or remove labels or annotati
 To do this, perform the following:
 
 1. Add/remove the labels/annotations to/from the Terraform module and apply it.  
-Please follow the [Maintenance -> Adding/Removing Labels/annotations to/from the Dataset part in the Terraform module README](/terraform/kubecost_cid_terraform_module/README.md/.#addingremoving-labelsannotations-tofrom-the-dataset) file.
+Please follow the ["Maintenance -> Adding/Removing Labels/annotations to/from the Dataset" part in the Terraform module README file](/terraform/terraform-aws-cca/README.md/.#addingremoving-labelsannotations-tofrom-the-dataset).
 2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels/annotations.  
 Alternatively, you can run the Kubecost S3 Exporter on-demand according to [Running the Kubecost S3 Exporter Pod On-Demand](#running-the-kubecost-s3-exporter-pod-on-demand) section.  
 
