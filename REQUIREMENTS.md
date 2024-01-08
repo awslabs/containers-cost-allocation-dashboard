@@ -18,7 +18,7 @@ You can choose to not create it, and then this requirement becomes relevant.
     * The get the most accurate cost data from Kubecost (such as RIs, SPs and Spot), [integrate it with CUR](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations) and [Spot Data Feed](https://docs.kubecost.com/install-and-configure/install/cloud-integration/aws-cloud-integrations/aws-spot-instances).
     * To get accurate network costs from Kubecost, please follow the [Kubecost network cost allocation guide](https://docs.kubecost.com/using-kubecost/getting-started/cost-allocation/network-allocation) and deploy [the network costs DaemonSet](https://docs.kubecost.com/install-and-configure/advanced-configuration/network-costs-configuration).   
     * To see K8s annotations in each allocation, you must [enable Annotation Emission in Kubecost](https://docs.kubecost.com/install-and-configure/advanced-configuration/annotations)
-    * To see node-related data for each allocation, [add node labels in Kubecost's values.yaml](https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml#L484-L486).  
+    * To see node-related data for each allocation, [add node labels in Kubecost's values.yaml](https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml).  
     See more information in the [Adding Node Labels](#adding-node-labels) section
 * Terraform 1.3.x or higher
 * Helm 3.x or higher 
@@ -57,7 +57,7 @@ The following node labels are support by the QuickSight dashboard:
     karpenter.k8s.aws/instance-ami-id
 
 However, by default, the Kubecost Allocation API response only includes a few specific node labels.  
-For the QuickSight dashboard to support all of the above node labels, you must add them to [Kubecost values.yaml](https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml#L484-L486).
+For the QuickSight dashboard to support all of the above node labels, you must add them to [Kubecost values.yaml](https://github.com/kubecost/cost-analyzer-helm-chart/blob/develop/cost-analyzer/values.yaml).
 
 Here's an example of adding these node labels using `--set` option when running `helm upgrade -i`:
 
@@ -78,7 +78,7 @@ Note in case you decided to use an existing Athena workgroup:
 You'll have to give the workgroup name as an input in a Terraform variable (documented separately in the Terraform README.md).
 2. Set Query Results Location in the Athena Workgroup Settings:
 If you decided to use an existing Athena workgroup, you need to set Athena workgroup Query Results Location yourself.  
-In this case, follow the [Set Query Results Location in the Athena Workgroup Settings section](#set-query-results-location-in-the-athena-workgroup-settings).
+In this case, follow the ["Set Query Results Location in the Athena Workgroup Settings section"](#set-query-results-location-in-the-athena-workgroup-settings).  
 Otherwise, skip it.
 
 #### Set Query Results Location in the Athena Workgroup Settings
