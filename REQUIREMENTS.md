@@ -4,11 +4,13 @@ Following are the requirements before deploying this solution:
 
 * An S3 bucket, which will be used to store the Kubecost data.  
 It is not created by the Terraform module, you need to create it in advance.
-* QuickSight Enterprise Edition
 * Athena workgroup, if you choose to not create it using the Terraform module.  
 Notice that by default, the Terraform module will create an Athena workgroup.  
 You can choose to not create it, and then this requirement becomes relevant.
 * An S3 bucket to be used for the Athena workgroup query results location (see [detailed instructions](#configure-athena-query-results-location))
+* QuickSight Enterprise Edition, with the following (see [detailed instructions](#quicksight-requirements)):
+  * Permissions to access the Kubecost S3 bucket and the Athena query results location S3 bucket
+  * Enough SPICE capacity
 * For each EKS cluster, have the following:
   * An [IAM OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).  
   The IAM OIDC Provider must be created in the EKS cluster's account. 
