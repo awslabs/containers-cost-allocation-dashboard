@@ -43,25 +43,25 @@ For example, use `https://kubecost-cost-analyzer.kubecost` (note no port is defi
 To identify which port is used by the Kubecost frontend service, run `kubectl get services` (see example of the `kubectl get services` command output below [4]).  
 2. If you're using a self-signed server certificate in Kubecost, disable TLS verification in the data collection pod.  
 Do so by adding `tls_verify` variable with value of `false`, in the cluster's calling module for the clusters where you enabled TLS in Kubecost.  
-This is done in the `main.tf` file in the root directory of the Terraform module.  
+This is done in the [`main.tf`](terraform/terraform-aws-cca/main.tf) file in the root directory of the Terraform module.  
 The default value of `tls_verify` is `true`.  
 This means that if the `kubecost_api_endpoint` uses an `https` URL and you're using a self-signed certificate in Kubecost, the data collection pod will fail to connect to Kubecost API.  
 So in this case, you must disable TLS verification in the data collection pod.  
 Please note that although at this point, the data in-transit will be encrypted, using a self-signed certificate is insecure.
 3. If your Kubecost frontend container uses a server certificate signed by a CA, the data collection pod will need to pull the CA certificate, so that it can use it for certificate verification.  
 Please follow the below steps to add the root CA certificate to the data collection pod:
-   1. Add the `kubecost_ca_certificates_list` variable in `common_variables` calling module in the [`main.tf`](terraform/terraform-aws-cca/main.tf) file in the root directory of the Terraform module.
+   1. Add the `kubecost_ca_certificates_list` variable in `pipeline` calling module in the [`main.tf`](terraform/terraform-aws-cca/main.tf) file in the root directory of the Terraform module.
    This variable is a list of root CA certificates with the relevant information required for the Terraform module.
    Terraform will use it to create a Secret in AWS Secret Manager.  
-   See example for using this variable, in `common_variables` calling module in [the example `main.tf` file](terraform/terraform-aws-cca/examples/root_module/main.tf)
-   This variable will be used by Terraform to create an AWS Secrets Manager Secret in the pipline account.  
+   See example for using this variable, in `pipeline` calling module in [the example `main.tf` file](terraform/terraform-aws-cca/examples/root_module/main.tf).  
+   This variable will be used by Terraform to create an AWS Secrets Manager Secret in the pipline account.
    2. Add the `kubecost_ca_certificate_secret_name` variable to the cluster's calling module for the clusters where you enabled TLS in Kubecost.  
    This is done in the [`main.tf`](terraform/terraform-aws-cca/main.tf) file in the root directory of the Terraform module.  
    The value must be the same secret name that you used in the `cert_secret_name` key in the relevant certificate from the `kubecost_ca_certificates_list` variable.  
    This is used by Terraform to identify the secret to be used for the specific cluster to communicate with Kubecost, and pass it to Helm.
    See example for using this variable, in `us-east-1-111111111111-cluster1` calling module in [the example `main.tf` file](terraform/terraform-aws-cca/examples/root_module/main.tf).
    3. Add the `kubecost_ca_certificate_secrets` variable to the cluster's calling module for the clusters where you enabled TLS in Kubecost.  
-   The value must be `module.pipeline.kubecost_ca_cert_secret`.
+   The value must be `module.pipeline.kubecost_ca_cert_secret`.  
    This is done in the [`main.tf`](terraform/terraform-aws-cca/main.tf) file in the root directory of the Terraform module.  
    See example for using this variable, in `us-east-1-111111111111-cluster1` calling module in [the example `main.tf` file](terraform/terraform-aws-cca/examples/root_module/main.tf).
    4. Make sure that the `tls_verify` variable is `true` (this should be the default)
