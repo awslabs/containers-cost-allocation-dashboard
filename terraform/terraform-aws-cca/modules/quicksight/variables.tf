@@ -250,11 +250,11 @@ variable "qs_data_set_settings" {
                                 Possible values: A valid QuickSight data sourceset.
                                 Default value: "cca_kubecost_view"
                (Optional) dataset_refresh_schedule: The hour of the day for the dataset refresh schedule.
-                                Possible values: An hour of the day, in the format of "HH:MM".
-                                Default value: "05:00"
+                                                    Possible values: An hour of the day, in the format of "HH:MM".
+                                                    Default value: "05:00"
                (Optional) timezone: The timezone for the dataset refresh schedule.
-                                Possible values: One of the timezones listed in the "timezones.txt" file.
-                                Default value: empty string (a timezone will be automatically chosen based on the QuickSight account's region).
+                                    Possible values: One of the timezones listed in the "timezones.txt" file.
+                                    Default value: empty string (a timezone will be automatically chosen based on the QuickSight account's region).
                (Optional) users: A list of QuickSight users and and their permissions.
                                  Users in this list take precedence over users in "qs_common_users" list, if they appear in both.
                                  Each item in the list is an object with the following fields:

@@ -11,7 +11,8 @@ Before you start using the dashboard, make sure the following is true:
 For this, the Kubecost S3 Exporter container must have collected data for at least one day.  
 Note: since it collects data from 72 hours ago 00:00:00 to 48 hours ago 00:00:00, it might find no data on new Kubecost deployments.  
 Wait until enough data was collected by Kubecost, so that the Kubecost S3 Exporter can collect data.
-* The Glue crawler must have successfully run after data was already uploaded by Kubecost S3 Exporter to the S3 bucket
+* The Glue crawler must have successfully run after data was already uploaded by Kubecost S3 Exporter to the S3 bucket.  
+Note that there must not be any files in the S3 bucket, other than the ones uploaded by the Kubecost S3 Exporter.
 * The QuickSight dataset must have refreshed successfully after the Glue crawler ran successfully
 
 ## Share the Dashboard with Users
@@ -27,7 +28,9 @@ Create an Analysis from the Dashboard, to edit it and create custom visuals:
 Once done, go back to the dashboard and refresh the page (it's required to see the "Save as" icon).
 3. On the top right part of the dashboard, click the "Save as" icon, name the Analysis, then click "SAVE".  
 You'll now be navigated to the Analysis.
-4. You can edit the Analysis as you wish, and save it again as a dashboard, by clicking the "Share" icon on the top right, then click "Publish dashboard"
+4. You can edit the Analysis as you wish, and save it again as a dashboard, by clicking the "Share" icon on the top right, then click "Publish dashboard".  
+Please note that if you customize the dashboard, and would later like to update to a new dashboard version, you must maintain a separate dashboard.  
+You can update a non-customized dashboard, then apply your customizations again on it.
 
 ## Tuning Schedules
 
@@ -36,7 +39,7 @@ Following are the schedules:
 
 * Kubecost S3 Exporter CronJob default schedule: 00:00:00 UTC, daily
 * Glue crawler schedule: 01:00:00 UTC, daily
-* QuickSight dataset refresh schedule: 05:00:00, daily
+* QuickSight dataset refresh schedule: 05:00:00, daily.  
 The timezone for the QuickSight dataset refresh schedule is automatically set based on the region where the dataset is created.
 
 The Kubecost S3 Exporter CronJob schedule and the Glue crawler schedule, are based on cron expressions.  
@@ -52,11 +55,11 @@ It's advised to adjust these schedules as instructed above, using the relevant T
 
 * For the Kubecost S3 Exporter CronJob schedule:  
 Adjust the `kubecost_s3_exporter_cronjob_schedule` variable in the `kubecost_s3_exporter` Terraform reusable module.  
-See [the `kubecost_s3_exporter` Terraform reusable module's README.md file](terraform/terraform-aws-cca/modules/kubecost_s3_exporter/README.md) for more information on this variable.
+See [the `kubecost_s3_exporter` Terraform reusable module's variables.tf file](terraform/terraform-aws-cca/modules/kubecost_s3_exporter/variables.tf) for more information on this variable.
 * For the Glue crawler schedule:  
 Adjust the `glue_crawler_schedule` variable in the `pipeline` module.  
-See [the `pipeline` Terraform reusable module's README.md file](terraform/terraform-aws-cca/modules/pipeline/README.md) for more information on this variable.
+See [the `pipeline` Terraform reusable module's variables.tf file](terraform/terraform-aws-cca/modules/pipeline/variables.tf) for more information on this variable.
 * For the QuickSight dataset refresh schedule:  
 Adjust the `dataset_refresh_schedule` field `qs_data_set_settings` variable in the `quicksight` module.  
 Adjust the `timezone` field in the `qs_data_set_settings` variable in the `quicksight` module.  
-See [the `quicksight` Terraform reusable module's README.md file](terraform/terraform-aws-cca/modules/quicksight/README.md) for more information on these variables.
+See [the `quicksight` Terraform reusable module's variables.tf file](terraform/terraform-aws-cca/modules/quicksight/variables.tf) for more information on these variables.
