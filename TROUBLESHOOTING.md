@@ -75,7 +75,8 @@ If you get the following error when executing `terraform apply`:
     │
 
 It means the region you defined in the `quicksight-identity` provider is incorrect.  
-Switch it to the region mentioned in the error (`eu-west-1` in this example).
+Switch it to the region mentioned in the error (`eu-west-1` in this example).  
+This is done in the [`providers.tf`](terraform/terraform-aws-cca/providers.tf) file in the root directory of the Terraform module
 
 ### Waiting from QuickSight Data Source
 
