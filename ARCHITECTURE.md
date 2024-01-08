@@ -24,7 +24,7 @@ These components are used to collect data from Kubecost.
 Most of the above components are deployed using a Terraform module.  
 The K8s resources are deployed using a Helm chart (that is invoked by the Terraform module or by the user).  
 The QuickSight dashboard is deployed using the `cid-cmd` CLI tool.  
-Deployment instructions can be found in the [DEPLOYMENT.md file](DEPLOYMENT.md)
+Deployment instructions can be found in the [DEPLOYMENT.md] file(DEPLOYMENT.md)
 
 ## High-Level Logic
 
