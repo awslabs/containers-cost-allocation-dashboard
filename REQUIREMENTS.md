@@ -115,6 +115,7 @@ You can also review the [following document](https://docs.aws.amazon.com/athena/
 Make sure you have enough QuickSight SPICE capacity to create the QuickSight dataset and store the data.  
 The required capacity depends on the size of your EKS clusters from which Kubecost data is collected.  
 You may start with small SPICE capacity and adjust as needed.  
-Make sure it's at least larger than 0, so Terraform can create the QuickSight dataset.
+Make sure it's at least larger than 0, so Terraform can create the QuickSight dataset.  
+Make sure that you purchase SPICE capacity in the region where you intend to deploy the dashboard
 
 To add SPICE capacity, follow [this document](https://docs.aws.amazon.com/quicksight/latest/user/managing-spice-capacity.html).
