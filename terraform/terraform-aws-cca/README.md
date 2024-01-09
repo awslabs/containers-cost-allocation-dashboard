@@ -40,43 +40,37 @@ This is so that Helm (invoked by Terraform or manually) can tell which AWS crede
 
 Below is the complete module structure, followed by details on each directory/module:
 
-      terraform-aws-cca/
-      ├── README.md
-      ├── main.tf
-      ├── outputs.tf
-      ├── providers.tf
-      ├── terraform.tfvars
-      ├── timezones.txt
-      ├── variables.tf
-      ├── examples
-      │   └── root_module
-      │       ├── main.tf
-      │       ├── outputs.tf
-      │       ├── providers.tf
-      │       ├── terraform.tfvars
-      │       └── variables.tf
-      └── modules
-          ├── common_locals
-          │   ├── locals.tf
-          │   └── outputs.tf
-          ├── kubecost_s3_exporter
-          │   ├── README.md
-          │   ├── locals.tf
-          │   ├── main.tf
-          │   ├── outputs.tf
-          │   └── variables.tf
-          ├── pipeline
-          │   ├── README.md
-          │   ├── locals.tf
-          │   ├── main.tf
-          │   ├── outputs.tf
-          │   ├── secret_policy.tpl
-          │   └── variables.tf
-          └── quicksight
-              ├── README.md
-              ├── locals.tf
-              ├── main.tf
-              └── variables.tf
+    terraform-aws-cca/
+    ├── README.md
+    ├── main.tf
+    ├── outputs.tf
+    ├── providers.tf
+    ├── terraform.tfvars
+    ├── variables.tf
+    ├── examples
+    │   └── root_module
+    │       ├── main.tf
+    │       ├── outputs.tf
+    │       ├── providers.tf
+    │       ├── terraform.tfvars
+    │       └── variables.tf
+    └── modules
+        ├── common_locals
+        │   ├── locals.tf
+        │   └── outputs.tf
+        ├── kubecost_s3_exporter
+        │   ├── README.md
+        │   ├── locals.tf
+        │   ├── main.tf
+        │   ├── outputs.tf
+        │   └── variables.tf
+        └── pipeline
+            ├── README.md
+            ├── locals.tf
+            ├── main.tf
+            ├── outputs.tf
+            ├── secret_policy.tpl
+            └── variables.tf
 
 ### The Root Directory
 
@@ -85,14 +79,12 @@ It contains the following files:
 * The [`main.tf`](main.tf) file, which is the entry point to this module.  
 Thi is where you call the reusable modules to deploy the resources:  
   * The `pipline` reusable module that deploys the pipeline resources
-  * The `kubecost_s3_exporter` reusable module for each cluster, to deploy the Kubecost S3 Exporter on your clusters
-  * The `quicksight` reusable module that deploys the QuickSight resources  
+  * The `kubecost_s3_exporter` reusable module for each cluster, to deploy the Kubecost S3 Exporter on your clusters 
 * The [`providers.tf`](providers.tf) file, where you add a provider configuration for each module  
 * The [`outputs.tf`](outputs.tf) file, to be used to add your required outputs
 * The [`variables.tf`](variables.tf) file, where the root module common variables are defined.  
 These variables are used by the reusable modules.
 * The [`terraform.tfvars`](terraform.tfvars), where you provide values for the root module common variables
-* The [`timezones.txt`](timezones.txt) file you can use to choose time zone when setting dataset refresh schedule
 
 ### The `modules` Directory
 
@@ -121,16 +113,6 @@ The `kubecost_s3_exporter` reusable module in the `kubecost_s3_exporter` directo
 
 It contains module-specific variables, outputs, and resources.
 
-#### The `quicksight` Module
-
-The `quicksight` reusable module in the `quicksight` directory contains the Terraform IaC required to deploy:
-
-* The Athena workgroup
-* The QuickSight data source and dataset
-* Generate YAML file used to create the QuickSight dashboard
-
-It contains module-specific variables, and resources
-
 ### The `examples` Directory
 
 The `examples` directory currently includes only the `root_module` directory.  
@@ -151,8 +133,6 @@ Deployment of the Containers Cost Allocation (CCA) Dashboard using this Terrafor
       See the ["Define Provider" section in the module's README.md file](modules/pipeline/README.md/.#define-provider).
    2. Add provider for the `kubecost_s3_exporter` reusable module. For more information and examples:  
       See the ["Define Provider for each EKS cluster" section in the module's README.md file](modules/kubecost_s3_exporter/README.md/.#define-provider-for-each-eks-cluster).
-   3. Add provider for the `quicksight` reusable module. For more information and examples:  
-      See the ["Define Provider" section in the module's README.md file](modules/quicksight/README.md/.#define-providers).
 2. Provide common root module variable values in the [`terraform.tfvars`](terraform.tfvars) file.  
 The only required variable is `bucket_arn`.
 3. Provide variables values in the [`main.tf`](main.tf) file in the root module, for:
@@ -160,8 +140,6 @@ The only required variable is `bucket_arn`.
       See the ["Create a Calling Module and Provide Variables Values" section in the module's README.md file](modules/pipeline/README.md/.#create-a-calling-module-and-provide-variables-values).
    2. The `kubecost_s3_exporter` reusable module for each cluster. For more information and examples:  
       See the ["Create a Calling Module and Provide Variables Values" section in the module's README.md file](modules/kubecost_s3_exporter/README.md/.#create-a-calling-module-and-provide-variables-values).
-   3. The `quicksight` reusable module. For more information and examples:  
-      See the ["Create a Calling Module and Provide Variables Values" section in the module's README.md file](modules/quicksight/README.md/.#create-a-calling-module-and-provide-variables-values).
 4. Optionally, add outputs to the [`outputs.tf`](outputs.tf) file in the root module.  
 See more information on the `kubecost_s3_exporter` module's outputs in the [module's README.md file](modules/kubecost_s3_exporter/README.md/.#adding-outputs-for-each-cluster).
 5. Deploy:  
@@ -221,11 +199,12 @@ As an example, see the below table, showing a possible list of labels and annota
 
 In this case, this is how the `k8s_labels` and `k8s_annotations` variables will look like:
 
-      k8s_labels      = ["a", "b", "c", "f", "g"] # Optionally, add K8s labels you'd like to be present in the dataset
-      k8s_annotations = ["1", "2", "3", "5", "6"] # Optionally, add K8s annotations you'd like to be present in the dataset
+    k8s_labels      = ["a", "b", "c", "f", "g"] # Optionally, add K8s labels you'd like to be present in the dataset
+    k8s_annotations = ["1", "2", "3", "5", "6"] # Optionally, add K8s annotations you'd like to be present in the dataset
 
 3. From the root directory, run `terraform apply`.  
 Terraform will output the new list of labels and annotations when the deployment is completed.
+4. Save and publish the dataset by following the ["Save and Publish the Dashboard" section in the DEPLOYMENT.md file](../../DEPLOYMENT.md/.#save-and-publish-the-dashboard)
 
 **_Note about annotations:_**
 

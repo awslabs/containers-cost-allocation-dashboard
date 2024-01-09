@@ -22,7 +22,7 @@ After the initial deployment, you might want to add or remove labels or annotati
 To do this, perform the following:
 
 1. Add/remove the labels/annotations to/from the Terraform module and apply it.  
-Please follow the ["Maintenance -> Adding/Removing Labels/annotations to/from the Dataset" part in the Terraform module README file](/terraform/terraform-aws-cca/README.md/.#addingremoving-labelsannotations-tofrom-the-dataset).
+Please follow the ["Maintenance -> Adding/Removing Labels/annotations to/from the Dataset" part in the Terraform module README file](terraform/terraform-aws-cca/README.md/.#addingremoving-labelsannotations-tofrom-the-dataset).
 2. Wait for the next Kubecost S3 Exporter schedule so that it'll collect the labels/annotations.  
 Alternatively, you can run the Kubecost S3 Exporter on-demand according to [Running the Kubecost S3 Exporter Pod On-Demand](#running-the-kubecost-s3-exporter-pod-on-demand) section.  
 
@@ -55,4 +55,3 @@ To see the logs of the Kubecost S3 Exporter pod, you need to first get the list 
 Then, run the following command to get the logs:
 
     kubectl logs <pod> -c kubecost-s3-exporter -n <namespace> --context <context>
-

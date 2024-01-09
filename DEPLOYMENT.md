@@ -103,12 +103,16 @@ Once you're done, continue to [step 3](#step-3-dashboard-deployment) below.
 
 ## Step 3: Dashboard Deployment
 
-As part of using Terraform to create the AWS resources, it also created a `cca.yaml` file.  
-This file is used to deploy the QuickSight dashboard.  
+Follow all subsections below to deploy the dashboard and be able to use it.
+
+### Deploy the QuickSight Assets
+
 From the `cid` folder, run the following command:
 
-    cid-cmd deploy --resources cca.yaml --dashboard-id containers-cost-allocation-cca  
+    cid-cmd deploy --resources containers_cost_allocation.yaml --dashboard-id containers-cost-allocation --athena-database kubecost_db --quicksight-datasource-id cca --athena-workgroup primary --timezone <timezone>
 
+Replace `<timezone>` with a timezone from the lists in the [timezones.txt file](timezones.txt) in the project's root directory.  
+You can also remove the `--timezone` argument, and the CLI tool will present timezones list for you.  
 Make sure you provide credentials as environment variables or by passing `--profile_name` argument to the above command.  
 Make sure you provide region as environment variable or by passing `--region_name` argument to the above command.  
 The output after executing the above command, should be similar to the below:
@@ -128,27 +132,30 @@ The output after executing the above command, should be similar to the below:
     
     Discovering deployed dashboards...  [####################################]  100%  "KPI Dashboard" (kpi_dashboard)
     
-    Latest template: arn:aws:quicksight:us-east-1:829389350341:template/containers-cost-allocation-cca/version/<latest_version>
-    Dashboard "containers-cost-allocation-cca" is not deployed
+    Latest template: arn:aws:quicksight:us-east-1:223485597511:template/containers-cost-allocation/version/1
+    Dashboard "containers-cost-allocation" is not deployed
     
     Required datasets:
-     - <data_set_name>
+     - cca_kubecost_view
     
     
-    Looking by DataSetId defined in template...
-        Found <data_set_name> as <data_set_id>
-    complete
-    Using dataset <data_set_name>: <data_set_id>
-    Deploying dashboard containers-cost-allocation-cca
+    Looking by DataSetId defined in template...complete
+    
+    There are still 1 datasets missing: cca_kubecost_view
+    Creating dataset: cca_kubecost_view
+    Detected views: kubecost_view
+    Dataset "cca_kubecost_view" created
+    Using dataset cca_kubecost_view: 53076fa4-4238-a2e1-8672-3909f0621986
+    Deploying dashboard containers-cost-allocation
     
     #######
     ####### Congratulations!
-    ####### Containers Cost Allocation (CCA) is available at: https://<data_set_id>.quicksight.aws.amazon.com/sn/dashboards/containers-cost-allocation-cca
+    ####### Containers Cost Allocation (CCA) is available at: https://<region>.quicksight.aws.amazon.com/sn/dashboards/containers-cost-allocation
     #######
-
+    
     ? [share-with-account] Share this dashboard with everyone in the account?: (Use arrow keys)
-    » yes
-      no
+     » yes
+       no
 
 Choose whether to share the dashboard with everyone in this account.  
 Selecting "yes" will result in an output similar to the below:
@@ -160,12 +167,28 @@ Selecting "no" will result in an output similar to the below:
 
     ? [share-with-account] Share this dashboard with everyone in the account?: no
 
+Any of the above selections will complete the deployment.
 
-Any of the above selections will complete the deployment.  
+### What Needs to Happen for Data to Appear on the Dashboard?
 
-Note:  
-Data won't be available in the dashboard at least until the following occurs:
-1. The data collection pod runs and collects data from Kubecost for the first time
-You must have data from at lest 72 hours ago in Kubecost for the data collection pod to collect data.
-2. The AWS Glue crawler runs for the first time after data was collected from Kubecost for the first time
-3. The QuickSight dataset is refreshed for the first time, after the above 2 conditions were met
+Before you start using the dashboard, make sure the following is true:
+
+* Data must be present in the S3 bucket.
+For this, the Kubecost S3 Exporter container must have collected data for at least one day.  
+Note: since it collects data from 72 hours ago 00:00:00 to 48 hours ago 00:00:00, it might find no data on new Kubecost deployments.  
+Wait until enough data was collected by Kubecost, so that the Kubecost S3 Exporter can collect data.
+* The Glue crawler must have successfully run after data was already uploaded by Kubecost S3 Exporter to the S3 bucket.  
+Note that there must not be any files in the S3 bucket, other than the ones uploaded by the Kubecost S3 Exporter.
+* The QuickSight dataset must have refreshed successfully after the Glue crawler ran successfully
+
+### Save and Publish the Dashboard
+
+If you added labels to the dataset (using the `k8s_labels` and `k8s_annotations` Terraform variables):  
+1. Log in to QuickSight and go to the "Datasets" menu on the left
+2. Click the `cca_kubecost_view` dataset, then click "EDIT DATASET"
+3. On the top right, click "SAVE & PUBLISH"
+4. To monitor the process, click the "QuickSight" icon on the top right.  
+Then, go to the "Datasets" menu and click the `cca_kubecost_view` dataset again.
+5. Click the "Refresh" tab.  
+On the "History" table, you should see the most recent refresh with "Refresh type" column of "Manual, Edit".  
+Wait until it's successfully finished, then you can start using the dashboard.

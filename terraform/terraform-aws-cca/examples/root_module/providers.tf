@@ -181,31 +181,3 @@ provider "helm" {
     config_path    = "~/.kube/config"
   }
 }
-
-#######################################
-# Section 3 - Quicksight AWS Provider #
-#######################################
-
-provider "aws" {
-  alias = "quicksight"
-
-  region                   = "us-east-1"
-  shared_config_files      = ["~/.aws/config"]
-  shared_credentials_files = ["~/.aws/credentials"]
-  profile                  = "quicksight_profile"
-  default_tags {
-    tags = var.aws_common_tags
-  }
-}
-
-provider "aws" {
-  alias = "quicksight-identity"
-
-  region                   = "us-east-1"
-  shared_config_files      = ["~/.aws/config"]
-  shared_credentials_files = ["~/.aws/credentials"]
-  profile                  = "quicksight_profile"
-  default_tags {
-    tags = var.aws_common_tags
-  }
-}

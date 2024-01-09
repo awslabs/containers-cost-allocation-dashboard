@@ -36,7 +36,6 @@ In case of a new dashboard version, run the following command from the `cid` fol
 
     cid-cmd update --norecursive --noforce --resources cca.yaml --dashboard-id containers-cost-allocation-cca
 
-
 Make sure you provide credentials as environment variables or by passing `--profile_name` argument to the above command.  
 Make sure you provide region as environment variable or by passing `--region_name` argument to the above command.  
 The output after executing the above command, should be similar to the below:
@@ -75,19 +74,7 @@ The output after executing the above command, should be similar to the below:
     ####### Containers Cost Allocation (CCA) is available at: https://<region>.quicksight.aws.amazon.com/sn/dashboards/containers-cost-allocation-cca
     #######
 
-If you get the following error:
-
-      WARNING - Dataset cca_kubecost_view is not found
-      CRITICAL - Failed to find a Dataset "cca_kubecost_view" with required fields. Please retry with --update "yes" --force --recursive flags.
-
-Run the update using the following command:
-
-      cid-cmd update --recursive --noforce --resources cca.yaml --dashboard-id containers-cost-allocation-cca
-
-Use the above command only if you get the above error.
-
 If there's no updated version of the dashboard, that output should be similar to the below:
-
 
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.39 Beta
     
@@ -104,21 +91,20 @@ If there's no updated version of the dashboard, that output should be similar to
     
     Discovering deployed dashboards...  [####################################]  100%  "KPI Dashboard" (kpi_dashboard)
     
-    Latest template: arn:aws:quicksight:us-east-1:829389350341:template/containers-cost-allocation-cca/version/<latest_version>
+    Latest template: arn:aws:quicksight:us-east-1:223485597511:template/containers-cost-allocation/version/1
     You are up to date!
-      Version    <latest_version>
-      VersionId  <latest_version>
-    Using dataset <data_set_name>: <data_set_id>
+      Version    v0.3.2
+      VersionId  1
+    Using dataset cca_kubecost_view: 53076fa4-4238-a2e1-8672-3909f0621986
     
     Checking for updates...
-    Deployed template: arn:aws:quicksight:us-east-1:829389350341:template/containers-cost-allocation-cca/version/<latest_version>
-    Latest template: arn:aws:quicksight:us-east-1:829389350341:template/containers-cost-allocation-cca/version/<latest_version>
+    Deployed template: arn:aws:quicksight:us-east-1:223485597511:template/containers-cost-allocation/version/1
+    Latest template: arn:aws:quicksight:us-east-1:223485597511:template/containers-cost-allocation/version/1
     
     ? [confirm-update] No updates available, should I update it anyway?: (Use arrow keys)
-       yes
-     » no
+     » yes
+       no
 
 Select "no", and upon selection, you should see output similar to the below:
-
 
     ? [confirm-update] No updates available, should I update it anyway?: no

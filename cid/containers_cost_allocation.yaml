@@ -1,0 +1,277 @@
+dashboards:
+  CONTAINERS COST ALLOCATION (CCA):
+    dependsOn:
+      datasets:
+      - cca_kubecost_view
+    name: Containers Cost Allocation (CCA)
+    dashboardId: containers-cost-allocation
+    category: Custom
+    templateId: containers-cost-allocation
+datasets:
+  cca_kubecost_view:
+    data:
+      DataSetId: 53076fa4-4238-a2e1-8672-3909f0621986
+      Name: cca_kubecost_view
+      PhysicalTableMap:
+        476e7a0e-2e42-df7a-ff77-1555e92677fe:
+          RelationalTable:
+            DataSourceArn: ${athena_datasource_arn}
+            Catalog: AwsDataCatalog
+            Schema: ${athena_database_name}
+            Name: kubecost_view
+            InputColumns:
+            - Name: name
+              Type: STRING
+            - Name: window.start
+              Type: DATETIME
+            - Name: window.end
+              Type: DATETIME
+            - Name: minutes
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: cpucores
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: cpucorerequestaverage
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: cpucoreusageaverage
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: cpucorehours
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: cpucost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: cpucostadjustment
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: cpuefficiency
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: gpucount
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: gpuhours
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: gpucost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: gpucostadjustment
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: networktransferbytes
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: networkreceivebytes
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: networkcost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: networkcrosszonecost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: networkcrossregioncost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: networkinternetcost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: networkcostadjustment
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: loadbalancercost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: loadbalancercostadjustment
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: pvbytes
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: pvbytehours
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: pvcost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: pvcostadjustment
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: rambytes
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: rambyterequestaverage
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: rambyteusageaverage
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: rambytehours
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: ramcost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: ramcostadjustment
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: ramefficiency
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: sharedcost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: externalcost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: totalcost
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: totalefficiency
+              Type: DECIMAL
+              SubType: FLOAT
+            - Name: properties.provider
+              Type: STRING
+            - Name: properties.region
+              Type: STRING
+            - Name: properties.cluster
+              Type: STRING
+            - Name: properties.clusterid
+              Type: STRING
+            - Name: properties.eksclustername
+              Type: STRING
+            - Name: properties.container
+              Type: STRING
+            - Name: properties.namespace
+              Type: STRING
+            - Name: properties.pod
+              Type: STRING
+            - Name: properties.node
+              Type: STRING
+            - Name: properties.node_instance_type
+              Type: STRING
+            - Name: properties.node_availability_zone
+              Type: STRING
+            - Name: properties.node_capacity_type
+              Type: STRING
+            - Name: properties.node_architecture
+              Type: STRING
+            - Name: properties.node_os
+              Type: STRING
+            - Name: properties.node_nodegroup
+              Type: STRING
+            - Name: properties.node_nodegroup_image
+              Type: STRING
+            - Name: properties.controller
+              Type: STRING
+            - Name: properties.controllerkind
+              Type: STRING
+            - Name: properties.providerid
+              Type: STRING
+            - Name: account_id
+              Type: STRING
+            - Name: region
+              Type: STRING
+            - Name: year
+              Type: STRING
+            - Name: month
+              Type: STRING
+      LogicalTableMap:
+        476e7a0e-2e42-df7a-ff77-1555e92677fe:
+          Alias: kubecost_view
+          DataTransforms:
+          - CreateColumnsOperation:
+              Columns:
+              - ColumnName: region_code
+                ColumnId: 2e12d931-4fae-9f31-c3ea-0c9b47fcc401
+                Expression: |-
+                  ifelse(
+                      isNotNull({properties.region}), {properties.region},
+                      region
+                  )
+          - ProjectOperation:
+              ProjectedColumns:
+              - name
+              - window.start
+              - window.end
+              - minutes
+              - cpucores
+              - cpucorerequestaverage
+              - cpucoreusageaverage
+              - cpucorehours
+              - cpucost
+              - cpucostadjustment
+              - cpuefficiency
+              - gpucount
+              - gpuhours
+              - gpucost
+              - gpucostadjustment
+              - networktransferbytes
+              - networkreceivebytes
+              - networkcost
+              - networkcrosszonecost
+              - networkcrossregioncost
+              - networkinternetcost
+              - networkcostadjustment
+              - loadbalancercost
+              - loadbalancercostadjustment
+              - pvbytes
+              - pvbytehours
+              - pvcost
+              - pvcostadjustment
+              - rambytes
+              - rambyterequestaverage
+              - rambyteusageaverage
+              - rambytehours
+              - ramcost
+              - ramcostadjustment
+              - ramefficiency
+              - sharedcost
+              - externalcost
+              - totalcost
+              - totalefficiency
+              - properties.provider
+              - properties.region
+              - properties.cluster
+              - properties.clusterid
+              - properties.eksclustername
+              - properties.container
+              - properties.namespace
+              - properties.pod
+              - properties.node
+              - properties.node_instance_type
+              - properties.node_availability_zone
+              - properties.node_capacity_type
+              - properties.node_architecture
+              - properties.node_os
+              - properties.node_nodegroup
+              - properties.node_nodegroup_image
+              - properties.controller
+              - properties.controllerkind
+              - properties.providerid
+              - account_id
+              - region
+              - year
+              - month
+              - region_code
+          - TagColumnOperation:
+              ColumnName: region
+              Tags:
+              - ColumnGeographicRole: STATE
+          - TagColumnOperation:
+              ColumnName: region_code
+              Tags:
+              - ColumnGeographicRole: STATE
+          Source:
+            PhysicalTableId: 476e7a0e-2e42-df7a-ff77-1555e92677fe
+      ImportMode: SPICE
+    dependsOn:
+      views:
+      - kubecost_view
+    schedules:
+    - default
+views: {}

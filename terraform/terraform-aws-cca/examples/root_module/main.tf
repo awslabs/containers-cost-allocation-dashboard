@@ -13,14 +13,6 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.4.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.6.0"
-    }
-    time = {
-      source  = "hashicorp/time"
-      version = "~> 0.9.1"
-    }
   }
 }
 
@@ -339,90 +331,4 @@ module "us-east-2-222222222222-cluster2" {
   create_namespace                     = false
   service_account                      = "kubecost-s3-exporter-2"
   create_service_account               = false
-}
-
-####################################
-# Section 3 - Quicksight Resources #
-####################################
-
-module "quicksight" {
-  source = "./modules/quicksight"
-
-  providers = {
-    aws          = aws.quicksight
-    aws.identity = aws.quicksight-identity
-  }
-
-  #                              #
-  # Root Module Common Variables #
-  #                              #
-
-  # References to root module common variables, do not remove or change
-
-  bucket_arn      = var.bucket_arn
-  k8s_labels      = var.k8s_labels
-  k8s_annotations = var.k8s_annotations
-  aws_common_tags = var.aws_common_tags
-
-  #                           #
-  # Pipeline Module Variables #
-  #                           #
-
-  # References to variables outputs from the pipeline module, do not remove
-
-  aws_glue_database_name = module.pipeline.aws_glue_database_name
-  aws_glue_view_name     = module.pipeline.aws_glue_view_name
-
-  #                             #
-  # QuickSight Module Variables #
-  #                             #
-
-  # Provide quicksight module variables values here
-
-  # Add an S3 bucket name for Athena Workgroup Query Results Location, if var.athena_workgroup_configuration.create is "true"
-  # Otherwise, remove the below field
-  athena_workgroup_configuration = {
-    query_results_location_bucket_name = "query-result-bucket"
-  }
-
-  qs_common_users = [
-    {
-      username = "user1"
-    },
-    {
-      username = "user2"
-    }
-  ]
-
-  qs_data_source_settings = {
-    users = [
-      {
-        username    = "user1"
-        permissions = "Viewer"
-      },
-      {
-        username    = "user3"
-        permissions = "Viewer"
-      },
-      {
-        username = "user4"
-      }
-    ]
-  }
-
-  qs_data_set_settings = {
-    timezone = "Asia/Jerusalem"
-    users = [
-      {
-        username = "user4"
-      },
-      {
-        username = "user1"
-      },
-      {
-        username    = "user3"
-        permissions = "Viewer"
-      }
-    ]
-  }
 }

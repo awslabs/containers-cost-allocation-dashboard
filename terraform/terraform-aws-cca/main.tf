@@ -16,14 +16,6 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.4.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.6.0"
-    }
-    time = {
-      source  = "hashicorp/time"
-      version = "~> 0.9.1"
-    }
   }
 }
 
@@ -141,70 +133,4 @@ module "cluster2" {
   cluster_arn                          = "" # Add the EKS cluster ARN here
   kubecost_s3_exporter_container_image = "" # Add the Kubecost S3 Exporter container image here (example: 111111111111.dkr.ecr.us-east-1.amazonaws.com/kubecost_s3_exporter:0.1.0)
   invoke_helm                          = false
-}
-
-####################################
-# Section 3 - Quicksight Resources #
-####################################
-
-# Calling module for the quicksight module, to create the QuickSight resources
-module "quicksight" {
-  source = "./modules/quicksight"
-
-  providers = {
-    aws          = aws.quicksight
-    aws.identity = aws.quicksight-identity
-  }
-
-  #                              #
-  # Root Module Common Variables #
-  #                              #
-
-  # References to root module common variables, do not remove or change
-
-  k8s_labels      = var.k8s_labels
-  k8s_annotations = var.k8s_annotations
-  aws_common_tags = var.aws_common_tags
-
-  #                           #
-  # Pipeline Module Variables #
-  #                           #
-
-  # References to variables outputs from the pipeline module, do not remove or change
-
-  glue_database_name = module.pipeline.glue_database_name
-  glue_view_name     = module.pipeline.glue_view_name
-
-  #                             #
-  # QuickSight Module Variables #
-  #                             #
-
-  # Provide quicksight module variables values here
-
-  # This configuration block is used to define Athena workgroup
-  # There are 2 options to use it:
-  #
-  # 1. Have Terraform create the Athena workgroup for you (the first uncommented block)
-  # 2. Use an existing Athena workgroup (the second commented block)
-
-  # Add an S3 bucket name for Athena Workgroup Query Results Location, if var.athena_workgroup_configuration.create is "true"
-  # It must be different from the S3 bucket used to store the Kubecost data
-  # If you decided to use var.athena_workgroup_configuration.create as "false", remove the below field
-  # Then, add the "name" field and specify and existing Athena workgroup
-
-  # Block for having Terraform create Athena workgroup
-  # You can optionally add the "name" field to change the default name that will used ("kubecost")
-  athena_workgroup_configuration = {
-    query_results_location_bucket_name = "" # Add an S3 bucket name for Athena Workgroup Query Results Location. It must be different from the S3 bucket used to store the Kubecost data
-  }
-
-  # Block for using an existing Athena workgroup
-  # If you want to use it, comment the first block above, and uncomment the block below, then give the inputs
-  # You can optionally add the "name" field to change the default name that will used ("kubecost")
-  #  athena_workgroup_configuration = {
-  #    create                             = false
-  #    name                               = "" # Add a name of an existing Athena Workgroup. Make sure it has Query Results Location set to an existing S3 bucket w hich is different from the S3 bucket used to store the Kubecost data
-  #    query_results_location_bucket_name = "" # Add an S3 bucket name for Athena Workgroup Query Results Location. It must be different from the S3 bucket used to store the Kubecost data
-  #  }
-
 }

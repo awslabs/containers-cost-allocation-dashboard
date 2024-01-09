@@ -3,18 +3,6 @@
 This document includes post-deployment steps.  
 Except the first section, all are optional, but it's advised to review all the below.
 
-## What Needs to Happen for Data to Appear on the Dashboard?
-
-Before you start using the dashboard, make sure the following is true:
-
-* Data must be present in the S3 bucket.
-For this, the Kubecost S3 Exporter container must have collected data for at least one day.  
-Note: since it collects data from 72 hours ago 00:00:00 to 48 hours ago 00:00:00, it might find no data on new Kubecost deployments.  
-Wait until enough data was collected by Kubecost, so that the Kubecost S3 Exporter can collect data.
-* The Glue crawler must have successfully run after data was already uploaded by Kubecost S3 Exporter to the S3 bucket.  
-Note that there must not be any files in the S3 bucket, other than the ones uploaded by the Kubecost S3 Exporter.
-* The QuickSight dataset must have refreshed successfully after the Glue crawler ran successfully
-
 ## Share the Dashboard with Users
 
 To share the dashboard with users, for them to be able to view it and create Analysis from it, see [this link](https://catalog.workshops.aws/awscid/en-US/dashboards/share).
@@ -39,8 +27,8 @@ Following are the schedules:
 
 * Kubecost S3 Exporter CronJob default schedule: 00:00:00 UTC, daily
 * Glue crawler schedule: 01:00:00 UTC, daily
-* QuickSight dataset refresh schedule: 05:00:00, daily.  
-The timezone for the QuickSight dataset refresh schedule is automatically set based on the region where the dataset is created.
+* QuickSight dataset refresh schedule: 02:12:00, daily.  
+The timezone for the QuickSight dataset refresh schedule is set based your selection when deploying the dashboard.
 
 The Kubecost S3 Exporter CronJob schedule and the Glue crawler schedule, are based on cron expressions.  
 Since cron expressions are always in UTC, the result may be that some components may be scheduled to run in a non-ideal order.  
@@ -60,6 +48,5 @@ See [the `kubecost_s3_exporter` Terraform reusable module's variables.tf file](t
 Adjust the `glue_crawler_schedule` variable in the `pipeline` module.  
 See [the `pipeline` Terraform reusable module's variables.tf file](terraform/terraform-aws-cca/modules/pipeline/variables.tf) for more information on this variable.
 * For the QuickSight dataset refresh schedule:  
-Adjust the `dataset_refresh_schedule` field `qs_data_set_settings` variable in the `quicksight` module.  
-Adjust the `timezone` field in the `qs_data_set_settings` variable in the `quicksight` module.  
-See [the `quicksight` Terraform reusable module's variables.tf file](terraform/terraform-aws-cca/modules/quicksight/variables.tf) for more information on these variables.
+Follow [this document](https://docs.aws.amazon.com/quicksight/latest/user/refreshing-imported-data.html#schedule-data-refresh).  
+Make sure you select "Full refresh".
