@@ -4,10 +4,8 @@ Following are the requirements before deploying this solution:
 
 * An S3 bucket, which will be used to store the Kubecost data.  
 It is not created by the Terraform module, you need to create it in advance.
-* Athena workgroup, if you choose to not create it using the Terraform module.  
-Notice that by default, the Terraform module will create an Athena workgroup.  
-You can choose to not create it, and then this requirement becomes relevant.
-* An S3 bucket to be used for the Athena workgroup query results location (see [detailed instructions](#configure-athena-query-results-location))
+* Athena workgroup (you can also use the default `primary` workgroup)
+* An S3 bucket to be used for the Athena workgroup query results location (see [detailed instructions](#athena-requirements))
 * QuickSight Enterprise Edition, with the following (see [detailed instructions](#quicksight-requirements)):
   * Permissions to access the Kubecost S3 bucket and the Athena query results location S3 bucket
   * Enough SPICE capacity
@@ -71,32 +69,16 @@ Here's an example of adding these node labels using `--set` option when running 
 
 ## Athena Requirements
 
-### Configure Athena Query Results Location
-
-1. Create an S3 bucket that will be used for the Athena Workgroup Query Results Location.  
-Note in case you decided to use an existing Athena workgroup:
-You'll have to give the workgroup name as an input in a Terraform variable (documented separately in the Terraform README.md).
-2. Set Query Results Location in the Athena Workgroup Settings:
-If you decided to use an existing Athena workgroup, you need to set Athena workgroup Query Results Location yourself.  
-In this case, follow the ["Set Query Results Location in the Athena Workgroup Settings section"](#set-query-results-location-in-the-athena-workgroup-settings).  
-Otherwise, skip it.
-
-#### Set Query Results Location in the Athena Workgroup Settings
-
-Navigate to Athena Console -> Administration -> Workgroups:
-![Screenshot of Athena Workgroups Page](./screenshots/athena_workgroups_page.png)
-
-Click on the relevant Workgroup, and you'll see the Workgroup settings:
-![Screenshot of Athena Workgroups Settings View](./screenshots/athena_workgroup_settings_view.png)
-
-If the "Query result location" field is empty, go back to the Workgroups page, and edit the Workgroup settings:
-![Screenshot of Athena Workgroups Page Edit Workgroup](./screenshots/athena_workgroups_page_edit_workgroup.png)
-
-In the settings page, set the Query results location.  
-Optionally (recommended), encrypt the query results, and save:
-![Screenshot of Athena Workgroup Settings Edit](./screenshots/athena_workgroup_settings_edit.png)
-
-You can also review the [following document](https://docs.aws.amazon.com/athena/latest/ug/querying.html#query-results-specify-location-workgroup) for more information
+1. Create an S3 bucket that will be used for the Athena workgroup query results location.  
+It must be different from the S3 bucket that you're using to store the Kubecost data.  
+It must be in the same region as the QuickSight region where you plan to deploy the dashboard.
+2. Create an Athena workgroup if you don't want to use the default `primary` workgroup.  
+It must be in the same region as the QuickSight region where you plan to deploy the dashboard.
+Follow [this document](https://docs.aws.amazon.com/athena/latest/ug/workgroups-create-update-delete.html#creating-workgroups) for instructions.
+3. Whether you decided to use the default `primary` workgroup or created a new one:  
+You must set an Athena query results location for the workgroup.
+Follow [this document](https://docs.aws.amazon.com/athena/latest/ug/querying.html#query-results-specify-location-workgroup) for instructions.
+It's advised that as part of the settings, you choose to encrypt the query results.
 
 ## QuickSight Requirements
 
@@ -108,7 +90,7 @@ You can also review the [following document](https://docs.aws.amazon.com/athena/
    1. Check the checkbox for the S3 bucket you created for the Kubecost data.  
    You only need to check the checkbox next to the S3 bucket name for this bucket.  
    No need to check the checkbox under "Write permission for Athena Workgroup" for  this bucket.
-   2. Check the checkbox for the S3 bucket you created for the Kubecost data.  
+   2. Check the checkbox for the S3 bucket you created for the Athena workgroup query results location.  
    Make sure you check both the checkbox next to the S3 bucket name and the checkbox under "Write permission for Athena Workgroup".
 4. Click "Finish" and "Save".
 
@@ -118,6 +100,6 @@ Make sure you have enough QuickSight SPICE capacity to create the QuickSight dat
 The required capacity depends on the size of your EKS clusters from which Kubecost data is collected.  
 You may start with small SPICE capacity and adjust as needed.  
 Make sure it's at least larger than 0, so Terraform can create the QuickSight dataset.  
-Make sure that you purchase SPICE capacity in the region where you intend to deploy the dashboard
+Make sure that you purchase SPICE capacity in the region where you intend to deploy the dashboard.
 
 To add SPICE capacity, follow [this document](https://docs.aws.amazon.com/quicksight/latest/user/managing-spice-capacity.html).
