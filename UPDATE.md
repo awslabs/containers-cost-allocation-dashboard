@@ -34,7 +34,7 @@ Make sure to keep a copy of the customized dashboard, update the original one, a
 
 In case of a new dashboard version, run the following command from the `cid` folder:
 
-    cid-cmd update --norecursive --noforce --resources cca.yaml --dashboard-id containers-cost-allocation-cca
+    cid-cmd update --resources containers_cost_allocation.yaml --dashboard-id containers-cost-allocation
 
 Make sure you provide credentials as environment variables or by passing `--profile_name` argument to the above command.  
 Make sure you provide region as environment variable or by passing `--region_name` argument to the above command.  
@@ -108,3 +108,14 @@ If there's no updated version of the dashboard, that output should be similar to
 Select "no", and upon selection, you should see output similar to the below:
 
     ? [confirm-update] No updates available, should I update it anyway?: no
+
+If you need to force update, select "yes", and you should see an output similar to the below:
+
+    ? [confirm-update] No updates available, should I update it anyway?: yes
+    
+    Updating containers-cost-allocation
+    Update completed
+    
+    #######
+    ####### Containers Cost Allocation (CCA) is available at: https://eu-north-1.quicksight.aws.amazon.com/sn/dashboards/containers-cost-allocation
+    #######
