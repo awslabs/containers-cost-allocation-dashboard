@@ -1,5 +1,9 @@
 # Deployment
 
+Clone the repo:
+
+    git clone https://github.com/awslabs/containers-cost-allocation-dashboard.git
+
 There are 3 high-level steps to deploy the solution:
 
 1. [Build and Push the Container Image](#step-1-build-and-push-the-container-image)
