@@ -269,9 +269,6 @@ datasets:
           Source:
             PhysicalTableId: 476e7a0e-2e42-df7a-ff77-1555e92677fe
       ImportMode: SPICE
-    dependsOn:
-      views:
-      - kubecost_view
     schedules:
     - default
 views: {}
