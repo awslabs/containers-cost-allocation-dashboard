@@ -84,7 +84,7 @@ Follow the sections and the comments in the file, which provide instructions.
 Follow the comments in the file, which provide instructions.
 3. Open the [`main.tf`](terraform/terraform-aws-cca/main.tf) file and define the calling modules.  
 Follow the sections and the comments in the file, which provide instructions.  
-Make sure you use `invole_helm` input set to `false` in each cluster's calling module.
+Make sure you use `invoke_helm` input set to `false` in each cluster's calling module.
 4. Run `terraform init`
 5. Run `terraform apply`
 
