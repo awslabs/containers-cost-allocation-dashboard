@@ -27,7 +27,7 @@ Following are the schedules:
 
 * Kubecost S3 Exporter CronJob default schedule: 00:00:00 UTC, daily
 * Glue crawler schedule: 01:00:00 UTC, daily
-* QuickSight dataset refresh schedule: 02:12:00, daily.  
+* QuickSight dataset refresh schedule varies (changes in different deployments).  
 The timezone for the QuickSight dataset refresh schedule is set based your selection when deploying the dashboard.
 
 The Kubecost S3 Exporter CronJob schedule and the Glue crawler schedule, are based on cron expressions.  
