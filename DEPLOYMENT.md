@@ -95,9 +95,9 @@ After applying the Terraform configuration, a YAML file will be created per clus
 The YAML file for each cluster will be named `<cluster_account_id>_<cluster_region>_<cluster_name>_values.yaml`.  
 The YAML files will be created in the `helm/kubecost_s3_exporter/clusters_values` directory.  
 Then, for each cluster, deploy the K8s resources by executing Helm.  
-Executing Helm when you're still in the Terraform `deploy` directory:
+Executing Helm when you're still in the Terraform module root directory:
 
-    helm upgrade -i kubecost-s3-exporter ../../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
+    helm upgrade -i kubecost-s3-exporter ../../helm/kubecost_s3_exporter/ -n <namespace> --values ../../../helm/kubecost_s3_exporter/clusters_values/<cluster>.yaml --create-namespace --kube-context <cluster_context>
 
 Executing Helm when in the `helm` directory:
 
