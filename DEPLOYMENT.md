@@ -12,10 +12,10 @@ There are 3 high-level steps to deploy the solution:
 
 ## Step 1: Build and Push the Container Image
 
-We do not provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.  
-For the registry, we recommend using Private Repository in Amazon Elastic Container Registry (ECR).  
+This project doesn't provide a public image, so you'll need to build an image and push it to the registry and repository of your choice.  
+We recommend using Private Repository in Amazon Elastic Container Registry (ECR).  
 You can find instructions on creating a Private Repository in ECR in [this document](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html), and pricing information can be found [here](https://aws.amazon.com/ecr/pricing/).  
-The name for the repository can be any name you'd like - for example, you can use `kubecost-s3-exporter`.  
+The name for the repository can be any valid name you'd like - for example, you can use `kubecost-s3-exporter`.  
 If you decided to use Private Repository in ECR, you'll have to configure your Docker client to log in to it first, before pushing the image to it.  
 You can find instructions on logging in to a Private Repository in ECR using Docker client, in [this document](https://docs.aws.amazon.com/AmazonECR/latest/userguide/registry_auth.html).  
 
