@@ -40,7 +40,6 @@ Make sure you provide credentials as environment variables or by passing `--prof
 Make sure you provide region as environment variable or by passing `--region_name` argument to the above command.  
 The output after executing the above command, should be similar to the below:
 
-
     CLOUD INTELLIGENCE DASHBOARDS (CID) CLI 0.2.39 Beta
     
     Loading plugins...
@@ -56,22 +55,22 @@ The output after executing the above command, should be similar to the below:
     
     Discovering deployed dashboards...  [####################################]  100%  "KPI Dashboard" (kpi_dashboard)
     
-    Latest template: arn:aws:quicksight:us-east-1:829389350341:template/containers-cost-allocation-cca/version/<latest_version>
+    Latest template: arn:aws:quicksight:us-east-1:223485597511:template/containers-cost-allocation/version/2
     An update is available:
                   Deployed -> Latest
-      Version    <deployed_version>      <latest_version>
-      VersionId  <deployed_version>      <latest_version>
-    Using dataset <data_set_name>: <data_set_id>
+      Version    v0.3.2      v0.3.3
+      VersionId  1           2
+    Using dataset cca_kubecost_view: 53076fa4-4238-a2e1-8672-3909f0621986
     
     Checking for updates...
-    Deployed template: arn:aws:quicksight:us-east-1:829389350341:template/containers-cost-allocation-cca/version/<deployed_version>
-    Latest template: arn:aws:quicksight:us-east-1:829389350341:template/containers-cost-allocation-cca/version/<latest_version>
+    Deployed template: arn:aws:quicksight:us-east-1:223485597511:template/containers-cost-allocation/version/1
+    Latest template: arn:aws:quicksight:us-east-1:223485597511:template/containers-cost-allocation/version/2
     
-    Updating containers-cost-allocation-cca
+    Updating containers-cost-allocation
     Update completed
     
     #######
-    ####### Containers Cost Allocation (CCA) is available at: https://<region>.quicksight.aws.amazon.com/sn/dashboards/containers-cost-allocation-cca
+    ####### Containers Cost Allocation (CCA) is available at: https://<region>.quicksight.aws.amazon.com/sn/dashboards/containers-cost-allocation
     #######
 
 If there's no updated version of the dashboard, that output should be similar to the below:
