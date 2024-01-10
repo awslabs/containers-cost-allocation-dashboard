@@ -79,12 +79,12 @@ This project uses the [Kubecost Allocation API](https://docs.kubecost.com/apis/a
 
 ## Back-filling Past Data
 
-This solution supports back-filling past data up to the Kubecost retention limits (15 days for the free tier).  
+This solution supports back-filling past data up to the Kubecost retention limits (15 days for the free tier and EKS-optimized bundle).  
 The back-filling is done automatically by the data collection pod if it identifies gaps in the S3 data compared to the Kubecost data.  
 The way it works is as follows:
 
 1. An environment variable is passed to the data collection pod (`BACKFILL_PERIOD_DAYS` in Helm, `backfill_period_days` in Terraform).  
-The default value is 15 days (according to the Kubecost free tier retention limit), but it can be changed.
+The default value is 15 days (according to the Kubecost free tier and EKS-optimized bundle retention limit), but it can be changed.
 2. Every time the data collection pod runs, it performs the following:
    1. Identifies the available data in Kubecost for the back-fill period.  
    This is done by querying the Allocation API for the given period, in daily granularity and `cluster` aggregation.  
@@ -114,8 +114,8 @@ If Parquet files within the Kubecost retention limit timeframe were accidentally
 
 Notes:
 
-1. The back-filling solution supports back-filling data only up to the Kubecost retention limit (15 days for the free tier)
+1. The back-filling solution supports back-filling data only up to the Kubecost retention limit (15 days for the free tier and EKS-optimized bundle)
 2. The back-filling solution is automatic, and does not support force-back-filling of data that already exists in the S3 bucket.  
 If you'd like to force-back-fill existing data, you must delete the Parquet file for the desired date, and then run the data collection (please back up first).  
 An example reason for such a scenario is that an issue was fixed or a feature was added to the solution, and you'd like it to be applied for past data.  
-Notice that this is possible only up to the Kubecost retention limit (15 days for the free tier).
+Notice that this is possible only up to the Kubecost retention limit (15 days for the free tier and EKS-optimized bundle).
