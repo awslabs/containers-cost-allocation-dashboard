@@ -1,7 +1,7 @@
 # Post-Deployment
 
 This document includes post-deployment steps.  
-Except the first section, all are optional, but it's advised to review all the below.
+All sections are optional, but it's advised to review them.
 
 ## Share the Dashboard with Users
 
