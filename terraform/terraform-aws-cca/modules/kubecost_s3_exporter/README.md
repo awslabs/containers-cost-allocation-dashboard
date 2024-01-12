@@ -220,7 +220,7 @@ Variables referenced from the `common_variables` module are already present, ple
 The `kubecost_s3_exporter` module has 2 required variables:
 * The `cluster_arn` variable, where you must input the EKS cluster ARN
 * The `kubecost_s3_exporter_container_image`, where you must input the Kubecost S3 Exporter Docker image.
-That's the image you built and pushed in ["Step 2: Build and Push the Container Image" in the DEPLOYMENT.md file](../../../../DEPLOYMENT.md/.#step-1-build-and-push-the-container-image).
+That's the image you built and pushed in ["Step 1: Build and Push the Container Image" in the DEPLOYMENT.md file](../../../../DEPLOYMENT.md/.#step-1-build-and-push-the-container-image).
 
 Example:
 
@@ -260,8 +260,8 @@ Make sure the `invoke_helm` has value of `false`, as below:
 
 Provide optional variables values if needed.
 
-For more information on the variables, see this module's [`variables.tf` file](variables.tf).  
-For examples, see the [`examples/root_module/main.tf` file](../../examples/root_module/main.tf).
+For more information on the variables, see this module's [`variables.tf`](variables.tf) file.  
+For examples, see the [`examples/root_module/main.tf`](../../examples/root_module/main.tf) file.
 
 #### Notes
 
@@ -272,7 +272,7 @@ In this case, you must provide the CA certificate in the `kubecost_ca_certificat
 If you don't do so, and `tls_verify` is set, the TLS connection will fail.  
 Otherwise, you can unset the `tls_verify` input. The connection will still be encrypted, but it's less secure due to the absence of server certificate verification.
 2. If you defined a secret name in `kubecost_ca_certificate_secret_name`, you MUST add the `kubecost_ca_certificate_secrets` variable with value of `module.pipeline.kubecost_ca_cert_secret` in the calling module.  
-Thi is due to the following process that happens in Terraform when specifying the above variable:  
+This is due to the following process that happens in Terraform when specifying the above variable:  
 Terraform will pull the configuration of the secret that was created by the `pipeline` module.  
 This is to then use the secret's ARN in the parent IAM role's inline policy, and to use its region in the Python script to get the secret value.  
 For this process (Terraform pulling the secret configuration) to work, the following must happen:  
@@ -303,4 +303,4 @@ The [`outputs.tf`](../../outputs.tf) file in the root directory already has a sa
 * Change the output name from `cluster1` to a name that uniquely represents your cluster.  
 * Change the value to reference to the calling module of your cluster (`module.<calling_module_name>`).
 
-More examples can be found in the [`examples/root_module/outputs.tf` file](../../examples/root_module/outputs.tf).
+More examples can be found in the [`examples/root_module/outputs.tf`](../../examples/root_module/outputs.tf) file.

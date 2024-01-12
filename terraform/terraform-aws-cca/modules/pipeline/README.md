@@ -65,5 +65,5 @@ Variables referenced from the `common_variables` module are already present, ple
 The `pipeline` module's own variables are all optional.  
 If you don't need to change one of the optional variables, you can leave the pre-created calling module as is.
 
-For more information on the variables, see this module's [`variables.tf` file](variables.tf).  
-For examples, see the [`examples/root_module/main.tf` file](../../examples/root_module/main.tf).
+For more information on the variables, see this module's [`variables.tf`](variables.tf) file.  
+For examples, see the [`examples/root_module/main.tf`](../../examples/root_module/main.tf) file.
