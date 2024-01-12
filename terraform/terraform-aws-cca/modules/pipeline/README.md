@@ -1,4 +1,4 @@
-# Pipline Module
+# Pipeline Module
 
 The Pipeline reusable module is used deploy the pipeline AWS resources for this solution.
 
